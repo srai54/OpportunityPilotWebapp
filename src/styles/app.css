@@ -1394,3 +1394,15 @@ a.result-title:hover { color: var(--op-primary); }
 .chip-select select { border: 0; background: transparent; color: var(--op-ink); font: inherit; font-weight: 600; min-height: 32px; padding: 0 6px; cursor: pointer; max-width: 11rem; }
 .chip-select select:disabled { color: var(--op-faint); cursor: not-allowed; }
 .chip-select:focus-within { border-color: var(--op-primary); outline: 2px solid var(--op-primary-tint-border); }
+
+/* Hiring trends */
+.bar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: var(--op-text-meta); }
+.bar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.bar-track { height: 10px; border-radius: 999px; background: var(--op-chart-track); overflow: hidden; }
+.bar-track i { display: block; height: 100%; border-radius: 999px; background: var(--op-c1); }
+.bar-n { font-weight: 600; text-align: right; min-width: 4.5rem; }
+.bar-n small { color: var(--op-muted); font-weight: 400; }
+.headline-list { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+@media (max-width: 860px) { .bar-row { grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr) auto; } }
+.headline-list { margin-top: 4px; }

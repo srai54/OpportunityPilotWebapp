@@ -35,6 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // No count: the Overview DTO has no total-opportunity figure (OQ-FE-039).
       { to: '/opportunities', label: 'Opportunities', icon: 'opportunities' },
       { to: '/wellfound', label: 'Job discovery', icon: 'opportunities' },
+      { to: '/trends', label: 'Hiring trends', icon: 'overview' },
     ],
   },
   {
@@ -82,6 +83,7 @@ export const SALES_NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
       { to: '/wellfound', label: 'Hiring signals', icon: 'opportunities' },
+      { to: '/trends', label: 'Hiring trends', icon: 'overview' },
       { to: '/opportunities', label: 'Companies', icon: 'opportunities' },
     ],
   },

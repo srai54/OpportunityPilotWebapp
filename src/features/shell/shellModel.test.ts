@@ -49,7 +49,7 @@ describe('NAV_GROUPS', () => {
   it('keeps every top-level route reachable, each once', () => {
     const routes = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.to))
     expect([...routes].sort()).toEqual(
-      ['/', '/approvals', '/campaigns', '/follow-ups', '/opportunities', '/outreach', '/profiles', '/settings', '/how-it-works', '/wellfound'].sort(),
+      ['/', '/approvals', '/campaigns', '/follow-ups', '/opportunities', '/outreach', '/profiles', '/settings', '/how-it-works', '/trends', '/wellfound'].sort(),
     )
   })
 
