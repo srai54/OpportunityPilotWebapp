@@ -14,6 +14,8 @@ import {
   gmailLabel,
   initials,
   navGroupsFor,
+  readAdvanced,
+  writeAdvanced,
   navAccessibleName,
   navCount,
   readNavCollapsed,
@@ -110,6 +112,11 @@ export function AppShell() {
   const setWorkspace = useCallback((ws: Workspace) => {
     setWorkspaceState(ws)
     writeWorkspace(ws)
+  }, [])
+  const [advanced, setAdvancedState] = useState(readAdvanced)
+  const setAdvanced = useCallback((on: boolean) => {
+    setAdvancedState(on)
+    writeAdvanced(on)
   }, [])
 
   // Drawer and popovers remember the path they were opened on, so any route change closes them.
@@ -214,7 +221,7 @@ export function AppShell() {
 
   return (
     <ShellContext.Provider
-      value={{ capabilities: caps, awaitingApproval, refreshOverview: overview.reload, workspace, setWorkspace }}
+      value={{ capabilities: caps, awaitingApproval, refreshOverview: overview.reload, workspace, setWorkspace, advanced, setAdvanced }}
     >
       <div className={`shell ws-${workspace}`}>
         <a href="#main" className="skip-link">
@@ -307,7 +314,7 @@ export function AppShell() {
           </div>
 
           <div className="rail-groups">
-            {navGroupsFor(workspace).map((group) => (
+            {navGroupsFor(workspace, advanced).map((group) => (
               <div key={group.id} className="rail-group">
                 {group.label &&
                   (collapsed ? (
@@ -364,6 +371,17 @@ export function AppShell() {
           </div>
 
           <div className="rail-footer">
+            <button
+              type="button"
+              className="rail-switch"
+              role="switch"
+              aria-checked={advanced}
+              onClick={() => setAdvanced(!advanced)}
+              title={collapsed ? (advanced ? 'Advanced: on' : 'Advanced: off') : undefined}
+            >
+              <span className="rail-switch-track" aria-hidden="true"><i /></span>
+              <span className={collapsed ? 'sr-only' : undefined}>Advanced</span>
+            </button>
             {statuses.map((s) => (
               <div key={s.text} className="rail-status" title={collapsed ? s.text : undefined}>
                 <span className={`dot dot-${s.tone}`} aria-hidden="true" />

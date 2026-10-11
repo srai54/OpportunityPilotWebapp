@@ -32,7 +32,7 @@ interface Outcome {
 }
 
 /** /approvals — research's suggestions (status Suggested), approved or rejected in one batch. */
-export function ApprovalQueuePage() {
+export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: boolean }>) {
   const [params, setParams] = useSearchParams()
   const campaignId = params.get('campaign') ?? ''
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
@@ -54,14 +54,14 @@ export function ApprovalQueuePage() {
   }
 
   return (
-    <div className="page page-wide stack-4">
-      <PageHeader
+    <div className={embedded ? 'stack-4' : 'page page-wide stack-4'}>
+      {!embedded && <PageHeader
         title="Approvals"
         subtitle="Jobs that scored at or above your campaign's threshold. Approve to shortlist, reject to dismiss."
-      />
+      />}
       <HowItWorks summary="What approving does — nothing is applied when you approve">
-        <p>Approve moves a job to Shortlisted. Your agent applies to shortlisted LinkedIn and Naukri jobs on its next apply run;
-          you apply to the others from their application page. Reject dismisses a job; you can restore it from Opportunities.</p>
+        <p>Approve moves a job to Shortlisted. Open its application page to apply yourself, then mark it applied. Reject dismisses a job;
+          you can restore it from the full list.</p>
       </HowItWorks>
 
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} />}

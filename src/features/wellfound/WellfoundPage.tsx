@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
 import { PageHeader } from '../../components/PageHeader'
@@ -9,6 +10,7 @@ import type { WellfoundApplication, WellfoundApplicationState, WellfoundActivity
 import { useApi } from '../../lib/useApi'
 import { safeHref } from '../opportunities/opportunityModel'
 import { useShell } from '../shell/ShellContext'
+import { TrendsPanel } from '../trends/TrendsPage'
 import { BoardSearchPanel } from './BoardSearchPanel'
 import type { JobBoard } from './boardModel'
 
@@ -18,9 +20,10 @@ function money(value: number | null, currency: string | null) {
 }
 
 export function WellfoundPage() {
-  const { workspace } = useShell()
+  const { workspace, advanced } = useShell()
   const ws = workspace === 'sales' ? 'Sales' : 'Candidate'
-  const [provider, setProvider] = useState<'wellfound' | JobBoard>('wellfound')
+  const [params] = useSearchParams()
+  const [provider, setProvider] = useState<'wellfound' | 'trends' | JobBoard>(params.get('tab') === 'trends' ? 'trends' : 'wellfound')
   const [keyword, setKeyword] = useState('')
   const [company, setCompany] = useState('')
   const [location, setLocation] = useState('')
@@ -35,7 +38,7 @@ export function WellfoundPage() {
   const [jobState, setJobState] = useState('')
   const [sort, setSort] = useState('newest')
   const [busy, setBusy] = useState(false)
-  const [moreOpen, setMoreOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(advanced)
   const [actionError, setActionError] = useState<Error>()
   const [syncWarning, setSyncWarning] = useState('')
   const autoSyncAttempted = useRef(false)
@@ -116,15 +119,16 @@ export function WellfoundPage() {
   const tabs = <div className="segmented" role="group" aria-label="Job source">
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
     {(['Indeed', 'LinkedIn', 'Seek'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
+    <button type="button" className={provider === 'trends' ? 'active' : ''} aria-pressed={provider === 'trends'} onClick={() => setProvider('trends')}>Trends</button>
   </div>
   const extraCount = [company, techStack, workMode, minSalary, fundingStage, industry, employmentType, postedWithinDays, jobState, equityOnly ? 'equity' : ''].filter(Boolean).length
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Job discovery" subtitle={workspace === 'sales'
+    <PageHeader title={workspace === 'sales' ? 'Find companies' : 'Find jobs'} subtitle={workspace === 'sales'
       ? 'See which companies are hiring right now — live hiring signals from Wellfound, Indeed, LinkedIn and SEEK.'
       : 'Live jobs from Wellfound, Indeed, LinkedIn and SEEK, each linked to the original posting.'} />
 
-    {provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
+    {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
     <form className="search-hero" aria-label="Search Wellfound" onSubmit={(e) => e.preventDefault()}>
       {tabs}
@@ -134,7 +138,7 @@ export function WellfoundPage() {
         <button className="btn btn-primary" type="button" disabled={busy} onClick={syncPublic}>{busy ? 'Refreshing…' : 'Refresh live jobs'}</button>
       </div>
       <div className="search-tools">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Fewer filters' : `More filters${extraCount ? ` (${extraCount})` : ''}`}</button>
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide advanced' : `Advanced${extraCount ? ` (${extraCount})` : ''}`}</button>
         {activeFilterCount > 0 && <button className="btn btn-ghost btn-sm" type="button" onClick={clearFilters}>Clear {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'}</button>}
         <span className="grow" />
         <label className="inline-select"><span>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value)}><option value="newest">Newest</option><option value="salary">Highest salary</option><option value="company">Company A–Z</option><option value="match">Best match</option></select></label>
@@ -189,13 +193,13 @@ export function WellfoundPage() {
       </article>)}
     </section>}
 
-    {workspace === 'sales' && applications.data && applications.data.length > 0 && <section className="panel">
+    {advanced && workspace === 'sales' && applications.data && applications.data.length > 0 && <section className="panel">
       <header className="panel-head"><div><h3 className="eyebrow">Applicant review</h3><p className="muted-small">Demo actions are local only. Live accept/reject will require a fresh MCP confirmation.</p></div></header>
       <div className="table-scroll"><table className="table"><thead><tr><th>Candidate</th><th>Role</th><th>Fit</th><th>State</th><th>Decision</th></tr></thead><tbody>{applications.data.map((item) => <tr key={item.id}><td className="table-role">{item.candidateName}<div className="muted-small">{item.isDemo ? 'Demo applicant' : 'Provider applicant'}</div></td><td>{item.jobTitle}</td><td className="op-num">{item.fitScore ?? '—'}%</td><td><Badge>{item.state}</Badge></td><td><div className="row wrap"><button className="btn btn-primary btn-sm" onClick={() => changeApplication(item, 'Shortlisted')}>Shortlist</button><button className="btn btn-secondary btn-sm" onClick={() => changeApplication(item, 'Reviewing')}>Review</button><button className="btn btn-ghost btn-sm" onClick={() => changeApplication(item, 'Rejected')}>Not a fit</button></div></td></tr>)}</tbody></table></div>
     </section>}
 
 
-    {activities.data && activities.data.length > 0 && <section className="panel"><header className="panel-head"><h3 className="eyebrow">Wellfound activity</h3><span className="muted-small">{activities.data.length} recent events</span></header><ul className="state-list panel-body">{activities.data.map((item) => <li key={item.id}><span><strong>{item.kind}</strong><br /><span className="muted-small">{item.detail}</span></span><time className="muted-small" dateTime={item.occurredAt}>{new Date(item.occurredAt).toLocaleString()}</time></li>)}</ul></section>}
+    {advanced && activities.data && activities.data.length > 0 && <section className="panel"><header className="panel-head"><h3 className="eyebrow">Wellfound activity</h3><span className="muted-small">{activities.data.length} recent events</span></header><ul className="state-list panel-body">{activities.data.map((item) => <li key={item.id}><span><strong>{item.kind}</strong><br /><span className="muted-small">{item.detail}</span></span><time className="muted-small" dateTime={item.occurredAt}>{new Date(item.occurredAt).toLocaleString()}</time></li>)}</ul></section>}
     </>}
   </div>
 }

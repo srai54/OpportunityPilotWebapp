@@ -77,6 +77,30 @@ export function OverviewPage() {
   )
 }
 
+/** The one big call to action on the Overview: go and find something. */
+function FindStrip({ workspace }: { workspace: 'candidate' | 'sales' }) {
+  return (
+    <section className="hero-strip">
+      <div className="hero-strip-text">
+        <h3 className="section-heading">{workspace === 'sales' ? 'Find companies that are hiring' : 'Find jobs that fit you'}</h3>
+        <p className="muted-small">
+          {workspace === 'sales'
+            ? 'Search LinkedIn, Indeed, SEEK and Wellfound, see the hiring trend, and turn the best into leads.'
+            : 'Search LinkedIn, Indeed, SEEK and Wellfound, see what is in demand, and track the best.'}
+        </p>
+      </div>
+      <div className="row wrap hero-strip-actions">
+        <Link className="btn btn-primary" to="/wellfound">
+          {workspace === 'sales' ? 'Find companies' : 'Find jobs'}
+        </Link>
+        <Link className="btn btn-ghost btn-sm" to="/campaigns/new">
+          New campaign
+        </Link>
+      </div>
+    </section>
+  )
+}
+
 function Kpi({ label, value, sub, tone }: { label: string; value: string | number; sub: string; tone?: 'warning' | 'muted' }) {
   return (
     <div className="kpi">
@@ -214,6 +238,7 @@ function Sources({ a }: { a: AnalyticsOverview }) {
 }
 
 function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Overview }) {
+  const { advanced } = useShell()
   const k = a.kpis
   const perDay = a.applicationsPerDay ?? []
   const dayMax = Math.max(1, ...perDay.map((d) => d.applied))
@@ -221,13 +246,16 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
   const appliedTotal = perDay.reduce((n, d) => n + d.applied, 0)
   return (
     <>
-      <div className="kpi-strip">
+      <FindStrip workspace="candidate" />
+      <div className={advanced ? 'kpi-strip' : 'kpi-strip kpi-strip-4'}>
         <Kpi label="Waiting on you" value={k.awaitingApproval} sub="jobs to approve" tone={k.awaitingApproval ? 'warning' : undefined} />
         <Kpi label="Shortlisted" value={k.shortlisted} sub={`${k.shortlistedNotApplied} not yet applied`} />
-        <Kpi label={`Applied · ${a.days} days`} value={k.applied ?? '—'} sub={`${k.appliedByAgent ?? 0} agent · ${k.appliedByYou ?? 0} by you`} />
+        <Kpi label={`Applied · ${a.days} days`} value={k.applied ?? '—'} sub={advanced ? `${k.appliedByAgent ?? 0} agent · ${k.appliedByYou ?? 0} by you` : 'marked applied by you'} />
         <Kpi label="Responded" value={k.responded ?? '—'} sub={k.respondedRate === null ? 'no applications yet' : `${percent(k.respondedRate)} of applications`} />
+        {advanced && <>
         <Kpi label="Qualify rate" value={`${k.qualified} / ${k.found}`} sub={`${percent(k.qualifyRate)} of what was found`} />
         <Kpi label="Agent needs you" value={k.agentNeedsYou || overview.needsManual} sub="captcha or an extra question" tone={k.agentNeedsYou ? 'warning' : undefined} />
+        </>}
       </div>
 
       <div className="panel-grid-2">
@@ -256,6 +284,7 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
             </ul>
           )}
         </Panel>
+        {advanced && (
         <Panel title="Applications sent — last 14 days">
           {appliedTotal === 0 ? (
             <p className="muted-small">No applications in the last 14 days — approve jobs, then apply from their page or let the agent do it.</p>
@@ -274,8 +303,10 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
           </p>
           <p className="muted-small">Counted from agent results and the jobs you marked applied. Nothing is inferred.</p>
         </Panel>
+        )}
       </div>
 
+      {advanced && <>
       <Funnel a={a} title="Pipeline — what happened to everything we read" tone="teal" />
 
       <div className="panel-grid-3">
@@ -294,11 +325,13 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
         />
         <Sources a={a} />
       </div>
+      </>}
     </>
   )
 }
 
 function SalesOverview({ a }: { a: AnalyticsOverview }) {
+  const { advanced } = useShell()
   const k = a.kpis
   if (a.campaignCount === 0)
     return (
@@ -325,6 +358,7 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
   const industryTotal = (a.qualifiedByIndustry ?? []).reduce((n, x) => n + x.count, 0)
   return (
     <>
+      <FindStrip workspace="sales" />
       <div className="kpi-strip kpi-strip-5">
         <Kpi label="Companies found" value={k.found} sub={`across ${a.campaignCount} ${a.campaignCount === 1 ? 'campaign' : 'campaigns'}`} />
         <Kpi label="Qualified" value={k.qualified} sub={`${percent(k.qualifyRate)} of what was found`} />
@@ -334,7 +368,7 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
       </div>
 
       <div className="panel-grid-2 panel-grid-wide-left">
-        <Funnel a={a} title="Pipeline — Sales" tone="blue" />
+        {advanced && <Funnel a={a} title="Pipeline — Sales" tone="blue" />}
         <Panel title="Outreach">
           {a.outreach ? (
             <dl className="criteria-list criteria-row">
@@ -354,6 +388,7 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
         </Panel>
       </div>
 
+      {advanced && (
       <div className="panel-grid-3">
         <RankedBars
           title="Qualified by industry"
@@ -370,6 +405,7 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
         />
         <Sources a={a} />
       </div>
+      )}
     </>
   )
 }

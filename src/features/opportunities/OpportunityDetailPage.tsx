@@ -68,7 +68,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
   const navigate = useNavigate()
   const [announcement, setAnnouncement] = useState('')
   const [chosen, setChosen] = useState<OpportunityStatus>(o.status)
-  const { refreshOverview } = useShell()
+  const { refreshOverview, advanced } = useShell()
+  const [details, setDetails] = useState(advanced)
 
   const outcome = OUTCOME_LABELS[o.outcome] ?? { text: o.outcome, tone: 'neutral' }
   const status = STATUS_LABELS[o.status] ?? { text: o.status, tone: 'neutral' }
@@ -228,7 +229,12 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
       </span>
       {error && <ErrorNotice error={error} />}
 
-      <div className="detail3">
+      <div className="row">
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={details} onClick={() => setDetails(!details)}>
+          {details ? 'Hide score details' : 'Advanced: how the score was built, facts and evidence'}
+        </button>
+      </div>
+      <div className={details ? 'detail3' : 'detail2'}>
         <div className="stack-4">
           <section className="panel" aria-labelledby="fit-heading">
             <h3 id="fit-heading" className="sr-only">
@@ -248,6 +254,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             </div>
           </section>
 
+          {details && <>
           <section className="panel" aria-labelledby="unknown-heading">
             <header className="panel-head">
               <h3 id="unknown-heading" className="eyebrow">
@@ -318,8 +325,10 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
               </ul>
             </div>
           </section>
+          </>}
         </div>
 
+        {details && (
         <section className="panel" aria-labelledby="contrib-heading">
           <header className="panel-head">
             <h3 id="contrib-heading" className="eyebrow">
@@ -379,6 +388,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             </details>
           )}
         </section>
+        )}
 
         <div className="stack-4">
           {o.mode === 'Job' && <CoverNotePanel opportunityId={o.id} />}
@@ -386,6 +396,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             <OutreachActionsPanel opportunityId={o.id} />
           </div>
 
+          {details && <>
           <section className="panel" aria-labelledby="evidence-heading">
             <header className="panel-head">
               <h3 id="evidence-heading" className="eyebrow">
@@ -468,6 +479,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
               <p className="hint">Status changes are yours alone. Research never resets a status you set.</p>
             </div>
           </section>
+          </>}
         </div>
       </div>
     </div>

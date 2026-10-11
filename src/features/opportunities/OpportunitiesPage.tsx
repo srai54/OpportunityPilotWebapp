@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
@@ -17,6 +17,7 @@ import type {
 import { useApi } from '../../lib/useApi'
 import { formatWhen } from '../applications/applicationStatus'
 import { MODE_LABELS } from '../campaigns/campaignModel'
+import { ApprovalQueuePage } from '../approvals/ApprovalQueuePage'
 import { useShell } from '../shell/ShellContext'
 import {
   appendUnique,
@@ -38,7 +39,7 @@ import {
  * /opportunities (campaign chosen with ?campaign=, defaulting to the newest) and /campaigns/:id/opportunities.
  * Opportunities belong to a campaign in the API, so the list is always one campaign's.
  */
-export function OpportunitiesPage() {
+function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
   const { id: routeId } = useParams()
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
@@ -46,7 +47,6 @@ export function OpportunitiesPage() {
   const list = campaigns.data ?? []
   const campaignId = routeId ?? params.get('campaign') ?? list[0]?.id
   const campaign = list.find((c) => c.id === campaignId)
-  const awaiting = useShell().awaitingApproval ?? 0
 
   const choose = (id: string) =>
     routeId ? navigate(`/campaigns/${id}/opportunities`) : setParams({ campaign: id }, { replace: true })
@@ -56,18 +56,8 @@ export function OpportunitiesPage() {
       <PageHeader
         title="Opportunities"
         subtitle="Everything your campaigns found, best fit first. Fit is a ranking out of 100, not a chance of success."
-        actions={
-          awaiting > 0 ? (
-            <Link className="btn btn-primary btn-sm" to="/approvals">
-              Go to approvals · {awaiting}
-            </Link>
-          ) : (
-            <Link className="btn btn-secondary btn-sm" to="/campaigns/new">
-              New campaign
-            </Link>
-          )
-        }
       />
+      {tabs}
 
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} />}
       {campaigns.loading && !campaigns.data && <LoadingState label="Loading campaigns…" waking={campaigns.waking} rows={3} />}
@@ -487,4 +477,29 @@ function OpportunityTable({
       {moreError && <ErrorNotice error={moreError} onRetry={() => void loadMore()} />}
     </div>
   )
+}
+
+/** Opportunities, with the approval queue as its second view (one place instead of two pages). */
+export function OpportunitiesPage() {
+  const [params, setParams] = useSearchParams()
+  const awaiting = useShell().awaitingApproval ?? 0
+  const view = params.get('view') === 'approvals' ? 'approvals' : 'all'
+  const tabs = (
+    <div className="segmented" role="group" aria-label="View">
+      <button type="button" className={view === 'all' ? 'active' : ''} aria-pressed={view === 'all'} onClick={() => setParams({}, { replace: true })}>All</button>
+      <button type="button" className={view === 'approvals' ? 'active' : ''} aria-pressed={view === 'approvals'} onClick={() => setParams({ view: 'approvals' }, { replace: true })}>
+        Waiting for approval{awaiting > 0 ? ` · ${awaiting}` : ''}
+      </button>
+    </div>
+  )
+  if (view === 'approvals') {
+    return (
+      <div className="page page-wide stack-4">
+        <PageHeader title="Opportunities" subtitle="Approve the jobs worth your time in one click, or reject the rest." />
+        {tabs}
+        <ApprovalQueuePage embedded />
+      </div>
+    )
+  }
+  return <OpportunityList tabs={tabs} />
 }

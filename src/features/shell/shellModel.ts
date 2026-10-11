@@ -15,6 +15,8 @@ export interface NavItem {
   count?: { key: NavCountKey; tone: NavCountTone; srLabel: string }
   /** The route is a "Not built yet" placeholder; the rail shows a "Soon" marker. */
   notBuilt?: boolean
+  /** Shown only when the Advanced switch is on. */
+  advanced?: boolean
 }
 
 export interface NavGroup {
@@ -24,103 +26,64 @@ export interface NavGroup {
   items: NavItem[]
 }
 
-/** The Candidate rail, grouped by the job each destination does (design ShellStates / WorkspaceSwitcher). */
+/**
+ * The rails. Simple mode (the default) shows only what a person needs to find, decide and reach out; everything else is
+ * marked `advanced` and appears when the Advanced switch is on (sidebar footer or Settings).
+ */
 export const NAV_GROUPS: NavGroup[] = [
   { id: 'home', label: null, items: [{ to: '/', label: 'Overview', icon: 'overview', end: true }] },
   {
     id: 'find',
-    label: 'Find',
+    label: 'Work',
     items: [
-      { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
-      // No count: the Overview DTO has no total-opportunity figure (OQ-FE-039).
-      { to: '/opportunities', label: 'Opportunities', icon: 'opportunities' },
-      { to: '/wellfound', label: 'Job discovery', icon: 'opportunities' },
-      { to: '/trends', label: 'Hiring trends', icon: 'overview' },
-    ],
-  },
-  {
-    id: 'decide',
-    label: 'Decide',
-    items: [
-      {
-        to: '/approvals',
-        label: 'Approvals',
-        icon: 'approvals',
-        count: { key: 'awaitingApproval', tone: 'attention', srLabel: 'awaiting approval' },
-      },
-    ],
-  },
-  {
-    id: 'act',
-    label: 'Act',
-    items: [
+      { to: '/wellfound', label: 'Find jobs', icon: 'opportunities' },
+      { to: '/opportunities', label: 'Opportunities', icon: 'approvals', count: { key: 'awaitingApproval', tone: 'attention', srLabel: 'awaiting approval' } },
       { to: '/outreach', label: 'Outreach', icon: 'outreach' },
+      { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', advanced: true, count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
+      { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps', advanced: true },
     ],
   },
-  { id: 'track', label: 'Track', items: [{ to: '/follow-ups', label: 'Follow-ups', icon: 'followUps' }] },
   {
     id: 'setup',
     label: 'Set up',
     items: [
       { to: '/profiles', label: 'Profiles', icon: 'profiles' },
       { to: '/settings', label: 'Settings', icon: 'settings' },
-      { to: '/how-it-works', label: 'How it works', icon: 'help' },
+      { to: '/how-it-works', label: 'How it works', icon: 'help', advanced: true },
     ],
   },
 ]
 
-const SETUP_GROUP = NAV_GROUPS[NAV_GROUPS.length - 1]
-
-/**
- * The Sales rail (design WorkspaceSwitcher): genuinely different destinations, not a filter. Companies are the
- * opportunities a Customer campaign finds; proposals and placed-bid reporting still wait for later N5 slices.
- */
+/** The Sales rail: companies that are hiring become leads; staffing deals are advanced. */
 export const SALES_NAV_GROUPS: NavGroup[] = [
   NAV_GROUPS[0],
   {
     id: 'find',
-    label: 'Find',
+    label: 'Work',
     items: [
-      { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
-      { to: '/wellfound', label: 'Hiring signals', icon: 'opportunities' },
-      { to: '/trends', label: 'Hiring trends', icon: 'overview' },
-      { to: '/opportunities', label: 'Companies', icon: 'opportunities' },
-    ],
-  },
-  {
-    id: 'decide',
-    label: 'Decide',
-    items: [
-      { to: '/approvals', label: 'Approvals', icon: 'approvals', count: { key: 'awaitingApproval', tone: 'attention', srLabel: 'awaiting approval' } },
-    ],
-  },
-  {
-    id: 'act',
-    label: 'Act',
-    items: [
+      { to: '/wellfound', label: 'Find companies', icon: 'opportunities' },
+      { to: '/opportunities', label: 'Companies', icon: 'approvals', count: { key: 'awaitingApproval', tone: 'attention', srLabel: 'awaiting approval' } },
       { to: '/outreach', label: 'Outreach', icon: 'outreach' },
-    ],
-  },
-  {
-    id: 'track',
-    label: 'Track',
-    items: [
-      { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps' },
+      { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', advanced: true, count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
+      { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps', advanced: true },
     ],
   },
   {
     id: 'staffing',
     label: 'Staffing',
     items: [
-      { to: '/staffing', label: 'Deals', icon: 'bids' },
-      { to: '/staffing/candidates', label: 'Candidates', icon: 'profiles' },
+      { to: '/staffing', label: 'Deals', icon: 'bids', advanced: true },
+      { to: '/staffing/candidates', label: 'Candidates', icon: 'profiles', advanced: true },
     ],
   },
-  SETUP_GROUP,
+  NAV_GROUPS[2],
 ]
 
-export function navGroupsFor(workspace: Workspace): NavGroup[] {
-  return workspace === 'sales' ? SALES_NAV_GROUPS : NAV_GROUPS
+/** The rail for a workspace; without Advanced, advanced items (and groups left empty) are left out. */
+export function navGroupsFor(workspace: Workspace, advanced = false): NavGroup[] {
+  const groups = workspace === 'sales' ? SALES_NAV_GROUPS : NAV_GROUPS
+  if (advanced) return groups
+  return groups.map((g) => ({ ...g, items: g.items.filter((i) => !i.advanced) })).filter((g) => g.items.length > 0)
 }
 
 /** The figure to show next to a nav item, or null when there is nothing to show (unknown, zero, or no count). */
@@ -171,7 +134,7 @@ export const WORKSPACES: Record<Workspace, { label: string; tagline: string; opt
 
 /** Top-bar line under the title: the pipeline group, plus a real count where the shell already has one. */
 export function topbarHint(pathname: string, workspace: Workspace, overview: Overview | undefined): string | null {
-  const group = navGroupFor(pathname, navGroupsFor(workspace))
+  const group = navGroupFor(pathname, navGroupsFor(workspace, true))
   const known = (n: number | undefined) => typeof n === 'number'
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
   if (pathname === '/') {
@@ -234,6 +197,24 @@ export function readWorkspace(store: Store | null = safeStore()): Workspace {
 export function writeWorkspace(workspace: Workspace, store: Store | null = safeStore()): void {
   try {
     store?.setItem(WORKSPACE_KEY, workspace)
+  } catch {
+    // Not stored; the choice lasts for this page view only.
+  }
+}
+
+const ADVANCED_KEY = 'op.advanced'
+
+export function readAdvanced(store: Store | null = safeStore()): boolean {
+  try {
+    return store?.getItem(ADVANCED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function writeAdvanced(on: boolean, store: Store | null = safeStore()): void {
+  try {
+    store?.setItem(ADVANCED_KEY, on ? '1' : '0')
   } catch {
     // Not stored; the choice lasts for this page view only.
   }

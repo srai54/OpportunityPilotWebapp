@@ -1,5 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { HowItWorks } from '../../components/HowItWorks'
+import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
 import { BoardLiveResults } from './BoardLiveResults'
 import { BOARDS, boardJobsPath, type JobBoard } from './boardModel'
@@ -22,7 +23,8 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
   const [postedWithinDays, setPostedWithinDays] = useState('')
   const [exclude, setExclude] = useState('')
   const [radius, setRadius] = useState('')
-  const [moreOpen, setMoreOpen] = useState(false)
+  const { advanced } = useShell()
+  const [moreOpen, setMoreOpen] = useState(advanced)
   const [livePath, setLivePath] = useState<string | null>(null)
 
   const query = useMemo(() => {
@@ -58,6 +60,14 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
         {info.countries ? <label className="search-field search-field-small"><span className="sr-only">Country</span><select value={country} onChange={(event) => setCountry(event.target.value)}>{info.countries.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label> : null}
         <button className="btn btn-primary" type="submit" disabled={!query}>Search {info.name}</button>
       </div>
+      <div className="search-tools">
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide advanced' : `Advanced${extraCount + filterCount ? ` (${extraCount + filterCount})` : ''}`}</button>
+        {(canSearch || extraCount > 0 || filterCount > 0) && <button type="button" className="btn btn-ghost btn-sm" onClick={clear}>Clear</button>}
+        <span className="grow" />
+        {query && <span className="muted-small search-query" title="The query sent to the job board">Query: {query}</span>}
+        {canSearch ? <a className="btn btn-ghost btn-sm" href={searchUrl} target="_blank" rel="noopener noreferrer">Open on {info.name} ↗<span className="sr-only"> (opens in a new tab)</span></a> : null}
+      </div>
+      {moreOpen && <>
       <div className="filter-row" role="group" aria-label="Optional filters — all optional">
         <label className="chip-select"><span>Date posted</span><select value={postedWithinDays} onChange={(event) => setPostedWithinDays(event.target.value)}><option value="">Any time</option><option value="1">Past 24 hours</option><option value="3">Past 3 days</option><option value="7">Past week</option><option value="14">Past month</option></select></label>
         <label className="chip-select"><span>Job type</span><select value={jobType} onChange={(event) => setJobType(event.target.value)}><option value="">Any type</option><option value="FULLTIME">Full time</option><option value="PARTTIME">Part time</option><option value="CONTRACTOR">Contract</option><option value="INTERN">Internship</option><option value="FULLTIME,CONTRACTOR">Full time or contract</option></select></label>
@@ -65,13 +75,7 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
         <label className="chip-select"><span>Work mode</span><select value={workMode} onChange={(event) => setWorkMode(event.target.value)}><option value="">Any mode</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="in-person">In person</option></select></label>
         <label className="chip-select"><span>Within</span><select value={radius} onChange={(event) => setRadius(event.target.value)} disabled={!location.trim()} title={location.trim() ? undefined : 'Enter a location first'}><option value="">Any distance</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select></label>
       </div>
-      <div className="search-tools">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Fewer filters' : `More filters${extraCount ? ` (${extraCount})` : ''}`}</button>
-        {(canSearch || extraCount > 0 || filterCount > 0) && <button type="button" className="btn btn-ghost btn-sm" onClick={clear}>Clear</button>}
-        <span className="grow" />
-        {query && <span className="muted-small search-query" title="The query sent to the job board">Query: {query}</span>}
-        {canSearch ? <a className="btn btn-ghost btn-sm" href={searchUrl} target="_blank" rel="noopener noreferrer">Open on {info.name} ↗<span className="sr-only"> (opens in a new tab)</span></a> : null}
-      </div>
+      </>}
       {moreOpen && <div className="search-more filters">
         <label className="field field-wide"><span>Tech stack</span><input value={techStack} onChange={(event) => setTechStack(event.target.value)} placeholder="React, TypeScript, AWS" /></label>
         <label className="field"><span>Company</span><input value={company} onChange={(event) => setCompany(event.target.value)} placeholder="Only this company" /></label>

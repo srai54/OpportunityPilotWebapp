@@ -7,6 +7,7 @@ import { LoadingState } from '../../components/States'
 import { api, ApiError } from '../../lib/api'
 import type { Campaign, ProfileSummary } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { QuickCampaign } from './QuickCampaign'
 import { formatWhen } from '../applications/applicationStatus'
 import {
   campaignPayload,
@@ -30,7 +31,10 @@ const STEPS = ['Goal and mode', 'Filters', 'Sources', 'Review and run'] as const
 /** /campaigns/new and /campaigns/:id/edit. Steps live in ?step= so a refresh or a shared link keeps its place. */
 export function CampaignBuilder() {
   const { id } = useParams()
-  return id ? <ExistingCampaign key={id} id={id} /> : <Builder key="new" />
+  const [params] = useSearchParams()
+  if (id) return <ExistingCampaign key={id} id={id} />
+  // New campaigns start on the one-screen form; the full four-step builder is its Advanced mode (?full=1).
+  return params.get('full') === '1' ? <Builder key="new" /> : <QuickCampaign key="quick" />
 }
 
 function ExistingCampaign({ id }: { id: string }) {

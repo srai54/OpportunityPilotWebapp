@@ -10,7 +10,6 @@ import { SignUpPage } from './features/auth/SignUpPage'
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage'
 import { EmptyState } from './components/States'
 
-const ApprovalQueuePage = lazy(() => import('./features/approvals/ApprovalQueuePage').then((m) => ({ default: m.ApprovalQueuePage })))
 const CampaignBuilder = lazy(() => import('./features/campaigns/CampaignBuilder').then((m) => ({ default: m.CampaignBuilder })))
 const CampaignsPage = lazy(() => import('./features/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage })))
 const OpportunitiesPage = lazy(() => import('./features/opportunities/OpportunitiesPage').then((m) => ({ default: m.OpportunitiesPage })))
@@ -26,7 +25,6 @@ const StaffingDealPage = lazy(() => import('./features/staffing/StaffingDealPage
 const StaffingCandidatesPage = lazy(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
 const AppShell = lazy(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
 const HowItWorksPage = lazy(() => import('./features/guide/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
-const TrendsPage = lazy(() => import('./features/trends/TrendsPage').then((m) => ({ default: m.TrendsPage })))
 const WellfoundPage = lazy(() => import('./features/wellfound/WellfoundPage').then((m) => ({ default: m.WellfoundPage })))
 
 const SIGNED_OUT_SCREENS = {
@@ -95,7 +93,7 @@ const router = createBrowserRouter([
       { path: 'research/:jobId', element: <ResearchProgressPage />, handle: { title: 'Research run' } },
       { path: 'opportunities', element: <OpportunitiesPage />, handle: { title: 'Opportunities' } },
       { path: 'opportunities/:id', element: <OpportunityDetailPage />, handle: { title: 'Opportunity' } },
-      { path: 'approvals', element: <ApprovalQueuePage />, handle: { title: 'Approvals' } },
+      { path: 'approvals', element: <Navigate to="/opportunities?view=approvals" replace />, handle: { title: 'Opportunities' } },
       { path: 'outreach', handle: { title: 'Outreach' }, element: <OutreachPage /> },
       { path: 'follow-ups', handle: { title: 'Follow-ups' }, element: <FollowUpsPage /> },
       { path: 'staffing', element: <StaffingDealsPage />, handle: { title: 'Staffing deals' } },
@@ -104,7 +102,7 @@ const router = createBrowserRouter([
       { path: 'how-it-works', element: <HowItWorksPage />, handle: { title: 'How it works' } },
       { path: 'profiles', element: <ProfilesPage />, handle: { title: 'Profiles' } },
       { path: 'profiles/:id', element: <ProfilesPage />, handle: { title: 'Profiles' } },
-      { path: 'trends', element: <TrendsPage />, handle: { title: 'Hiring trends' } },
+      { path: 'trends', element: <Navigate to="/wellfound?tab=trends" replace />, handle: { title: 'Find jobs' } },
       { path: 'wellfound', element: <WellfoundPage />, handle: { title: 'Job discovery' } },
       { path: 'settings', element: <SettingsPage />, handle: { title: 'Settings' } },
       { path: '*', element: <NotFound />, handle: { title: 'Not found' } },

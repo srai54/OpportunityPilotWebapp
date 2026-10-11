@@ -84,3 +84,20 @@ Fixed in the same round:
 - A job-board search source with no keywords now **blocks the run** with a clear reason (it used to "complete" with 0 items).
 - **Scheduled campaigns did not run** because the free Render instance sleeps and cannot poll. A GitHub Actions timer (`.github/workflows/keepalive.yml`, every 10 minutes, free because the repo is public) now keeps it awake.
 - Where data is stored and how to query it: API `docs/DATA_STORAGE.md`.
+
+## Simple UI + Advanced switch (2026-10-09/11: "make the UI simpler, everything under an Advanced toggle")
+
+One **Advanced** switch (sidebar footer and Settings, remembered per browser in `op.advanced`) reveals everything non-essential. Nothing was deleted: the full screens are the Advanced view, and the previous layout is on `archive/pre-mvp-cut-2026-10-09`.
+
+| Area | Simple (default) | Under Advanced |
+|---|---|---|
+| Menu | Overview · Find jobs / Find companies · Opportunities / Companies · Outreach · Profiles · Settings | Campaigns, Follow-ups, Staffing (Deals, Candidates), How it works |
+| New campaign | One screen: role, place, where to look, **Create & run** (`QuickCampaign.tsx`) | The full four-step builder (`/campaigns/new?full=1`): weights, hard filters, thresholds, more sources. Existing campaigns always open in it |
+| Find jobs | Role + place + Search on tabs Wellfound / Indeed / LinkedIn / SEEK / **Trends** | Filter chips (date, type, experience, mode, distance), company, tech stack, exclude terms; Wellfound activity and applicant panels |
+| Approvals | A second view inside Opportunities ("Waiting for approval · N"); `/approvals` redirects there; count badge on the Opportunities menu item | — |
+| Hiring trends | A tab in Find jobs; `/trends` redirects there | Date and sample-size settings |
+| Overview | "Find jobs" strip, four numbers, what needs attention | Pipeline funnel, score histogram, why-jobs-stall, source performance, applications chart, extra numbers |
+| Opportunity page | Title, score, next step, one-click Approve & apply / Approve & send, cover note and outreach | "How the score was built", facts, unknowns, evidence, activity history (button on the page) |
+| Settings | Account, display, Advanced switch | Rules and deployment facts |
+
+Restore a simple-mode screen's old layout: set Advanced on, or check out the file from the archive branch.

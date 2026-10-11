@@ -11,6 +11,9 @@ export interface ShellState {
   /** Client-side preference (localStorage `op.workspace`), not an account setting; filters no data. */
   workspace: Workspace
   setWorkspace: (workspace: Workspace) => void
+  /** Client-side preference (localStorage `op.advanced`): show the advanced menu items and sections. */
+  advanced: boolean
+  setAdvanced: (on: boolean) => void
 }
 
 export const ShellContext = createContext<ShellState>({
@@ -19,6 +22,8 @@ export const ShellContext = createContext<ShellState>({
   refreshOverview: () => {},
   workspace: 'candidate',
   setWorkspace: () => {},
+  advanced: false,
+  setAdvanced: () => {},
 })
 
 export const useShell = () => useContext(ShellContext)

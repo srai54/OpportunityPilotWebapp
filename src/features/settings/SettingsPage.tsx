@@ -28,7 +28,7 @@ const FIXED_RULES = [
 export function SettingsPage() {
   const diagnostics = useApi<{ version: string; database: { pendingMigrations: number | null } }>('/api/v1/diagnostics')
   const { user, mode, signOut } = useAuth()
-  const { capabilities, workspace, setWorkspace } = useShell()
+  const { capabilities, workspace, setWorkspace, advanced, setAdvanced } = useShell()
   const [accountError, setAccountError] = useState<Error>()
   const [accountBusy, setAccountBusy] = useState(false)
 
@@ -110,12 +110,17 @@ export function SettingsPage() {
             <div className="panel-body">
               <p className="muted-small">Saved in this browser. System follows your device's light or dark setting.</p>
               <ThemeChoiceGroup />
+              <label className="check-row">
+                <input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)} />
+                <span><strong>Advanced</strong> — show campaigns, follow-ups, staffing, help and the detailed settings below</span>
+              </label>
               <p className="muted-small">The navigation rail collapses from its own button; below 860 px it is always a drawer.</p>
             </div>
           </section>
         </div>
 
         <div className="stack-4">
+          {advanced && <>
           <section className="panel" aria-labelledby="set-rules">
             <header className="panel-head">
               <h3 id="set-rules" className="eyebrow">
@@ -184,6 +189,7 @@ export function SettingsPage() {
               </button>
             </div>
           </section>
+          </>}
         </div>
       </div>
     </div>

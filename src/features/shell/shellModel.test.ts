@@ -10,10 +10,12 @@ import {
   navAccessibleName,
   navCount,
   navGroupFor,
+  readAdvanced,
   readNavCollapsed,
   readWorkspace,
   topbarHint,
   WORKSPACE_KEY,
+  writeAdvanced,
   writeNavCollapsed,
   writeWorkspace,
   type NavItem,
@@ -46,61 +48,69 @@ const throwingStore = {
 }
 
 describe('NAV_GROUPS', () => {
-  it('keeps every top-level route reachable, each once', () => {
-    const routes = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.to))
-    expect([...routes].sort()).toEqual(
-      ['/', '/approvals', '/campaigns', '/follow-ups', '/opportunities', '/outreach', '/profiles', '/settings', '/how-it-works', '/trends', '/wellfound'].sort(),
-    )
+  const labels = (advanced: boolean, ws: 'candidate' | 'sales' = 'candidate') => navGroupsFor(ws, advanced).flatMap((g) => g.items.map((i) => i.label))
+
+  it('keeps the simple menu to the essentials', () => {
+    expect(labels(false)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Profiles', 'Settings'])
+    expect(labels(false, 'sales')).toEqual(['Overview', 'Find companies', 'Companies', 'Outreach', 'Profiles', 'Settings'])
   })
 
-  it('groups Overview · Find · Decide · Act · Track · Set up', () => {
-    expect(NAV_GROUPS.map((g) => g.label)).toEqual([null, 'Find', 'Decide', 'Act', 'Track', 'Set up'])
+  it('adds campaigns, follow-ups, staffing and help only with Advanced on, each route once', () => {
+    expect(labels(true)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Campaigns', 'Follow-ups', 'Profiles', 'Settings', 'How it works'])
+    expect(labels(true, 'sales')).toContain('Deals')
+    expect(labels(false, 'sales')).not.toContain('Deals')
+    const routes = navGroupsFor('candidate', true).flatMap((g) => g.items.map((i) => i.to))
+    expect(new Set(routes).size).toBe(routes.length)
+  })
+
+  it('drops a group whose items are all advanced', () => {
+    expect(navGroupsFor('sales', false).map((g) => g.label)).toEqual([null, 'Work', 'Set up'])
+    expect(navGroupsFor('sales', true).map((g) => g.label)).toEqual([null, 'Work', 'Staffing', 'Set up'])
   })
 
   it('has no placeholder screens marked as not built', () => {
-    const notBuilt = NAV_GROUPS.flatMap((g) => g.items).filter((i) => i.notBuilt).map((i) => i.to)
-    expect(notBuilt).toEqual([])
+    expect(NAV_GROUPS.flatMap((g) => g.items).filter((i) => i.notBuilt)).toEqual([])
   })
 })
 
 describe('navCount', () => {
   it('shows a real positive count', () => {
     expect(navCount(item('/campaigns'), overview)).toBe(3)
+    expect(navCount(item('/opportunities'), { ...overview, awaitingApproval: 5 })).toBe(5)
   })
 
   it('hides zero, unknown and items without a count', () => {
-    expect(navCount(item('/approvals'), overview)).toBeNull()
-    expect(navCount(item('/approvals'), undefined)).toBeNull()
     expect(navCount(item('/opportunities'), overview)).toBeNull()
+    expect(navCount(item('/opportunities'), undefined)).toBeNull()
+    expect(navCount(item('/outreach'), overview)).toBeNull()
     expect(navCount(item('/'), overview)).toBeNull()
   })
 })
 
 describe('navAccessibleName', () => {
-  it('says the count and the not-built state in words', () => {
-    expect(navAccessibleName(item('/approvals'), 4)).toBe('Approvals (4 awaiting approval)')
-    expect(navAccessibleName(item('/approvals'), null)).toBe('Approvals')
+  it('says the count in words', () => {
+    expect(navAccessibleName(item('/opportunities'), 4)).toBe('Opportunities (4 awaiting approval)')
+    expect(navAccessibleName(item('/opportunities'), null)).toBe('Opportunities')
     expect(navAccessibleName(item('/outreach'), null)).toBe('Outreach')
   })
 })
 
 describe('navGroupFor / topbarHint', () => {
+  const all = navGroupsFor('candidate', true)
   it('finds the group for nested routes', () => {
-    expect(navGroupFor('/campaigns/new')?.label).toBe('Find')
-    expect(navGroupFor('/campaigns/abc/opportunities')?.label).toBe('Find')
-    expect(navGroupFor('/research/123')?.label).toBe('Find')
-    expect(navGroupFor('/profiles/abc')?.label).toBe('Set up')
-    expect(navGroupFor('/nowhere')).toBeUndefined()
+    expect(navGroupFor('/campaigns/new', all)?.label).toBe('Work')
+    expect(navGroupFor('/campaigns/abc/opportunities', all)?.label).toBe('Work')
+    expect(navGroupFor('/research/123')?.label).toBe('Work')
+    expect(navGroupFor('/profiles/abc', all)?.label).toBe('Set up')
+    expect(navGroupFor('/nowhere', all)).toBeUndefined()
   })
 
   it('uses only counts the shell already has', () => {
     expect(topbarHint('/', 'candidate', overview)).toBe('Candidate workspace · 3 campaigns')
     expect(topbarHint('/', 'sales', undefined)).toBe('Sales workspace')
-    expect(topbarHint('/approvals', 'candidate', overview)).toBe('Decide · Nothing waiting')
-    expect(topbarHint('/approvals', 'candidate', undefined)).toBe('Decide')
     expect(topbarHint('/profiles', 'candidate', overview)).toBe('Set up · 1 profile')
-    expect(topbarHint('/outreach', 'candidate', overview)).toBe('Act')
-    expect(topbarHint('/follow-ups', 'candidate', overview)).toBe('Track')
+    expect(topbarHint('/outreach', 'candidate', overview)).toBe('Work')
+    expect(topbarHint('/campaigns', 'candidate', overview)).toBe('Work · 3 campaigns')
     // Sales-only pages opened from the Candidate workspace have no rail group: no "undefined" label.
     expect(topbarHint('/staffing', 'candidate', overview)).toBeNull()
     expect(topbarHint('/staffing', 'sales', overview)).toBe('Staffing')
@@ -156,20 +166,31 @@ describe('labels', () => {
 
 describe('workspace rails', () => {
   it('gives Sales its own destinations and keeps Candidate unchanged', () => {
-    const sales = navGroupsFor('sales').flatMap((g) => g.items.map((i) => i.label))
+    const sales = navGroupsFor('sales', true).flatMap((g) => g.items.map((i) => i.label))
     expect(sales).toContain('Deals')
     expect(sales).toContain('Companies')
-    expect(sales).not.toContain('Bids sent')
-    expect(navGroupsFor('candidate')).toBe(NAV_GROUPS)
+    expect(navGroupsFor('candidate', true)).toBe(NAV_GROUPS)
   })
 
   it('marks all sales destinations as built', () => {
-    const notBuilt = navGroupsFor('sales').flatMap((g) => g.items).filter((i) => i.notBuilt).map((i) => i.to)
-    expect(notBuilt).toEqual([])
-    expect(navGroupsFor('sales').flatMap((g) => g.items).map((i) => i.to)).toContain('/staffing')
+    expect(navGroupsFor('sales', true).flatMap((g) => g.items).filter((i) => i.notBuilt)).toEqual([])
+    expect(navGroupsFor('sales', true).flatMap((g) => g.items).map((i) => i.to)).toContain('/staffing')
   })
 
   it('finds the Sales group for sales-only paths', () => {
-    expect(navGroupFor('/staffing', navGroupsFor('sales'))?.label).toBe('Staffing')
+    expect(navGroupFor('/staffing', navGroupsFor('sales', true))?.label).toBe('Staffing')
+  })
+})
+
+describe('advanced preference', () => {
+  it('is off by default, stored as 1/0, and survives a blocked store', () => {
+    const s = memoryStore()
+    expect(readAdvanced(s)).toBe(false)
+    writeAdvanced(true, s)
+    expect(readAdvanced(s)).toBe(true)
+    writeAdvanced(false, s)
+    expect(readAdvanced(s)).toBe(false)
+    expect(readAdvanced(throwingStore)).toBe(false)
+    expect(() => writeAdvanced(true, throwingStore)).not.toThrow()
   })
 })

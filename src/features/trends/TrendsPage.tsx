@@ -1,7 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
-import { PageHeader } from '../../components/PageHeader'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import type { WellfoundJob } from '../../lib/types'
@@ -82,11 +81,12 @@ function Startups({ workspace }: Readonly<{ workspace: 'candidate' | 'sales' }>)
   </div>
 }
 
-/** Hiring trends: a sample of the newest postings for a role, across the sites JSearch covers, plus the stored Wellfound listings. */
-export function TrendsPage() {
-  const { workspace } = useShell()
+/** Hiring trends inside Find jobs: a sample of the newest postings for a role, across the sites JSearch covers, plus stored Wellfound listings. */
+export function TrendsPanel({ workspace, tabs }: Readonly<{ workspace: 'candidate' | 'sales'; tabs: ReactNode }>) {
+  const { advanced } = useShell()
   const [form, setForm] = useState<TrendSearch>({ query: '', location: '', datePosted: 'month', pages: 1 })
   const [path, setPath] = useState<string | null>(null)
+  const [adv, setAdv] = useState(advanced)
   const report = useApi<TrendReport>(path)
 
   function submit(event: FormEvent) {
@@ -94,12 +94,9 @@ export function TrendsPage() {
     setPath(trendsPath(form))
   }
 
-  return <div className="page page-wide stack-4">
-    <PageHeader title="Hiring trends" subtitle={workspace === 'sales'
-      ? 'See what companies are hiring for, and where — then reach out with something relevant.'
-      : 'See which skills, companies and sites are hiring for a role right now.'} />
-
+  return <>
     <form className="search-hero" onSubmit={submit} aria-label="Hiring trends search">
+      {tabs}
       <div className="search-bar">
         <label className="search-field search-field-main"><span className="sr-only">Role or skill</span>
           <input value={form.query} onChange={(e) => setForm({ ...form, query: e.target.value })} placeholder="Role or skill, e.g. .NET developer, data engineer, sales manager" /></label>
@@ -107,10 +104,13 @@ export function TrendsPage() {
           <input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Location, e.g. Bengaluru (optional)" /></label>
         <button className="btn btn-primary" type="submit" disabled={!form.query.trim()}>Show trends</button>
       </div>
-      <div className="filter-row" role="group" aria-label="Optional settings">
+      <div className="search-tools">
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Advanced'}</button>
+      </div>
+      {adv && <div className="filter-row" role="group" aria-label="Advanced settings">
         <label className="chip-select"><span>Posted</span><select value={form.datePosted} onChange={(e) => setForm({ ...form, datePosted: e.target.value })}>{DATE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
         <label className="chip-select"><span>Sample</span><select value={form.pages} onChange={(e) => setForm({ ...form, pages: Number(e.target.value) })}>{SAMPLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
-      </div>
+      </div>}
       <HowItWorks summary="How to read this — a sample, not the whole market">
         <p>The numbers come from the newest postings JSearch (Google for Jobs) returns for your search, from every site it covers — LinkedIn, Indeed, Glassdoor, company career pages and more. They show what is being asked for <em>in that sample</em>; they are not market totals, and a different search can give a different picture.</p>
         <p>Each page of about 10 postings uses 1 of your free monthly searches. Repeating the same search within a few hours is free. Skills are counted only from a fixed list, in the posting's title and text.</p>
@@ -123,6 +123,6 @@ export function TrendsPage() {
     {report.data && path && <Report r={report.data} />}
 
     <h3 className="results-title">Startups on Wellfound</h3>
-    <Startups workspace={workspace === 'sales' ? 'sales' : 'candidate'} />
-  </div>
+    <Startups workspace={workspace} />
+  </>
 }
