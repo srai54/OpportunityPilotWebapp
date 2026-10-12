@@ -89,6 +89,7 @@
 
   /* shape */
   --op-radius: 12px;
+  --op-radius-card: 16px;
   --op-radius-control: 8px;
   --op-radius-chip: 6px;
 

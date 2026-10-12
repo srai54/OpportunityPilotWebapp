@@ -1587,3 +1587,78 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .path-chips li.is-done { background: var(--op-green-tint); color: var(--op-on-green-tint); }
 .goal-input { width: 5rem; min-height: 32px; text-align: right; }
 @media (prefers-reduced-motion: reduce) { .progress-track i { transition: none; } }
+
+/* ---------- Card system v3 (DESIGN.md section 13) ---------- */
+.card-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.card-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.ccard { position: relative; background: var(--op-surface); border: 1px solid var(--op-line); border-radius: var(--op-radius-card); box-shadow: var(--op-shadow-card); padding: 20px 22px; min-width: 0; }
+.ccard-signature { background: var(--op-primary-tint); border-color: var(--op-primary-tint-border); }
+.ccard-muted { background: var(--op-panel-head); box-shadow: none; }
+.ccard-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.ccard-titles { flex: 1 1 auto; min-width: 0; }
+.ccard-title { font-size: 17px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.3; }
+.ccard-sub { margin: 4px 0 0; color: var(--op-muted); font-size: var(--op-text-body); }
+.ccard-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 0 0 auto; }
+.ccard-body { display: grid; gap: 12px; }
+.ccard-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--op-hair); }
+
+.avatar-tile { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 700; font-size: 15px; letter-spacing: 0.02em; }
+.avatar-0 { background: var(--op-primary-tint); color: var(--op-on-primary-tint); }
+.avatar-1 { background: var(--op-green-tint); color: var(--op-on-green-tint); }
+.avatar-2 { background: var(--op-amber-tint); color: var(--op-on-amber-tint); }
+.avatar-3 { background: var(--op-indigo-tint); color: var(--op-on-indigo-tint); }
+.avatar-4 { background: var(--op-teal-tint); color: var(--op-on-teal-tint); }
+.avatar-5 { background: var(--op-neutral-tint); color: var(--op-on-neutral-tint); }
+
+.match-ring { position: relative; display: inline-grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; }
+.match-ring svg { position: absolute; inset: 2px; width: 44px; height: 44px; }
+.match-ring b { font-size: 14px; font-weight: 700; color: var(--op-ink); }
+.ring-track { fill: none; stroke: var(--op-chart-track); stroke-width: 4; }
+.ring-fill { fill: none; stroke-width: 4; stroke-linecap: round; stroke: var(--op-muted); }
+.match-strong .ring-fill { stroke: var(--op-c3); }
+.match-fair .ring-fill { stroke: var(--op-c2); }
+.match-weak .ring-fill { stroke: var(--op-muted); }
+
+.chip { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 999px; background: var(--op-neutral-tint); color: var(--op-on-neutral-tint); font-size: var(--op-text-meta); font-weight: 500; }
+
+.lead-card { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px 18px; transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease; }
+.lead-card:hover { box-shadow: var(--op-shadow-hover); transform: translateY(-1px); }
+.lead-card.is-selected { border-color: var(--op-primary); box-shadow: 0 0 0 1px var(--op-primary), var(--op-shadow-card); }
+.lead-select { position: relative; z-index: 2; display: grid; place-items: center; width: 28px; height: 44px; cursor: pointer; }
+.lead-select input { width: 18px; height: 18px; accent-color: var(--op-primary); }
+.lead-main { min-width: 0; display: grid; gap: 2px; }
+.lead-title { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.3; }
+.lead-title a { color: var(--op-ink); text-decoration: none; }
+.lead-title a::after { content: ""; position: absolute; inset: 0; border-radius: var(--op-radius-card); }
+.lead-title a:focus-visible { outline: none; }
+.lead-title a:focus-visible::after { outline: 2px solid var(--op-focus); outline-offset: 2px; }
+.lead-meta { margin: 0; color: var(--op-muted); font-size: var(--op-text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.lead-note { color: var(--op-muted); font-size: var(--op-text-meta); }
+.lead-side { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+.lead-action .btn, .lead-action .btn-link, .lead-action a { position: relative; z-index: 2; }
+@media (max-width: 760px) {
+  .lead-card { grid-template-columns: auto auto minmax(0, 1fr); }
+  .lead-side { grid-column: 1 / -1; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--op-hair); }
+  .lead-meta { white-space: normal; }
+}
+
+.bulk-bar { position: sticky; bottom: 12px; z-index: 12; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 16px; border-radius: var(--op-radius-card); background: var(--op-ink); color: var(--op-surface); box-shadow: var(--op-shadow-popover); }
+.bulk-bar .btn-ghost { color: var(--op-surface); }
+.bulk-bar .btn-ghost:hover { background: rgb(255 255 255 / 0.12); }
+.bulk-bar .btn-secondary { background: var(--op-surface); color: var(--op-ink); }
+.bulk-bar .btn-primary { background: var(--op-primary); color: var(--op-on-primary); }
+.bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 auto; }
+
+.step-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 18px 22px; }
+.step-card.is-done { background: var(--op-panel-head); box-shadow: none; }
+.step-card.is-done .step-title { color: var(--op-muted); }
+.step-badge { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--op-neutral-tint); color: var(--op-on-neutral-tint); }
+.ccard-signature .step-badge { background: var(--op-primary); color: var(--op-on-primary); }
+.step-card.is-done .step-badge { background: var(--op-green-tint); color: var(--op-on-green-tint); }
+.step-title { font-size: 16px; font-weight: 650; }
+.step-sub { margin: 2px 0 0; color: var(--op-muted); }
+.ccard-signature .step-sub { color: var(--op-on-primary-tint); }
+.ccard-signature .step-title { font-size: 18px; }
+@media (max-width: 640px) { .step-card { grid-template-columns: auto minmax(0, 1fr); } .step-action { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .lead-card { transition: none; } .lead-card:hover { transform: none; } }
