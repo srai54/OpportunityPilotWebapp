@@ -1717,3 +1717,13 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .connector-titles { flex: 1 1 auto; min-width: 0; display: grid; }
 .connector-name { font-size: 16px; font-weight: 650; }
 .connector-does { margin: 0; }
+
+/* All sites */
+.site-lines { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font-size: var(--op-text-meta); color: var(--op-muted); }
+.site-lines .is-ok span { color: var(--op-on-green-tint); }
+.site-lines .is-off { color: var(--op-on-amber-tint); }
+.chip-site { background: var(--op-primary-tint); color: var(--op-on-primary-tint); }
+.result-lite { grid-template-columns: 0 auto minmax(0, 1fr) auto; }
+.result-lite .lead-side { flex-direction: column; align-items: flex-end; gap: 6px; }
+.result-lite .lead-title a::after { display: none; }
+@media (max-width: 760px) { .result-lite { grid-template-columns: 0 auto minmax(0, 1fr); } .result-lite .lead-side { flex-direction: row; align-items: center; } }
