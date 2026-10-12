@@ -740,3 +740,13 @@ export interface AnalyticsTrend {
   current: TrendTotals
   previous: TrendTotals
 }
+
+/** One recorded action of the signed-in person (GET /api/v1/analytics/activity). */
+export interface ActivityFeedItem {
+  at: string
+  kind: string
+  detail: string
+  opportunityId: string
+  title: string
+  organization: string
+}

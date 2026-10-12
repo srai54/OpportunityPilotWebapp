@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
+import { canConnectOne, providerName, sendable, type Mailbox } from '../mail/mailModel'
 
 type Execution = {
   id: string; state: 'AwaitingManualConfirmation' | 'Succeeded' | 'Failed'; provider: string; attempt?: number
@@ -15,6 +17,8 @@ type Execution = {
  */
 export function SendPanel({ draftId, version, state, onChange, onSent, appLabel }: { draftId: string; version: number; state: string; onChange: () => void; onSent?: () => void; appLabel?: string }) {
   const executions = useApi<Execution[]>(`/api/v1/executions?subjectId=${draftId}`)
+  const mailboxes = useApi<Mailbox[]>('/api/v1/mailboxes')
+  const ready = sendable(mailboxes.data)
   const [receipt, setReceipt] = useState('')
   const [failure, setFailure] = useState('')
   const [busy, setBusy] = useState(false)
@@ -53,9 +57,20 @@ export function SendPanel({ draftId, version, state, onChange, onSent, appLabel 
           </form>
         </details>
       </>
-      : <div className="row wrap">
-        <button className="btn btn-primary btn-sm" type="button" disabled={busy} onClick={() => void run(`/api/v1/executions/drafts/${draftId}`, { version })}>Send this approved version</button>
-        <span className="muted-small">Checks approval, the suppression list and today's limit; it can be recorded as sent only once.</span>
+      : <div className="stack-2">
+        {ready.map((m) => (
+          <div className="row wrap" key={m.provider}>
+            <button className="btn btn-primary" type="button" disabled={busy} onClick={() => void run(`/api/v1/drafts/${draftId}/send-via-mailbox`, { version, provider: m.provider }, true)}>
+              {busy ? 'Sending…' : `Send from ${providerName(m.provider)}`}
+            </button>
+            <span className="muted-small">From {m.emailAddress}. Accepted by {providerName(m.provider)} is recorded as sent; it is not a delivery confirmation.</span>
+          </div>
+        ))}
+        <div className="row wrap">
+          <button className={`btn ${ready.length > 0 ? 'btn-secondary' : 'btn-primary'} btn-sm`} type="button" disabled={busy} onClick={() => void run(`/api/v1/executions/drafts/${draftId}`, { version })}>{ready.length > 0 ? 'I will send it myself' : 'Send this approved version'}</button>
+          <span className="muted-small">Checks approval, the suppression list and today's limit; it can be recorded as sent only once.</span>
+        </div>
+        {canConnectOne(mailboxes.data) && <p className="muted-small">Want one click? <Link to="/settings">Connect Outlook or Gmail in Settings</Link>.</p>}
       </div>}
     {(executions.data ?? []).filter((e) => e.state === 'Failed').map((e) => <p key={e.id} className="muted-small">Earlier attempt failed: {e.safeFailure}</p>)}
   </section>

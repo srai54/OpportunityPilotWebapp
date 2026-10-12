@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
-import type { AnalyticsOverview, AnalyticsTrend } from '../../lib/types'
+import type { ActivityFeedItem, AnalyticsOverview, AnalyticsTrend } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { formatWhen } from '../applications/applicationStatus'
 import { journeySteps } from '../journey/journeyModel'
 import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
 import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
 import {
-  clampGoal, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  activityLine, clampGoal, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
@@ -23,6 +24,30 @@ const RANGES = [7, 14, 30, 90] as const
 /** Keyed by workspace so each side keeps its own goal and range. */
 export function InsightsPage() {
   return <InsightsView key={useShell().workspace} />
+}
+
+/** "My activity": the person's own recorded actions, newest first, each linking to the job or lead. */
+function ActivityPanel({ sales }: Readonly<{ sales: boolean }>) {
+  const feed = useApi<ActivityFeedItem[]>(`/api/v1/analytics/activity?workspace=${sales ? 'Sales' : 'Candidate'}&take=20`)
+  return (
+    <section className="panel" aria-labelledby="my-activity">
+      <header className="panel-head"><h3 className="eyebrow" id="my-activity">My activity</h3><div className="grow" /><span className="muted-small">latest 20 · newest first</span></header>
+      <div className="panel-body">
+        {feed.error && <ErrorNotice error={feed.error} onRetry={feed.reload} what="your activity" />}
+        {feed.data?.length === 0 && <p className="muted-small">Nothing recorded yet. Approvals, applications and sends show up here with their date.</p>}
+        {feed.data && feed.data.length > 0 && (
+          <ol className="activity-list">
+            {feed.data.map((x, i) => (
+              <li key={`${x.opportunityId}-${x.at}-${i}`}>
+                <time className="muted-small" dateTime={x.at}>{formatWhen(x.at)}</time>
+                <Link to={`/opportunities/${x.opportunityId}`}>{activityLine(x, sales)}</Link>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </section>
+  )
 }
 
 function InsightsView() {
@@ -136,6 +161,8 @@ function InsightsView() {
               </div>
             </section>
           </div>
+
+          <ActivityPanel sales={sales} />
 
           {a && (
             <div className="panel-grid-3">
