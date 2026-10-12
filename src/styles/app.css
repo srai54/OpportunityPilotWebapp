@@ -1289,7 +1289,7 @@ p { margin: 0; }
 .activity-list li { font-size: var(--op-text-meta); }
 .panel-body.row { flex-direction: row; flex-wrap: wrap; align-items: center; }
 .table-role a { color: var(--op-ink); font-weight: 600; text-decoration: none; }
-.table-role a:hover { color: var(--op-primary); text-decoration: underline; text-underline-offset: 2px; }
+.table-role a:hover { color: var(--op-primary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .msg-in { border-left: 3px solid var(--op-primary, currentColor); }
 .kpi-strip-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 @media (max-width: 1280px) { .kpi-strip-7 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -1460,3 +1460,86 @@ a.result-title:hover { color: var(--op-primary); }
 .help-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--op-line); background: var(--op-surface); color: var(--op-muted); font: inherit; font-weight: 700; cursor: pointer; }
 .help-btn:hover { color: var(--op-ink); border-color: var(--op-field-border); }
 @media (prefers-reduced-motion: no-preference) { .coach { animation: coach-in 0.16s ease-out; } @keyframes coach-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } } }
+
+/* ---------- Journey shell (W3): brand + workspace + switches on top, five steps under it ---------- */
+.topbar-wrap { position: sticky; top: 0; z-index: 10; background: var(--op-surface); border-bottom: 1px solid var(--op-line); }
+.topbar-wrap .topbar { position: static; border-bottom: 0; }
+.brand { display: inline-flex; align-items: center; gap: 9px; flex-shrink: 0; color: var(--op-ink); text-decoration: none; }
+.brand:hover { text-decoration: none; }
+.brand-mark { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--op-primary); color: var(--op-on-primary); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.brand-name { font-size: 15px; font-weight: 650; letter-spacing: -0.015em; white-space: nowrap; }
+.is-advanced .brand { display: none; }
+.is-advanced .brand + .ws-seg { margin-left: 0; }
+.ws-seg-top { margin: 0; grid-template-columns: auto auto; background: var(--op-hair); }
+.ws-seg-top .ws-seg-btn { color: var(--op-muted); }
+.ws-seg-top .ws-seg-btn:hover { color: var(--op-ink); }
+.ws-seg-top .ws-seg-btn[aria-pressed="true"] { color: var(--op-ink); }
+.top-switches { display: flex; align-items: center; gap: 4px; }
+.top-switch { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 8px; background: none; border: 0; border-radius: var(--op-radius-control); color: var(--op-muted); font: inherit; font-size: var(--op-text-meta); font-weight: 500; cursor: pointer; white-space: nowrap; }
+.top-switch:hover { color: var(--op-ink); background: var(--op-neutral-tint); }
+.top-switch-track { position: relative; flex: 0 0 auto; width: 30px; height: 16px; border-radius: 999px; background: var(--op-field-border); transition: background 0.15s ease; }
+.top-switch-track i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform 0.15s ease; }
+.top-switch[aria-checked="true"] { color: var(--op-ink); }
+.top-switch[aria-checked="true"] .top-switch-track { background: var(--op-primary); }
+.top-switch[aria-checked="true"] .top-switch-track i { transform: translateX(14px); }
+.menu-switches { display: none; flex-direction: column; padding: var(--op-space-1) 0; border-top: 1px solid var(--op-hair); border-bottom: 1px solid var(--op-hair); margin: var(--op-space-1) 0; }
+a.menu-item { color: var(--op-ink); text-decoration: none; }
+a.menu-item:hover { text-decoration: none; }
+.help-btn:disabled { opacity: 0.4; cursor: default; }
+
+.journey { display: flex; align-items: center; justify-content: center; padding: 0 22px 10px; }
+.journey-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; max-width: 100%; overflow-x: auto; }
+.journey-step { display: flex; align-items: center; flex: 0 0 auto; }
+.journey-step + .journey-step::before { content: ""; width: 22px; height: 1px; background: var(--op-line); margin-right: 4px; }
+.journey-link { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px 0 8px; border-radius: 999px; color: var(--op-muted); font-size: var(--op-text-body); font-weight: 500; text-decoration: none; white-space: nowrap; border: 1px solid transparent; }
+.journey-link:hover { color: var(--op-ink); background: var(--op-neutral-tint); text-decoration: none; }
+.journey-num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--op-hair); color: var(--op-muted); }
+.journey-step.is-done .journey-num { background: var(--op-green-tint); color: var(--op-on-green-tint); }
+.journey-step.is-done .journey-link { color: var(--op-ink); }
+.journey-step.is-here .journey-link { background: var(--op-primary-tint); color: var(--op-on-primary-tint); border-color: var(--op-primary-tint-border); font-weight: 650; }
+.journey-step.is-here .journey-num { background: var(--op-primary); color: var(--op-on-primary); }
+.journey-step.is-next .journey-link { border-color: var(--op-primary); color: var(--op-ink); }
+.journey-badge { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--op-amber-tint); color: var(--op-on-amber-tint); font-size: 11.5px; font-weight: 700; text-align: center; line-height: 20px; }
+.journey-next { padding: 0 7px; border-radius: 999px; background: var(--op-primary); color: var(--op-on-primary); font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 18px; }
+.journey-compact { display: none; font-size: var(--op-text-meta); font-weight: 600; color: var(--op-ink); }
+
+.next-bar { display: flex; align-items: center; gap: 12px; padding: 10px 22px; background: var(--op-primary-tint); border-bottom: 1px solid var(--op-primary-tint-border); color: var(--op-on-primary-tint); }
+.next-bar-tag { flex: 0 0 auto; padding: 0 8px; border-radius: 999px; background: var(--op-primary); color: var(--op-on-primary); font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; line-height: 20px; }
+.next-bar-text { flex: 1 1 auto; min-width: 0; font-size: var(--op-text-body); }
+.next-bar .btn { flex: 0 0 auto; }
+
+/* Simple mode: one calm centred column, no sidebar */
+.is-simple .content { padding: var(--op-space-5) var(--op-space-4) 72px; }
+.is-simple .page, .is-simple .page-wide { max-width: 1040px; }
+
+@media (max-width: 860px) {
+  .brand-name { display: none; }
+  .topbar-wrap .topbar { gap: 8px; padding: 0 12px; }
+  .journey { padding: 0 12px 8px; }
+  .journey-step + .journey-step::before { width: 8px; margin-right: 2px; }
+  .journey-link { padding: 0 6px; gap: 0; }
+  /* Visually hidden, not display:none: the link keeps its name for screen readers. */
+  .journey-label, .journey-next { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .journey-step.is-here .journey-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; margin-left: 6px; }
+  .journey-step.is-here .journey-link { padding: 0 12px 0 6px; }
+  .journey-list { overflow: visible; }
+  .next-bar { flex-wrap: wrap; padding: 10px 14px; }
+  .next-bar-text { flex-basis: 100%; order: 3; }
+  .next-bar .btn { margin-left: auto; }
+}
+@media (max-width: 640px) {
+  .top-switches { display: none; }
+  .menu-switches { display: flex; }
+  .topbar-ai { display: none; }
+}
+
+/* Simple mode: the profile form is one calm column, not a wide editor */
+.is-simple .profiles2-main .profiles2-pad { max-width: 720px; margin-inline: auto; }
+.is-simple .profiles2-main .save-bar { justify-content: center; }
+/* Blue text on the hovered grey row is 4.1:1; the darker (light theme) / lighter (dark theme) hover blue passes. */
+.table tbody tr:hover .btn-link, .table tbody tr:hover a { color: var(--op-primary-hover); }
+@media (max-width: 640px) {
+  .topbar-wrap .topbar-heading { display: none; }
+  .topbar-wrap .topbar { gap: 6px; padding: 0 10px; }
+  .ws-seg-top .ws-seg-btn { padding: 0 6px; }
+}

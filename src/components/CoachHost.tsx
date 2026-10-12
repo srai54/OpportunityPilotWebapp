@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { COACH_FLOWS, flowById } from '../features/coach/coachFlows'
-import { flowIdForPath, markFlowDone, setTipsOff, shouldAutoStart, type CoachFlow } from '../features/coach/coachModel'
+import { flowIdForPath, markFlowDone, shouldAutoStart, withWorkspace, type CoachFlow } from '../features/coach/coachModel'
+import type { Workspace } from '../features/shell/shellModel'
 
 type Placement = 'right' | 'below' | 'sheet'
 type Spot = { top: number; left: number; placement: Placement; arrow: number }
@@ -36,7 +37,7 @@ function place(rect: DOMRect, height: number): Spot {
  * Coachmarks: a small, non-blocking tip beside the thing it explains. Three or four per screen, shown once, skippable in one
  * click, replayable with the Help button. The page stays usable underneath; there is no full-screen dim.
  */
-export function CoachHost({ pathname, replay }: Readonly<{ pathname: string; replay: number }>) {
+export function CoachHost({ pathname, replay, guide, guideTick, workspace, onSkip }: Readonly<{ pathname: string; replay: number; guide: boolean; guideTick: number; workspace: Workspace; onSkip: () => void }>) {
   const [flow, setFlow] = useState<CoachFlow | null>(null)
   const [index, setIndex] = useState(0)
   const [spot, setSpot] = useState<Spot | null>(null)
@@ -45,6 +46,9 @@ export function CoachHost({ pathname, replay }: Readonly<{ pathname: string; rep
   const returnFocus = useRef<HTMLElement | null>(null)
   const forced = useRef(false)
   const lastReplay = useRef(replay)
+  const guideRef = useRef(guide)
+  // Declared before the start effect so it already holds the new value when that effect runs in the same commit.
+  useEffect(() => { guideRef.current = guide }, [guide])
 
   const close = useCallback((markDone: boolean) => {
     setFlow((f) => {
@@ -63,8 +67,9 @@ export function CoachHost({ pathname, replay }: Readonly<{ pathname: string; rep
     const id = flowIdForPath(pathname)
     const wantsReplay = replay !== lastReplay.current
     lastReplay.current = replay
-    const candidate = flowById(id)
-    if (!candidate || (!wantsReplay && !shouldAutoStart(candidate.id))) { queueMicrotask(() => close(false)); return }
+    const base = flowById(id)
+    const candidate = base ? withWorkspace(base, workspace) : undefined
+    if (!candidate || (!wantsReplay && !(guideRef.current && shouldAutoStart(candidate.id)))) { queueMicrotask(() => close(false)); return }
     forced.current = wantsReplay
     let tries = 0
     // Wait (up to about four seconds) for the screen to draw its first target, then start; otherwise stay quiet.
@@ -80,7 +85,7 @@ export function CoachHost({ pathname, replay }: Readonly<{ pathname: string; rep
       } else if (tries > 16) clearInterval(timer)
     }, 250)
     return () => { clearInterval(timer); close(false) }
-  }, [pathname, replay, close])
+  }, [pathname, replay, guideTick, workspace, close])
 
   // Position the tip and ring the target; keep it in place on scroll and resize.
   useEffect(() => {
@@ -137,7 +142,7 @@ export function CoachHost({ pathname, replay }: Readonly<{ pathname: string; rep
       <h3 id="coach-title" ref={headingRef} tabIndex={-1} className="coach-title">{step.title}</h3>
       <p id="coach-body" className="coach-body">{step.body}</p>
       <div className="coach-actions">
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setTipsOff(true); close(false) }}>Skip tips</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { onSkip(); close(false) }}>Turn guide off</button>
         <span className="grow" />
         {pos > 0 && <button type="button" className="btn btn-secondary btn-sm" onClick={() => go(-1)}>Back</button>}
         {isLast

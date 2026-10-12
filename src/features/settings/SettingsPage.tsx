@@ -8,8 +8,6 @@ import { useAuth } from '../auth/AuthContext'
 import { useShell } from '../shell/ShellContext'
 import { WORKSPACES, type Workspace } from '../shell/shellModel'
 import { ThemeChoiceGroup } from '../shell/ThemeToggle'
-import { COACH_FLOW_IDS } from '../coach/coachFlows'
-import { resetAllTips } from '../coach/coachModel'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 const AUTH_LABEL = { supabase: 'Email & password / Google', dev: 'Development sign-in (local only)', guest: 'Guest (demo mode)' }
@@ -30,8 +28,7 @@ const FIXED_RULES = [
 export function SettingsPage() {
   const diagnostics = useApi<{ version: string; database: { pendingMigrations: number | null } }>('/api/v1/diagnostics')
   const { user, mode, signOut } = useAuth()
-  const { capabilities, workspace, setWorkspace, advanced, setAdvanced } = useShell()
-  const [tipsReset, setTipsReset] = useState(false)
+  const { capabilities, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide } = useShell()
   const [accountError, setAccountError] = useState<Error>()
   const [accountBusy, setAccountBusy] = useState(false)
 
@@ -113,15 +110,14 @@ export function SettingsPage() {
             <div className="panel-body">
               <p className="muted-small">Saved in this browser. System follows your device's light or dark setting.</p>
               <ThemeChoiceGroup />
-              <div className="row wrap">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => { resetAllTips(COACH_FLOW_IDS); setTipsReset(true) }}>Show the tips again</button>
-                {tipsReset && <span className="muted-small" role="status">Done — the tips will show again as you visit each screen.</span>}
-              </div>
+              <label className="check-row">
+                <input type="checkbox" checked={guide} onChange={(e) => setGuide(e.target.checked)} />
+                <span><strong>Guide</strong> — tips on every screen and a "Next" bar that says what to do now. Turning it on shows all the tips again.</span>
+              </label>
               <label className="check-row">
                 <input type="checkbox" checked={advanced} onChange={(e) => setAdvanced(e.target.checked)} />
-                <span><strong>Advanced</strong> — show campaigns, follow-ups, staffing, help and the detailed settings below</span>
+                <span><strong>Advanced</strong> — show the full menu, campaigns, follow-ups, staffing, help and the detailed settings below</span>
               </label>
-              <p className="muted-small">The navigation rail collapses from its own button; below 860 px it is always a drawer.</p>
             </div>
           </section>
         </div>

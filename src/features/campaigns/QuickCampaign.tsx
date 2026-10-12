@@ -4,8 +4,9 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
-import type { Campaign, ProfileSummary } from '../../lib/types'
+import type { Campaign, Profile, ProfileSummary } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { splitTags } from '../profiles/profileFields'
 import { useShell } from '../shell/ShellContext'
 import {
   campaignPayload, newDraft, parseBoardInput, SEARCH_BOARDS, suggestedMode,
@@ -14,8 +15,9 @@ import {
 
 type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Greenhouse' | 'Lever'
 
-const CHOICES: { value: SourceChoice; label: string }[] = [
-  ...SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` })),
+const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` }))
+/** Candidates can also read one company's own board; Sales cannot (a board lists jobs, and a Sales campaign needs the hiring company). */
+const BOARDS: { value: SourceChoice; label: string }[] = [
   { value: 'Greenhouse', label: 'One company\'s Greenhouse board' },
   { value: 'Lever', label: 'One company\'s Lever board' },
 ]
@@ -29,10 +31,11 @@ export function QuickCampaign() {
   const [params] = useSearchParams()
   const { workspace } = useShell()
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
-  const [profileId, setProfileId] = useState('')
+  const [profileId, setProfileId] = useState(params.get('profile') ?? '')
   const [query, setQuery] = useState(params.get('keywords') ?? '')
   const [place, setPlace] = useState(params.get('location') ?? '')
-  const preferred = CHOICES.find((c) => c.value === params.get('board'))?.value
+  const choices = workspace === 'sales' ? SEARCHES : [...SEARCHES, ...BOARDS]
+  const preferred = choices.find((c) => c.value === params.get('board'))?.value
   const [source, setSource] = useState<SourceChoice>(preferred ?? 'LinkedIn')
   const [token, setToken] = useState('')
   const [busy, setBusy] = useState(false)
@@ -42,6 +45,9 @@ export function QuickCampaign() {
   const usable = (profiles.data ?? []).filter((p) => (p.type === 'Candidate') === wantsCandidate)
   const chosen = usable.find((p) => p.id === profileId) ?? usable[0]
   const mode: SupportedMode = suggestedMode(chosen?.type)
+  // Skills the person confirmed on their profile rank the results; without them every job would score 0.
+  const full = useApi<Profile>(chosen ? `/api/v1/profiles/${chosen.id}` : null)
+  const skills = full.data && full.data.data.confirmations?.skills ? splitTags(full.data.data.fields?.skills).slice(0, 15) : []
   const board = source === 'Greenhouse' || source === 'Lever' ? parseBoardInput(source as BoardKind, token) : null
   const boardError = board && 'error' in board ? board.error : null
   const problems = [
@@ -60,7 +66,7 @@ export function QuickCampaign() {
       const keywords = query.trim() ? [query.trim().slice(0, 200)] : []
       draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${source === 'Seek' ? 'SEEK' : source}`
       draft.goal = keywords.length ? `Find ${keywords[0]}${place.trim() ? ` in ${place.trim()}` : ''}.` : ''
-      draft.criteria = { ...draft.criteria, keywords, locations: place.trim() ? [place.trim().slice(0, 100)] : [] }
+      draft.criteria = { ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }
       // Suggest anything reasonable for approval so the first run has something to approve.
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
       const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode) }) })
@@ -97,9 +103,10 @@ export function QuickCampaign() {
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>
       <label className="field" data-coach="quick-source"><span>Where to look</span>
-        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>{CHOICES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
+        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>{choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}
+      {mode === 'Job' && skills.length > 0 && <p className="muted-small">Results are ranked by your skills: {skills.join(', ')}.</p>}
       {error && <ErrorNotice error={error} what="creating the campaign" />}
       <div className="row wrap">
         <button className="btn btn-primary" type="submit" data-coach="quick-run" disabled={busy || problems.length > 0}>{busy ? 'Starting…' : 'Create & run'}</button>

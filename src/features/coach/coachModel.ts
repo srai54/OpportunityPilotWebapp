@@ -1,5 +1,5 @@
 /** One tip: it points at the element carrying `data-coach="<target>"` and says one useful thing. */
-export type CoachStep = { target: string; title: string; body: string }
+export type CoachStep = { target: string; title: string; body: string; sales?: { title?: string; body?: string } }
 export type CoachFlow = { id: string; label: string; steps: CoachStep[] }
 
 export const COACH_OFF_KEY = 'op.coach.off'
@@ -49,10 +49,19 @@ export function presentSteps(flow: CoachFlow, exists: (target: string) => boolea
 /** Which flow belongs to a route, or null. The campaign form and the opportunity page are matched exactly. */
 export function flowIdForPath(pathname: string): string | null {
   if (pathname === '/') return 'overview'
+  if (pathname === '/profiles' || pathname.startsWith('/profiles/')) return 'profile'
   if (pathname === '/wellfound') return 'find'
   if (pathname === '/campaigns/new') return 'campaign'
+  if (/^\/research\/[^/]+$/.test(pathname)) return 'run'
+  if (pathname === '/follow-ups') return 'followups'
   if (pathname === '/opportunities') return 'opps'
   if (/^\/opportunities\/[^/]+$/.test(pathname)) return 'opp'
   if (pathname === '/outreach') return 'outreach'
   return null
+}
+
+/** The flow with Sales wording applied where a step has it. */
+export function withWorkspace(flow: CoachFlow, workspace: 'candidate' | 'sales'): CoachFlow {
+  if (workspace !== 'sales') return flow
+  return { ...flow, steps: flow.steps.map((s) => ({ ...s, title: s.sales?.title ?? s.title, body: s.sales?.body ?? s.body })) }
 }

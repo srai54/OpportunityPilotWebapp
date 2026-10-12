@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { Icon } from '../../components/icons'
 import { api, ApiUnreachableError, isDegraded } from '../../lib/api'
 import type { Capabilities, Overview } from '../../lib/types'
@@ -7,7 +7,10 @@ import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { ShellContext } from './ShellContext'
 import { CoachHost } from '../../components/CoachHost'
-import { flowIdForPath } from '../coach/coachModel'
+import { COACH_FLOW_IDS } from '../coach/coachFlows'
+import { flowIdForPath, resetAllTips, setTipsOff, tipsOff } from '../coach/coachModel'
+import { JourneyBar } from '../journey/JourneyBar'
+import { NextBar } from '../journey/NextBar'
 import { ThemeToggle } from './ThemeToggle'
 import {
   aiModeLabel,
@@ -96,6 +99,16 @@ function useDismiss(open: boolean, close: () => void, root: React.RefObject<HTML
   }, [open, close, root, trigger])
 }
 
+/** A small labelled on/off switch for the top bar (Guide, Advanced). */
+function TopSwitch({ label, on, onChange, coach, hint }: Readonly<{ label: string; on: boolean; onChange: (on: boolean) => void; coach?: string; hint?: string }>) {
+  return (
+    <button type="button" className="top-switch" role="switch" aria-checked={on} title={hint} data-coach={coach} onClick={() => onChange(!on)}>
+      <span className="top-switch-track" aria-hidden="true"><i /></span>
+      <span>{label}</span>
+    </button>
+  )
+}
+
 export function AppShell() {
   const { user, signOut } = useAuth()
   const apiStatus = useApiStatus()
@@ -104,6 +117,7 @@ export function AppShell() {
   // For the rail counts and the top-bar hint; screens that show the figures fetch their own copy.
   const overview = useApi<Overview>(apiStatus === 'ready' ? '/api/v1/overview' : null)
   const awaitingApproval = overview.data?.awaitingApproval
+  const reloadOverview = overview.reload
   const location = useLocation()
   const matches = useMatches()
   const isDrawerLayout = useIsDrawerLayout()
@@ -117,6 +131,17 @@ export function AppShell() {
   }, [])
   const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op.demoBanner') === '1' } catch { return false } })
   const [replay, setReplay] = useState(0)
+  const [guide, setGuideState] = useState(() => !tipsOff())
+  // Bumped every time Guide is turned on, so the tours for the current screen start again.
+  const [guideTick, setGuideTick] = useState(0)
+  const setGuide = useCallback((on: boolean) => {
+    setGuideState(on)
+    setTipsOff(!on)
+    if (on) {
+      resetAllTips(COACH_FLOW_IDS)
+      setGuideTick((t) => t + 1)
+    }
+  }, [])
   const [advanced, setAdvancedState] = useState(readAdvanced)
   const setAdvanced = useCallback((on: boolean) => {
     setAdvancedState(on)
@@ -126,7 +151,7 @@ export function AppShell() {
   // Drawer and popovers remember the path they were opened on, so any route change closes them.
   const [drawerPath, setDrawerPath] = useState<string | null>(null)
   const [menuPath, setMenuPath] = useState<string | null>(null)
-  const drawerOpen = isDrawerLayout && drawerPath === location.pathname
+  const drawerOpen = advanced && isDrawerLayout && drawerPath === location.pathname
   const menuOpen = menuPath === location.pathname
 
   const menuRef = useRef<HTMLDivElement>(null)
@@ -138,6 +163,9 @@ export function AppShell() {
     [...matches].reverse().map((m) => (m.handle as { title?: string } | undefined)?.title).find(Boolean) ??
     'OpportunityPilot'
   const hint = topbarHint(location.pathname, workspace, overview.data)
+
+  // The journey bar and Next bar read these counts, so refresh them whenever the person moves to another screen.
+  useEffect(() => { reloadOverview() }, [location.pathname, reloadOverview])
 
   const closeDrawer = useCallback(() => setDrawerPath(null), [])
   const closeMenu = useCallback(() => setMenuPath(null), [])
@@ -217,12 +245,13 @@ export function AppShell() {
 
   return (
     <ShellContext.Provider
-      value={{ capabilities: caps, awaitingApproval, refreshOverview: overview.reload, workspace, setWorkspace, advanced, setAdvanced }}
+      value={{ capabilities: caps, awaitingApproval, overview: overview.data, refreshOverview: overview.reload, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide }}
     >
-      <div className={`shell ws-${workspace}`}>
+      <div className={`shell ws-${workspace} ${advanced ? 'is-advanced' : 'is-simple'}`}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
+        {advanced && (
         <nav ref={railRef} className={railClass} aria-label="Primary" id="primary-nav">
           <div className="rail-head">
             {isDrawerLayout ? (
@@ -242,23 +271,6 @@ export function AppShell() {
               </button>
             )}
             {!collapsed && <span className="rail-brand-name">OpportunityPilot</span>}
-          </div>
-
-          <div className="ws-seg" role="group" aria-label="Workspace">
-            {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={`ws-seg-btn ws-seg-${key}`}
-                aria-pressed={key === workspace}
-                aria-label={collapsed ? `${WORKSPACES[key].label} workspace` : undefined}
-                data-tip={collapsed ? `${WORKSPACES[key].label} workspace` : undefined}
-                onClick={() => setWorkspace(key)}
-              >
-                <Icon name={WORKSPACES[key].icon} size={14} />
-                {!collapsed && <span>{WORKSPACES[key].label}</span>}
-              </button>
-            ))}
           </div>
 
           <div className="rail-groups">
@@ -320,17 +332,6 @@ export function AppShell() {
           </div>
 
           <div className="rail-footer">
-            <button
-              type="button"
-              className="rail-switch"
-              role="switch"
-              aria-checked={advanced}
-              onClick={() => setAdvanced(!advanced)}
-              title={collapsed ? (advanced ? 'Advanced: on' : 'Advanced: off') : undefined}
-            >
-              <span className="rail-switch-track" aria-hidden="true"><i /></span>
-              <span className={collapsed ? 'sr-only' : undefined}>Advanced</span>
-            </button>
             {statuses.map((s) => (
               <div key={s.text} className="rail-status" title={collapsed ? s.text : undefined}>
                 <span className={`dot dot-${s.tone}`} aria-hidden="true" />
@@ -339,35 +340,53 @@ export function AppShell() {
             ))}
           </div>
         </nav>
+        )}
         {drawerOpen && <div className="scrim" onClick={closeDrawer} aria-hidden="true" />}
 
         <div className="main-col" inert={drawerOpen}>
+          <div className="topbar-wrap">
           <header className="topbar">
-            <button
-              ref={menuButtonRef}
-              type="button"
-              className="menu-toggle"
-              aria-label="Open navigation"
-              aria-controls="primary-nav"
-              aria-expanded={drawerOpen}
-              onClick={() => setDrawerPath(location.pathname)}
-            >
-              <Icon name="menu" size={20} />
-            </button>
-            <div className="topbar-heading">
+            {advanced && (
+              <button
+                ref={menuButtonRef}
+                type="button"
+                className="menu-toggle"
+                aria-label="Open navigation"
+                aria-controls="primary-nav"
+                aria-expanded={drawerOpen}
+                onClick={() => setDrawerPath(location.pathname)}
+              >
+                <Icon name="menu" size={20} />
+              </button>
+            )}
+            <Link to="/" className="brand" aria-label="OpportunityPilot home">
+              <span className="brand-mark" aria-hidden="true">OP</span>
+              <span className="brand-name">OpportunityPilot</span>
+            </Link>
+            <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
+              {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
+                <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
+                  <Icon name={WORKSPACES[key].icon} size={14} />
+                  <span>{WORKSPACES[key].label}</span>
+                </button>
+              ))}
+            </div>
+            <div className={advanced ? 'topbar-heading' : 'sr-only'}>
               <h1 className="topbar-title">{title}</h1>
-              {hint && <span className="topbar-hint">{hint}</span>}
+              {advanced && hint && <span className="topbar-hint">{hint}</span>}
             </div>
             <div className="grow" />
             {advanced && aiMode && (
-              <span className={`pill pill-${aiMode.tone}`}>
+              <span className="pill pill-neutral topbar-ai">
                 <span className="dot" aria-hidden="true" />
                 {aiMode.text}
               </span>
             )}
-            {flowIdForPath(location.pathname) && (
-              <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" onClick={() => setReplay((n) => n + 1)}>?</button>
-            )}
+            <div className="top-switches">
+              <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" />
+              <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" />
+            </div>
+            <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>?</button>
             <ThemeToggle />
             <div className="account" ref={menuRef}>
               <button
@@ -386,6 +405,12 @@ export function AppShell() {
               {menuOpen && (
                 <div className="menu" role="menu">
                   <div className="menu-meta">{user?.email}</div>
+                  <div className="menu-switches">
+                    <TopSwitch label="Guide" on={guide} onChange={setGuide} />
+                    <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} />
+                  </div>
+                  <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>
+                  <Link to="/" role="menuitem" className="menu-item" onClick={closeMenu}>Home</Link>
                   <button type="button" role="menuitem" className="menu-item" onClick={() => void signOut()}>
                     Sign out
                   </button>
@@ -393,6 +418,8 @@ export function AppShell() {
               )}
             </div>
           </header>
+          <JourneyBar workspace={workspace} overview={overview.data} pathname={location.pathname} />
+          </div>
 
           {apiStatus === 'waking' && (
             <div className="banner" role="status">
@@ -425,10 +452,11 @@ export function AppShell() {
             </div>
           )}
 
+          {guide && <NextBar workspace={workspace} overview={overview.data} pathname={location.pathname} search={location.search} />}
           <main id="main" className="content" tabIndex={-1}>
             <Outlet />
           </main>
-          <CoachHost pathname={location.pathname} replay={replay} />
+          <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />
         </div>
       </div>
     </ShellContext.Provider>

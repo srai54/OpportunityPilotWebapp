@@ -47,6 +47,7 @@ export const FIELDS: Record<ProfileType, FieldDef[]> = {
     { key: 'experience', label: 'Experience', rows: 4, confirmable: true },
     { key: 'skills', label: 'Skills', rows: 2, confirmable: true },
     { key: 'availability', label: 'Availability and terms', hint: PLACEHOLDER_HINT, rows: 2 },
+    { key: 'outreachIdentity', label: 'Your name for message sign-offs', hint: 'How your messages end, e.g. Asha Rao. Without it a draft ends with a placeholder you must fill in.', rows: 1 },
   ],
   Services: [
     { key: 'offer', label: 'Services you deliver', hint: OFFER_HINT, rows: 3, required: true },
@@ -123,6 +124,17 @@ export function joinTags(tags: string[]): string {
 /** Fields shown on the create form: the offer plus the non-claim fields. Claims come after the first save. */
 export function createFields(type: ProfileType): FieldDef[] {
   return FIELDS[type].filter((f) => !f.confirmable)
+}
+
+/** The short create form of simple mode: what you offer, who it is for, one claim to rank by (skills / capabilities), and the sign-off drafts need. */
+export function simpleCreateFields(type: ProfileType): FieldDef[] {
+  const keys = ['offer', 'idealCustomer', 'skills', 'capabilities', 'outreachIdentity']
+  return FIELDS[type].filter((f) => keys.includes(f.key))
+}
+
+/** A search phrase to start the first campaign with: the profile's name without its qualifiers ("Data analyst — 5 years" → "Data analyst"). */
+export function starterSearchTerm(name: string): string {
+  return name.split(/\s[—–-]\s|\s\(|,/)[0].trim().slice(0, 80)
 }
 
 /** Order and wording of the type cards on the create form (design ProfileNew). */

@@ -38,7 +38,7 @@ export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: bo
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
   const jobCampaigns = (campaigns.data ?? []).filter((c) => c.mode === 'Job')
   const campaign = jobCampaigns.find((c) => c.id === campaignId)
-  const { refreshOverview } = useShell()
+  const { refreshOverview, workspace } = useShell()
   const [outcome, setOutcome] = useState<Outcome>()
   const [reloads, setReloads] = useState(0)
 
@@ -90,6 +90,11 @@ export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: bo
                 ' Skipped jobs were no longer awaiting approval (decided elsewhere) or are not in your account.'}
               {outcome.error && ' The request did not finish — the list below shows what the server has now.'}
             </span>
+            {!outcome.error && outcome.result.approved > 0 && (
+              <Link className="btn btn-primary btn-sm" to="/opportunities?status=Shortlisted">
+                {workspace === 'sales' ? 'Next: reach out to them' : 'Next: apply or reach out'}
+              </Link>
+            )}
           </p>
         )}
       </div>

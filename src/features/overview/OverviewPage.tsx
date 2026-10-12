@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { AnalyticsOverview, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { journeySteps, nextStep, type StepId } from '../journey/journeyModel'
 import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
 import {
@@ -411,30 +412,36 @@ function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overvi
   )
 }
 
-/** Three steps, one highlighted: the same path for everyone, so a new person never has to choose between screens. */
+/** The five-step path with the next step highlighted: the same list as the journey bar, with a sentence and one button. */
 function GuidedStart({ overview, workspace }: { overview: Overview; workspace: Workspace }) {
   const sales = workspace === 'sales'
-  const steps = [
-    { done: overview.profiles > 0, title: 'Create your profile', text: sales ? 'What you sell, in your own words — it takes a minute.' : 'What you offer and your skills — it takes a minute.', to: '/profiles/new', action: 'Create profile' },
-    { done: overview.campaigns > 0, title: sales ? 'Find companies that are hiring' : 'Find jobs', text: sales ? 'Search a role; each hiring company becomes a scored lead.' : 'Search a role and place; the best matches are suggested for you.', to: '/wellfound', action: sales ? 'Find companies' : 'Find jobs' },
-    { done: overview.shortlisted > 0 || overview.applied > 0, title: sales ? 'Approve a lead and reach out' : 'Approve one and apply', text: sales ? 'Approve a lead, then draft a LinkedIn note or email.' : 'Approve a job, open its application page and apply.', to: '/opportunities', action: 'See opportunities' },
-  ]
-  if (steps.every((x) => x.done)) return null
-  const next = steps.findIndex((x) => !x.done)
+  const steps = journeySteps(workspace, overview)
+  const next = nextStep(workspace, overview)
+  const copy: Record<StepId, { title: string; text: string }> = {
+    profile: { title: sales ? 'Describe what you sell' : 'Create your profile', text: sales ? 'A few words about your product or service. It takes a minute.' : 'What you offer and your skills. It takes a minute.' },
+    find: { title: sales ? 'Find companies that are hiring' : 'Find jobs', text: sales ? 'Search a role; each hiring company becomes a scored lead.' : 'Search a role and place; the best matches come back scored.' },
+    review: { title: sales ? 'Approve the best leads' : 'Approve the best matches', text: 'One click each. Nothing is sent or applied without you.' },
+    reach: { title: sales ? 'Reach out' : 'Apply or reach out', text: sales ? 'A LinkedIn note or an email, drafted for you to edit and send.' : 'Apply on the job page, or message the recruiter.' },
+    follow: { title: 'Follow up', text: 'A reminder is set for you when you record a message as sent.' },
+  }
+  if (!next || steps.slice(0, 4).every((x) => x.done)) return null
   return (
-    <section className="card stack-3" aria-label="Getting started">
-      <h3 className="section-heading">Getting started</h3>
+    <section className="card stack-3" aria-label="Getting started" data-coach="start-card">
+      <h3 className="section-heading">Your next step</h3>
       <ol className="guided-steps plain-list">
-        {steps.map((x, i) => (
-          <li key={x.title} className={`guided-step${x.done ? ' is-done' : ''}${i === next ? ' is-next' : ''}`} aria-current={i === next ? 'step' : undefined}>
-            <span className="step-num">{x.done ? '✓' : i + 1}</span>
-            <div className="stack-1 grow">
-              <strong>{x.title}</strong>
-              <span className="muted-small">{x.text}</span>
-            </div>
-            {i === next && <Link className="btn btn-primary btn-sm" to={x.to}>{x.action}</Link>}
-          </li>
-        ))}
+        {steps.map((x, i) => {
+          const isNext = x.id === next.step
+          return (
+            <li key={x.id} className={`guided-step${x.done ? ' is-done' : ''}${isNext ? ' is-next' : ''}`} aria-current={isNext ? 'step' : undefined}>
+              <span className="step-num">{x.done ? '✓' : i + 1}</span>
+              <div className="stack-1 grow">
+                <strong>{copy[x.id].title}</strong>
+                <span className="muted-small">{isNext ? next.text : copy[x.id].text}</span>
+              </div>
+              {isNext && <Link className="btn btn-primary btn-sm" to={next.to}>{next.action}</Link>}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )
