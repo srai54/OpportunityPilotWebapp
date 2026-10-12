@@ -1,4 +1,4 @@
-import type { TrendPoint, TrendTotals } from '../../lib/types'
+import type { TrendPoint, TrendTotals, ActivityFeedItem } from '../../lib/types'
 import type { Workspace } from '../shell/shellModel'
 
 /** The four lines on the trend chart, fixed order (DESIGN.md: max four series, never cycled). `reached` is Applied or Contacted. */
@@ -150,4 +150,25 @@ export function trendSummary(workspace: Workspace, days: number, current: TrendT
     return `Nothing recorded in the last ${days} days yet.`
   const d = delta(current.found, previous.found)
   return `Last ${days} days: ${current.found} ${label('found')} (${d.text}), ${current.approved} ${label('approved')}, ${current.reached} ${label('reached')}, ${current.replied} replies.`
+}
+
+const ACTIVITY_VERBS: Record<string, string> = {
+  Researched: 'Found',
+  Suggested: 'Suggested for review',
+  Approved: 'You approved',
+  Rejected: 'You skipped',
+  Applied: 'You applied to',
+  StatusChanged: 'Updated',
+}
+
+/** "You approved" / "Found" for a stored activity kind; an unknown kind is shown as written, never guessed. */
+export function activityVerb(kind: string): string {
+  return ACTIVITY_VERBS[kind] ?? kind
+}
+
+/** One readable line per recorded action: the verb, the job or lead, and the stored detail when it adds something. */
+export function activityLine(item: Pick<ActivityFeedItem, 'kind' | 'title' | 'organization' | 'detail'>, sales: boolean): string {
+  const what = sales ? item.organization || item.title : [item.title, item.organization].filter(Boolean).join(' · ')
+  const detail = item.detail && item.kind === 'StatusChanged' ? ` — ${item.detail}` : ''
+  return `${activityVerb(item.kind)} ${what}${detail}`
 }

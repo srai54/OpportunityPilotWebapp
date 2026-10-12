@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { BulkBar } from '../../components/cards'
+import { BulkDraftCard, LeadCardList } from './LeadCards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { PageHeader } from '../../components/PageHeader'
@@ -21,16 +23,21 @@ import { ApprovalQueuePage } from '../approvals/ApprovalQueuePage'
 import { useShell } from '../shell/ShellContext'
 import {
   appendUnique,
+  applyLabel,
   canMoveTo,
   DEFAULT_FILTERS,
   formatCoverage,
+  foundLabel,
   opportunitiesPath,
   type OpportunityFilters,
+  type OpportunitySort,
   OUTCOME_LABELS,
   platformLabel,
   primaryAction,
   searchLoaded,
   selectionCsv,
+  SORT_OPTIONS,
+  sortLabel,
   STATUS_LABELS,
   STATUSES,
 } from './opportunityModel'
@@ -164,14 +171,13 @@ function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; c
             ))}
           </select>
         </label>
+        </>}
         <label className="pill-select">
-          <span>Sort</span>
-          <select value={filters.sort} onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as OpportunityFilters['sort'] }))}>
-            <option value="score">Match, high to low</option>
-            <option value="recent">Recently updated</option>
+          <span>Order</span>
+          <select value={filters.sort} onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as OpportunitySort }))}>
+            {SORT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
-        </>}
         <div className="grow" />
         <input
           className="toolbar-search"
@@ -219,7 +225,9 @@ function OpportunityTable({
   search: string
   onClearFilters: () => void
 }) {
-  const { advanced } = useShell()
+  const { advanced, workspace } = useShell()
+  const sales = workspace === 'sales'
+  const [drafting, setDrafting] = useState(false)
   const first = useApi<OpportunityPage>(opportunitiesPath(campaignId, filters, 0))
   const [more, setMore] = useState<OpportunitySummary[]>([])
   const [fetchedMore, setFetchedMore] = useState(0)
@@ -338,6 +346,26 @@ function OpportunityTable({
         {announcement}
       </span>
       {actionError && <ErrorNotice error={actionError} />}
+      {!advanced && (
+        <>
+          <p className="muted-small" aria-live="polite">
+            {total} {sales ? (total === 1 ? 'company' : 'companies') : (total === 1 ? 'job' : 'jobs')} · {counts.qualified} qualified{loaded.length < total ? ` · showing ${items.length}` : ''}
+            {search && ` · ${items.length} match “${search.trim()}”`}
+          </p>
+          {drafting && <BulkDraftCard ids={chosen.map((o) => o.id)} noun={sales ? 'leads' : 'jobs'} onCancel={() => setDrafting(false)} />}
+          <LeadCardList items={items} selected={selected} onToggle={toggle} busy={busy} onStatus={(o, to) => void setStatus(o, to)} label={sales ? 'Leads' : 'Jobs'} />
+          {loaded.length < total && (
+            <div className="row"><button type="button" className="btn btn-secondary" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>
+          )}
+          <BulkBar count={chosen.length} noun={sales ? { one: 'lead', many: 'leads' } : { one: 'job', many: 'jobs' }} onClear={() => { setSelected(new Set()); setDrafting(false) }}>
+            <button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => setDrafting(true)}>Draft messages</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Shortlisted')}>Approve</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Dismissed')}>Skip</button>
+          </BulkBar>
+        </>
+      )}
+      {advanced && (
+        <>
       {chosen.length > 0 && (
         <div className="selection-bar">
           <strong>{chosen.length} selected</strong>
@@ -370,7 +398,7 @@ function OpportunityTable({
         <div className="table-scroll" role="region" aria-labelledby="opp-heading" tabIndex={0}>
           <table className="table opp-table">
             <caption className="sr-only">
-              Opportunities sorted by {filters.sort === 'score' ? 'fit score' : 'most recently updated'}. Showing {items.length} of {total}.
+              Opportunities ordered: {sortLabel(filters.sort).toLowerCase()}. Showing {items.length} of {total}.
             </caption>
             <thead>
               <tr>
@@ -382,7 +410,7 @@ function OpportunityTable({
                     onChange={() => setSelected(allShown ? new Set() : new Set(items.map((o) => o.id)))}
                   />
                 </th>
-                <th scope="col">Opportunity</th>
+                <th scope="col" aria-sort={filters.sort === 'found' ? 'descending' : filters.sort === 'oldest' ? 'ascending' : undefined}>Opportunity</th>
                 {advanced && <th scope="col">Mode</th>}
                 <th scope="col" data-coach="opps-match" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
                   Match
@@ -412,6 +440,7 @@ function OpportunityTable({
                     <td className="table-role">
                       <Link to={`/opportunities/${o.id}`}>{o.title}</Link>
                       <div className="muted-small">{[o.organization, o.location].filter(Boolean).join(' · ')}</div>
+                      {foundLabel(o.foundAt) && <div className="muted-small found-at"><time dateTime={o.foundAt}>{foundLabel(o.foundAt)}</time></div>}
                       {o.outcomeReason && excluded && <div className="muted-small clamp-2">{o.outcomeReason}</div>}
                     </td>
                     {advanced && <td>
@@ -460,7 +489,7 @@ function OpportunityTable({
                         </Link>
                       ) : next.label === 'Open posting' && (o.applyUrl || o.url) ? (
                         <a href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">
-                          Open posting
+                          {applyLabel(o.platform)}
                           <span className="sr-only"> for {o.title} (opens in a new tab)</span>
                         </a>
                       ) : (
@@ -487,6 +516,8 @@ function OpportunityTable({
           )}
         </footer>
       </section>
+        </>
+      )}
       {moreError && <ErrorNotice error={moreError} onRetry={() => void loadMore()} />}
     </div>
   )

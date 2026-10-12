@@ -52,6 +52,9 @@ export const PLATFORM_LABELS: Record<JobPlatform, string> = {
   Seek: 'SEEK',
   Remotive: 'Remotive',
   RemoteOk: 'Remote OK',
+  Arbeitnow: 'Arbeitnow',
+  Jobicy: 'Jobicy',
+  WeWorkRemotely: 'We Work Remotely',
   Other: 'Other',
 }
 
@@ -116,7 +119,27 @@ export function factLabel(fact: Pick<OpportunityFact, 'evidenceId' | 'isInferenc
 export interface OpportunityFilters {
   outcome: FilterOutcome | ''
   status: OpportunityStatus | ''
-  sort: 'score' | 'recent'
+  sort: OpportunitySort
+}
+
+export type OpportunitySort = 'score' | 'found' | 'oldest' | 'recent'
+
+export const SORT_OPTIONS: { value: OpportunitySort; label: string }[] = [
+  { value: 'score', label: 'Best match first' },
+  { value: 'found', label: 'Newest found first' },
+  { value: 'oldest', label: 'Oldest found first' },
+  { value: 'recent', label: 'Recently updated' },
+]
+
+export function sortLabel(sort: OpportunitySort): string {
+  return SORT_OPTIONS.find((s) => s.value === sort)?.label ?? 'Best match first'
+}
+
+/** "Found Oct 12, 5:28 PM" — the same wording in cards and the table so the order of discovery is always readable. */
+export function foundLabel(foundAt: string | undefined, locale?: string): string | null {
+  const t = foundAt ? Date.parse(foundAt) : NaN
+  if (!Number.isFinite(t)) return null
+  return `Found ${new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(t))}`
 }
 
 export const DEFAULT_FILTERS: OpportunityFilters = { outcome: '', status: '', sort: 'score' }
@@ -242,6 +265,11 @@ export function nextPermittedAction(o: Pick<OpportunitySummary, 'status' | 'outc
     case 'Closed': return 'Closed. No further action.'
     default: return 'Review the evidence.'
   }
+}
+
+/** "Apply on LinkedIn" names where the click goes; boards without a known name say "the site". */
+export function applyLabel(platform: JobPlatform | null | undefined): string {
+  return `Apply on ${platformLabel(platform) ?? 'the site'}`
 }
 
 /** One clear next step per row (design): approve, review, open the posting, or restore. */

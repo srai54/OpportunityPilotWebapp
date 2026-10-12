@@ -12,6 +12,7 @@ import { useApi } from '../../lib/useApi'
 import { safeHref } from '../opportunities/opportunityModel'
 import { useShell } from '../shell/ShellContext'
 import { TrendsPanel } from '../trends/TrendsPage'
+import { AllSitesPanel } from './AllSitesPanel'
 import { BoardSearchPanel } from './BoardSearchPanel'
 import type { JobBoard } from './boardModel'
 
@@ -24,7 +25,7 @@ export function WellfoundPage() {
   const { workspace, advanced } = useShell()
   const ws = workspace === 'sales' ? 'Sales' : 'Candidate'
   const [params] = useSearchParams()
-  const [provider, setProvider] = useState<'wellfound' | 'trends' | JobBoard>(params.get('tab') === 'trends' ? 'trends' : 'wellfound')
+  const [provider, setProvider] = useState<'all' | 'wellfound' | 'trends' | JobBoard>(params.get('tab') === 'trends' ? 'trends' : params.get('tab') === 'wellfound' ? 'wellfound' : 'all')
   const [keyword, setKeyword] = useState('')
   const [company, setCompany] = useState('')
   const [location, setLocation] = useState('')
@@ -118,6 +119,7 @@ export function WellfoundPage() {
   }
 
   const tabs = <div className="segmented" role="group" aria-label="Job source" data-coach="find-tabs">
+    <button type="button" className={provider === 'all' ? 'active' : ''} aria-pressed={provider === 'all'} onClick={() => setProvider('all')}>All sites</button>
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
     {(['Indeed', 'LinkedIn', 'Seek'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
     <button type="button" className={provider === 'trends' ? 'active' : ''} aria-pressed={provider === 'trends'} onClick={() => setProvider('trends')}>Trends</button>
@@ -126,10 +128,10 @@ export function WellfoundPage() {
 
   return <div className="page page-wide stack-4">
     <PageHeader title={workspace === 'sales' ? 'Find companies' : 'Find jobs'} subtitle={workspace === 'sales'
-      ? 'See which companies are hiring right now — live hiring signals from Wellfound, Indeed, LinkedIn and SEEK.'
-      : 'Live jobs from Wellfound, Indeed, LinkedIn and SEEK, each linked to the original posting.'} />
+      ? 'See which companies are hiring right now. One search covers every site we can read, with live hiring signals.'
+      : 'One search over every site we can read, each job linked to its original posting.'} />
 
-    {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
+    {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
     <RoleList />
     <form className="search-hero" aria-label="Search Wellfound" onSubmit={(e) => e.preventDefault()}>

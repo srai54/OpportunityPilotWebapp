@@ -3,6 +3,8 @@ import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type
 import { useShell } from '../shell/ShellContext'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Card, CardList, MessageCard } from '../../components/cards'
+import { parseQueue, queuePath } from '../opportunities/bulkDraft'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -29,7 +31,8 @@ export function OutreachPage() {
   const [error, setError] = useState<Error>()
   const [notice, setNotice] = useState('')
   const [sendTick, setSendTick] = useState(0)
-  const { advanced } = useShell()
+  const { advanced, workspace } = useShell()
+  const sales = workspace === 'sales'
   const [adv, setAdv] = useState(advanced)
 
   const items = drafts.data?.items ?? []
@@ -117,15 +120,34 @@ export function OutreachPage() {
       const dirty = body !== row.body || recipient !== (row.recipient ?? '') || subject !== (row.subject ?? '')
       if (dirty) row = await api<OutreachDraft>(`/api/v1/drafts/${row.id}`, { method: 'PUT', body: JSON.stringify({ recipient: recipient || null, subject: subject || null, body, expectedVersion: row.version }) })
       if (row.state === 'Draft') row = await api<OutreachDraft>(`/api/v1/drafts/${row.id}/approve`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
-      await api(`/api/v1/executions/drafts/${row.id}`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
+      const started = await api<{ state: string; reused: boolean }>(`/api/v1/executions/drafts/${row.id}`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
+      if (started.reused && started.state === 'Succeeded') {
+        // Exactly these words were already sent: the app will not record a duplicate send. Change something to send another.
+        tab?.close()
+        setNotice('This exact message was already sent. Change a few words (or the recipient) to send another one.')
+        setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? ''); drafts.reload()
+        return
+      }
       if (target.copy) await navigator.clipboard.writeText(row.body).catch(() => undefined)
       if (target.kind === 'mailto' && target.url) window.location.href = target.url
       else if (tab && target.url) tab.location.href = target.url
       else tab?.close()
-      setNotice(`${target.label}. Send it there, then paste a receipt below and click "I sent it".`)
+      setNotice(`${target.label}. Press Send there, then come back and click "I pressed Send".`)
       setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? ''); setSendTick((n) => n + 1); drafts.reload()
     } catch (e) { tab?.close(); setError(e as Error) }
     finally { setWorking(false) }
+  }
+
+  /** A sent message cannot change, so "edit and send again" reopens it as a new editable version (the earlier send stays on record). */
+  async function resendAsNew() {
+    if (!selected) return
+    setWorking(true); setError(undefined); setNotice('')
+    try {
+      const copy = await api<OutreachDraft>(`/api/v1/drafts/${selected.id}/reopen`, { method: 'POST' })
+      drafts.reload()
+      setSelected(copy); setBody(copy.body); setRecipient(copy.recipient ?? ''); setSubject(copy.subject ?? ''); setTried(false)
+      setNotice('Ready to edit. Change what you need, then Approve & send. The earlier send stays on record.')
+    } catch (e) { setError(e as Error) } finally { setWorking(false) }
   }
 
   async function copyDraft() {
@@ -140,60 +162,132 @@ export function OutreachPage() {
     } catch (e) { setError(e as Error) }
   }
 
+  // Send queue: ?queue=id1,id2,… steps through several drafts, one at a time.
+  const queueIds = parseQueue(params.get('queue')).filter((id) => items.some((d) => d.id === id) || !drafts.data)
+  const position = selected ? queueIds.indexOf(selected.id) : -1
+  const inQueue = position >= 0
+  const goTo = (id: string | undefined) => { if (id) void open({ id }) }
+  const nextInQueue = () => goTo(queueIds[position + 1])
+  const readyToSend = items.filter((d) => d.state === 'Draft' || d.state === 'Approved')
+  const stateOf = (st: DraftState) => ({ text: st === 'Draft' ? 'To send' : st, tone: st === 'Sent' ? 'success' : st === 'Approved' ? 'primary' : 'warning' })
+  const appLabel = MAIL_APPS.find((m) => m.value === mailApp)?.label.split(' —')[0]
+
   return <div className="page page-wide stack-4">
-    <PageHeader title="Outreach" subtitle="Review every message, edit it safely, and approve the exact version you intend to use." />
+    <PageHeader title="Outreach" subtitle="Review a message, send it from your own mail, and we keep track. Nothing leaves without your OK." />
     {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
     {error && (loadError
       ? <ErrorNotice error={error} onRetry={() => { setError(undefined); setLoadError(false) }} what="the draft" />
       : <ErrorNotice error={error} />)}
     {drafts.error && <ErrorNotice error={drafts.error} onRetry={drafts.reload} what="outreach drafts" />}
     {drafts.loading && !drafts.data && <LoadingState label="Loading outreach drafts…" waking={drafts.waking} rows={4} />}
-    {drafts.data?.items.length === 0 && <EmptyState title="No outreach drafts yet"><p>Open an opportunity and create a cover note, email, LinkedIn message, or contact-form draft.</p><Link className="btn btn-primary" to="/opportunities">Browse opportunities</Link></EmptyState>}
-    {drafts.data && drafts.data.items.length > 0 && <div className="outreach-grid">
-      <section className="panel"><header className="panel-head"><h2 className="eyebrow">Draft inbox</h2><span className="grow" /><span className="muted-small">{filtered.length} shown · {drafts.data.total} total</span></header>
-        <div className="panel-body"><button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Advanced: filters, batch approve'}</button></div>
-        {adv && (
-        <div className="panel-body filters outreach-filters">
-          <label className="field"><span>Channel</span><select value={channel} onChange={(event) => setChannel(event.target.value as DraftChannel | '')}><option value="">All channels</option><option value="Email">Email</option><option value="CoverNote">Cover note</option><option value="LinkedInMessage">LinkedIn</option><option value="ContactForm">Contact form</option></select></label>
-          <label className="field"><span>State</span><select value={state} onChange={(event) => setState(event.target.value as DraftState | '')}><option value="">All states</option><option value="Draft">Draft</option><option value="Approved">Approved</option><option value="Sent">Sent</option></select></label>
-          <label className="field"><span>Campaign</span><select value={campaignId} onChange={(event) => setCampaignId(event.target.value)}><option value="">All campaigns</option>{campaigns.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
-          <div className="row wrap outreach-batch"><button className="btn btn-secondary btn-sm" type="button" disabled={eligible.length === 0} onClick={() => setChecked(eligible.map((item) => item.id))}>Select {eligible.length} eligible</button><button className="btn btn-primary btn-sm" type="button" disabled={working || checked.length === 0} onClick={approveSelected}>Approve selected ({checked.length})</button></div>
+    {drafts.data?.items.length === 0 && <EmptyState title="No messages yet" actions={<Link className="btn btn-primary" to="/opportunities">Choose who to contact</Link>}><p>Select one or several leads and press Draft messages, or open one and press Reach out.</p></EmptyState>}
+
+    {drafts.data && drafts.data.items.length > 0 && <>
+      {inQueue ? (
+        <Card tone="signature" coach="out-queue" title={`Send queue · message ${position + 1} of ${queueIds.length}`}
+          subtitle="Fix the recipient, approve and send, press Send in your mail, then it moves to the next one."
+          actions={<>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={position === 0} onClick={() => goTo(queueIds[position - 1])}>← Back</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={position >= queueIds.length - 1} onClick={nextInQueue}>Skip →</button>
+            <Link className="btn btn-ghost btn-sm" to="/outreach">Leave queue</Link>
+          </>}>
+          <div className="queue-dots" role="img" aria-label={`Message ${position + 1} of ${queueIds.length}`}>
+            {queueIds.map((id, i) => <i key={id} className={i < position ? 'is-done' : i === position ? 'is-now' : ''} />)}
+          </div>
+        </Card>
+      ) : readyToSend.length >= 2 && (
+        <Card tone="signature" title={`${readyToSend.length} messages are ready to send`} subtitle="Step through them one by one: check, send, next."
+          actions={<Link className="btn btn-primary" to={queuePath(readyToSend.map((d) => d.id))}>Start send queue</Link>} />
+      )}
+
+      <div className="outreach-cards">
+        <section className="stack-3" aria-label="Messages">
+          <div className="row wrap">
+            <h2 className="eyebrow">Messages · {filtered.length}</h2>
+            <span className="grow" />
+            <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide filters' : 'Filters & bulk approve'}</button>
+          </div>
+          {adv && (
+            <Card tone="muted">
+              <div className="filters outreach-filters">
+                <label className="field"><span>Channel</span><select value={channel} onChange={(event) => setChannel(event.target.value as DraftChannel | '')}><option value="">All channels</option><option value="Email">Email</option><option value="CoverNote">Cover note</option><option value="LinkedInMessage">LinkedIn</option><option value="ContactForm">Contact form</option></select></label>
+                <label className="field"><span>State</span><select value={state} onChange={(event) => setState(event.target.value as DraftState | '')}><option value="">All states</option><option value="Draft">To send</option><option value="Approved">Approved</option><option value="Sent">Sent</option></select></label>
+                <label className="field"><span>Campaign</span><select value={campaignId} onChange={(event) => setCampaignId(event.target.value)}><option value="">All campaigns</option>{campaigns.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
+                <div className="row wrap outreach-batch"><button className="btn btn-secondary btn-sm" type="button" disabled={eligible.length === 0} onClick={() => setChecked(eligible.map((item) => item.id))}>Select {eligible.length} to send</button><button className="btn btn-primary btn-sm" type="button" disabled={working || checked.length === 0} onClick={approveSelected}>Approve selected ({checked.length})</button></div>
+              </div>
+            </Card>
+          )}
+          {filtered.length === 0 ? <p className="muted">No messages match these filters.</p> : (
+            <CardList label="Messages">
+              {filtered.map((item) => (
+                <MessageCard
+                  key={item.id}
+                  company={item.organization || item.opportunityTitle}
+                  title={item.opportunityTitle}
+                  channel={item.channel === 'LinkedInMessage' ? 'LinkedIn' : item.channel === 'CoverNote' ? 'Cover note' : item.channel === 'ContactForm' ? 'Contact form' : item.channel}
+                  recipient={item.recipient}
+                  state={stateOf(item.state)}
+                  open={selected?.id === item.id}
+                  onOpen={() => void open(item)}
+                  position={queueIds.includes(item.id) ? `${queueIds.indexOf(item.id) + 1} of ${queueIds.length}` : undefined}
+                  checked={checked.includes(item.id)}
+                  onCheck={adv && item.state === 'Draft' ? () => toggle(item.id) : undefined}
+                  checkLabel={`Select ${item.opportunityTitle} version ${item.version}`}
+                />
+              ))}
+            </CardList>
+          )}
+        </section>
+
+        <div className="stack-3">
+          {!selected ? <Card tone="muted"><p className="muted">Choose a message to review it.</p></Card> : <>
+            <Card
+              title={selected.channel === 'LinkedInMessage' ? 'LinkedIn note' : selected.channel === 'Email' ? 'Email' : selected.channel === 'CoverNote' ? 'Cover note' : 'Contact form message'}
+              subtitle={<><Badge tone={selected.state === 'Sent' ? 'success' : selected.state === 'Approved' ? 'primary' : 'warning'}>{selected.state === 'Draft' ? 'To send' : selected.state} · v{selected.version}</Badge> <Link to={`/opportunities/${selected.opportunityId}`}>Open {sales ? 'lead' : 'job'}</Link></>}
+            >
+              <label className="field"><span>To</span><input id="out-recipient" readOnly={selected.state === 'Sent'} value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'Typed by you · not verified.'}</small></label>
+              {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" readOnly={selected.state === 'Sent'} value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
+              <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={12} readOnly={selected.state === 'Sent'} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+              {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">
+                {checks.map((c) => <li key={c.label}>{c.ok
+                  ? <span className="ready-chip is-ok"><span aria-hidden="true">✓</span> {c.label}</span>
+                  : <button type="button" className="ready-chip is-todo" onClick={() => { setTried(true); document.getElementById(`out-${c.field}`)?.focus() }} title={c.fix}><span aria-hidden="true">○</span> {c.label}<span className="sr-only"> — {c.fix}</span></button>}</li>)}
+              </ul>}
+              {tried && checks.filter((c) => !c.ok).map((c) => <p key={c.label} className="field-error">{c.fix}</p>)}
+              {selected.channel === 'LinkedInMessage' && <p className={`muted-small${body.length > 300 ? ' text-danger' : ''}`}>
+                {body.length}/300 characters — a LinkedIn connection note is short{body.length > 300 ? ' (LinkedIn will cut it)' : ''}. After they accept, <Link to={`/opportunities/${selected.opportunityId}`}>create the follow-up email</Link> and send it the same way.
+              </p>}
+              {advanced && selected.state !== 'Sent' && selected.sendBlockers.length > 0 && <ul className="hint-list">{selected.sendBlockers.map((x) => <li key={x}>{x}</li>)}</ul>}
+            </Card>
+
+            {selected.state === 'Sent' ? (
+              <Card tone="signature" coach="out-resend" title="Sent" subtitle="This message is recorded as sent, so it is locked. To correct it or follow up, edit it and send again; the first send stays on record."
+                footer={<>
+                  <button className="btn btn-primary" type="button" disabled={working} onClick={() => void resendAsNew()}>{working ? 'Reopening…' : 'Edit & send again'}</button>
+                  <Link className="btn btn-ghost" to="/follow-ups">See my follow-up reminder</Link>
+                  {inQueue && position < queueIds.length - 1 && <button type="button" className="btn btn-secondary" onClick={nextInQueue}>Next message →</button>}
+                </>}>
+                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={appLabel} onChange={() => { drafts.reload() }} />
+              </Card>
+            ) : (
+              <Card tone="signature" title={selected.state === 'Approved' ? 'Ready: send it' : 'Send it'} coach="out-send-card">
+                {selected.channel === 'Email' && <label className="field" data-coach="out-mailapp"><span>Open email in</span>
+                  <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
+                  <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
+                <div className="row wrap">
+                  {selected.state === 'Draft' && <button className="btn btn-primary btn-lg" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>{working ? 'Opening…' : 'Approve & send →'}</button>}
+                  <button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save</button>
+                  {selected.state === 'Approved' ? <button className="btn btn-ghost" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-ghost" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve only</button>}
+                  <button className="btn btn-ghost" type="button" disabled={working} onClick={copyDraft}>Copy text</button>
+                </div>
+                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={appLabel}
+                  onChange={() => { drafts.reload(); void open(selected) }}
+                  onSent={() => { if (inQueue && position < queueIds.length - 1) setTimeout(nextInQueue, 600) }} />
+              </Card>
+            )}
+          </>}
         </div>
-        )}
-        {filtered.length === 0 ? <div className="panel-body muted">No drafts match these filters.</div> : <ul className="inbox-list">{filtered.map((item) => <li className="inbox-row" key={item.id}>
-{adv &&           <label className="inbox-check"><input type="checkbox" checked={checked.includes(item.id)} disabled={item.state !== 'Draft'} onChange={() => toggle(item.id)} /><span className="sr-only">Select {item.opportunityTitle} version {item.version}</span></label>}
-          <button type="button" className={selected?.id === item.id ? 'inbox-item is-selected' : 'inbox-item'} onClick={() => open(item)}>
-            <span><strong>{item.opportunityTitle}</strong><small>{item.organization || 'Unknown organisation'} · {item.campaignName} · {item.channel}</small>{item.recipient && <small>{item.recipientVerified ? 'Verified recipient' : 'Unverified recipient'}</small>}</span>
-            <Badge tone={item.state === 'Sent' ? 'success' : item.state === 'Approved' ? 'primary' : 'warning'}>{item.state}</Badge>
-          </button>
-        </li>)}</ul>}
-      </section>
-      <section className="panel"><header className="panel-head"><h2 className="eyebrow">Editor</h2></header>
-        {!selected ? <div className="panel-body muted">Select a draft to review it.</div> : <div className="panel-body stack-3">
-          <div className="row wrap"><Badge>{selected.channel}</Badge><Badge tone={selected.state === 'Approved' ? 'success' : 'warning'}>{selected.state} · v{selected.version}</Badge><Link to={`/opportunities/${selected.opportunityId}`}>Open opportunity</Link></div>
-          <label className="field"><span>Recipient</span><input id="out-recipient" value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
-          {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
-          <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={14} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
-          {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">
-            {checks.map((c) => <li key={c.label}>{c.ok
-              ? <span className="ready-chip is-ok"><span aria-hidden="true">✓</span> {c.label}</span>
-              : <button type="button" className="ready-chip is-todo" onClick={() => { setTried(true); document.getElementById(`out-${c.field}`)?.focus() }} title={c.fix}><span aria-hidden="true">○</span> {c.label}<span className="sr-only"> — {c.fix}</span></button>}</li>)}
-          </ul>}
-          {tried && checks.filter((c) => !c.ok).map((c) => <p key={c.label} className="field-error">{c.fix}</p>)}
-          {selected.channel === 'LinkedInMessage' && <p className={`muted-small${body.length > 300 ? ' text-danger' : ''}`}>
-            {body.length}/300 characters — a LinkedIn connection note is short{body.length > 300 ? ' (LinkedIn will cut it)' : ''}. After they accept, <Link to={`/opportunities/${selected.opportunityId}`}>create the follow-up email</Link> and send it the same way.
-          </p>}
-          {advanced && selected.state !== 'Sent' && selected.sendBlockers.length > 0 && <ul className="hint-list">{selected.sendBlockers.map((x) => <li key={x}>{x}</li>)}</ul>}
-          {selected.channel === 'Email' && selected.state !== 'Sent' && <label className="field" data-coach="out-mailapp"><span>Open email in</span>
-            <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
-            <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
-          <div className="row wrap"><button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save new version</button>
-            {selected.state === 'Sent' ? null : selected.state === 'Approved' ? <button className="btn btn-secondary" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-primary" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve version {selected.version}</button>}
-            {selected.state === 'Draft' && <button className="btn btn-primary" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>Approve &amp; send →</button>}
-            <button className="btn btn-secondary" type="button" disabled={working} onClick={copyDraft}>Copy text</button></div>
-          <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} onChange={() => { drafts.reload(); void open(selected) }} />
-        </div>}
-      </section>
-    </div>}
+      </div>
+    </>}
   </div>
 }

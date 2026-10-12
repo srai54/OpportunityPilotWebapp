@@ -15,6 +15,8 @@ export type BoardJob = {
   salaryPeriod: string | null
   postedAt: string | null
   snippet: string | null
+  /** The posting's text, when the source gives it (the free feeds do); used for filters such as visa and relocation. */
+  description?: string | null
 }
 
 export type BoardSearchResult = {

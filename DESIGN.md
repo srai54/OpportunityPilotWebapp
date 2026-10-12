@@ -1,4 +1,4 @@
-# DESIGN.md — OpportunityPilot design rules
+# DESIGN.md — OpportunityPilot design rules (v3: card-first)
 
 **Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/UI_REVAMP_PLAN.md` and `docs/WORKFLOW_GUIDE_PLAN.md`.
 
@@ -18,7 +18,18 @@
 | Zapier | Numbered workflow steps as the main metaphor (journey bar, Getting started) | Orange brand colour |
 | Intercom | Soft white tiles on a tinted canvas, human one-sentence guidance | Illustration-heavy layouts |
 | Cal.com | Whitespace, one clear primary button, friendly type | — |
+| Intercom / Zapier / Cal.com (card chrome) | Floating white tiles on a warm canvas, 12–16px corners, hairline border plus a very soft shadow, one tinted "signature" card for the thing to do now | Marketing-scale type, pill-rounded cards |
 | Linear / Clay / Airtable | — | Dark-first marketing look, illustration, long editorial scroll: wrong density for a task app |
+
+**Skill libraries reviewed (open source, read as text only, nothing installed or run), 2026-10-12:**
+
+| Repo | Used? | Why |
+|---|---|---|
+| `jakubkrehel/skills` (better-ui, better-layout, better-writing, better-accessibility) | **Yes** | Exact radius, press, layout-grouping and writing rules that match this app (sections 14–15) |
+| `emilkowalski/skills` (emil-design-eng, break-ui) | **Yes** | Concrete motion values and a worst-case-data checklist (sections 14, 16) |
+| `Owl-Listener/designer-skills` (interaction-design: onboarding, forms, error flows, state mapping) | **As a checklist** | Same goals as our journey and forms; used when designing a new flow, not copied |
+| `codeswithroh/tastemaker` | **Partly** | The "anti-slop" list (no `transition: all`, no `ease-in`, no `scale(0)`, no layout-property animation, always reduced motion) is adopted in section 14 |
+| `MengTo/Skills`, `elayadesign/ai-design-skills`, `ConardLi/garden-skills` | No | Landing pages, games, illustration, prompt libraries, video/article tools: not a task app |
 
 New inspiration is allowed only if it is recorded here with what is borrowed and rejected. Library sources: getdesign.md, github.com/VoltAgent/awesome-design-md, designmd.ai.
 
@@ -26,7 +37,7 @@ New inspiration is allowed only if it is recorded here with what is borrowed and
 
 | Role | Token | Notes |
 |---|---|---|
-| Page / card / header band | `--op-bg` / `--op-surface` / `--op-panel-head` | Cards are white on the warm page; hairline border, no shadow |
+| Page / card / header band | `--op-bg` / `--op-surface` / `--op-panel-head` | Cards are white on the warm page: hairline border + `--op-shadow-card` (very soft). Popovers and tips use `--op-shadow-popover` |
 | Text | `--op-ink` (body), `--op-muted` (secondary), `--op-faint` | `--op-faint` (3.7:1) is for axis ticks and eyebrow labels **only** |
 | Action | `--op-primary` `#006dd0`, hover `--op-primary-hover`, tint `--op-primary-tint` | White on primary and primary on page both pass 4.5:1. On a grey hover row use `--op-primary-hover` |
 | Status | `*-tint` + `--op-on-*-tint` for green / amber / danger / indigo / teal / neutral | Always with words |
@@ -54,7 +65,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 ## 5. Layout, spacing, shape
 
 - Spacing scale 4/8 (`--op-space-1…6`). No other spacing values.
-- Radius: cards 12 (`--op-radius`), controls 8, chips 6, pills 999.
+- Radius: cards 16 (`--op-radius-card`), panels/popovers 12 (`--op-radius`), controls 8, chips 6, pills 999.
 - Simple mode: one centred column, max 1040px, no sidebar. Advanced: sidebar (236px; collapses to 60px; drawer under 860px) and wide pages (≤ 1320px).
 - Breakpoints: 1080 (grids collapse), 860 (drawer / one column), 640 (compact top bar, bottom-sheet tips), 375 must have no horizontal scroll.
 - Touch target ≥ 44px on phones; row height 36px in tables.
@@ -115,3 +126,63 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 3. Opened in Edge: 1280 and 375, light and dark; axe 0; no horizontal overflow; no console errors.
 4. Unit tests for any new pure logic (`*Model.ts`).
 5. New pattern → recorded in this file.
+6. Simple view: lists are cards (section 13), not tables.
+7. Motion, layout and writing follow sections 14–15; the break test in section 16 was run.
+
+## 13. Card system (v3) — mandatory in the simple view
+
+**Rule: in the simple view, every list of things is a list of cards, never a table. Tables stay in Advanced.** One idea per card, one primary action per card, everything the person needs to decide is on the card itself.
+
+| Card | Used for | Contents |
+|---|---|---|
+| `Card` | Any grouped content | Optional icon + title, one-line subtitle, body, footer actions. 16px radius, 20–24px padding |
+| `StepCard` | Getting started, the path | Number or tick, title, one sentence, one button. The current step is the tinted **signature card** (`--op-primary-tint`); done steps are muted with a tick |
+| `LeadCard` (jobs and companies) | Review, approved list, Find results | Select box · initial avatar · title · company · place · source chips (Remote, pay, new) · **match ring** (score out of 100, with the word "match") · status badge · primary action (Approve / Open / Reach out) |
+| `MessageCard` | Outreach inbox | Company · channel icon · subject line · state badge (Draft / Approved / Sent) · first line of the text |
+| `FollowUpCard` | Follow-ups | Company · what to do · due label · Open / Done |
+| `StatCard` | Key figures | Label, figure, change, sparkline |
+| `ComposeCard` / `SendCard` | Outreach | Compose = fields + the "Before you send" chips. Send = mail app choice + the one big button + the receipt |
+
+Layout: cards sit in a `CardList` (single column, 12px gap) or a `CardGrid` (auto-fill, min 300px, 16px gap). A page is a short stack of cards under the page header; the **signature card** (what to do now) is always first.
+
+Selection and bulk: any card list that can be acted on in bulk shows a select box on each card and a **bulk bar** (sticky at the bottom) once one or more are chosen: "3 selected · Draft messages · Approve · Clear". Bulk never sends anything by itself; sending is always a visible, per-message step or a queue the person steps through.
+
+Interaction: an interactive card lifts 1px and deepens its shadow on hover; the whole card is clickable only when it has a single destination (a link inside the card, stretched); otherwise its buttons are the click targets. Focus ring on the card or its link. Never nest a link inside a clickable card.
+
+Tokens: `--op-radius-card` 16px, `--op-shadow-card`, `--op-shadow-card-hover`, `--op-canvas` (warm page). Dark theme re-declares them (no theme branching in components).
+
+Accessibility: a card list is a `<ul>`; each card an `<li>` with a heading (`h3`) or an `aria-label`; the match ring has the number as text; status is a word plus colour; bulk bar is a `role="region"` with a live count.
+
+## 14. Motion and interaction polish (from emilkowalski/skills and jakubkrehel/skills)
+
+- **Easing:** exits and entrances use ease-out `cubic-bezier(0.23, 1, 0.32, 1)` (`--op-ease-out`); things already on screen use ease-in-out `cubic-bezier(0.77, 0, 0.175, 1)`. **Never ease-in** for UI.
+- **Durations:** press feedback 100–160 ms; tooltips and small popovers 125–200 ms; dropdowns 150–250 ms; dialogs and drawers 200–500 ms. Any UI animation over 300 ms is cut to 150–250 ms. Exits are faster than entrances.
+- **Frequency:** things used many times a day (typing, table rows, keyboard-driven actions) are not animated at all.
+- **Press:** `:active` scales to **0.97** (range 0.95–0.98) with `transform 160ms ease-out`. Disabled controls never scale.
+- **Entrances:** never from `scale(0)`; start at `scale(0.95)` and `opacity: 0`. Staggers are 30–80 ms apart and never block interaction.
+- **Animate only `transform` and `opacity`.** Name transition properties explicitly: **never `transition: all`**; never animate layout properties.
+- **Hover** styles are wrapped in `@media (hover: hover) and (pointer: fine)` so phones do not get sticky hover.
+- **Reduced motion:** under `prefers-reduced-motion: reduce` keep opacity and colour changes, remove movement and scale.
+- **Overlays** (menus, drawers, dialogs, the coach tip): `overscroll-behavior: contain`.
+- **Nested rounding:** outer radius = inner radius + padding (+ border). Past 24 px padding use separate radius tokens.
+- **Rings and outlines:** a `box-shadow: 0 0 0 1px` ring also needs `border: 1px solid transparent` so it survives forced-colours mode. Icons use `currentColor` only.
+- **Theme switch:** transitions are disabled for the frame of the switch.
+
+## 15. Layout and writing details (from jakubkrehel/skills)
+
+- Space between groups is **at least 2×** the space inside a group (8 px inside → 16 px+ between). Use space first, background shape second, separator line last.
+- Adjacent bordered or filled controls are **≥ 12 px** apart; borderless text/icon controls ≥ 24 px between glyphs.
+- One primary action per view; once there are more than three secondary actions, move them into a menu.
+- Visual order matches DOM order (no `order`, `row-reverse`, or grid placement tricks). Identifying content leads a row; metadata and actions trail.
+- Text containers use `max-width` and `min-height`, never fixed width/height. Grid tracks `minmax(0, 1fr)`; overflowing flex children `min-width: 0`. Use `100%` not `100vw`, and `100dvh` not `100vh` on phones.
+- Breakpoints come from content, not devices. Check 320 px, 200 % zoom and a long-string language.
+- **Buttons** start with a verb and name the object ("Send message", "Review 4 leads"). Icon-only buttons have a verb-plus-object accessible name.
+- **Toggles** are worded for the ON state ("Send read receipts"). Sentence case everywhere. One vocabulary: if the menu says "Archive", the toast says "archived".
+- **Errors** say what failed and how to fix it, next to the field; no blame, no "Oops", no exclamation marks; show known requirements before input, not only after.
+- **Empty states** say what the place is for and offer one next action; a filtered-empty names the filter and offers "Clear filters".
+- **Confirmations:** prefer **undo** for reversible actions; confirm only irreversible, affects-others or bulk-destructive ones; the title names the action and object ("Delete 'Q3 report'?"), with counts; buttons are verb + object, never Yes/No.
+- Cut filler ("successfully", routine "please"). Build sentences with placeholders and plural rules, not fragments.
+
+## 16. Break test (from emilkowalski/skills break-ui) — before any UI change is done
+
+Open the screen with: a very long name and long unbroken email; a one-letter name; missing optional fields and a failed avatar; a name that makes wrong initials (emoji first); **0, 1, and 1,000+ items**; counts of exactly 1 (plurals) and 1,284 (separators); null or zero numbers; 320 px width and 200 % zoom; dark mode. Nothing may overflow, clip, mis-pluralise or show "undefined". Also check slow network (the host sleeps up to a minute).

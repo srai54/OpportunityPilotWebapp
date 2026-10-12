@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrendPoint } from '../../lib/types'
 import {
-  axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
+  activityLine, activityVerb, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
 } from './insightsModel'
 
 const pt = (date: string, o: Partial<TrendPoint> = {}): TrendPoint => ({ date, found: 0, qualified: 0, approved: 0, reached: 0, replied: 0, sent: 0, ...o })
@@ -106,5 +106,17 @@ describe('trendSummary', () => {
   it('states the numbers and the change in words', () => {
     const s = trendSummary('sales', 14, { ...zero, found: 6, approved: 2, reached: 1 }, { ...zero, found: 2 })
     expect(s).toBe('Last 14 days: 6 companies found (up 4), 2 leads approved, 1 contacted, 0 replies.')
+  })
+})
+
+describe('activity lines', () => {
+  const item = { title: 'Backend Engineer', organization: 'Stripe', detail: 'Applied by you' }
+  it('says who did what in plain words', () => {
+    expect(activityLine({ ...item, kind: 'Approved' }, false)).toBe('You approved Backend Engineer · Stripe')
+    expect(activityLine({ ...item, kind: 'Approved' }, true)).toBe('You approved Stripe')
+    expect(activityLine({ ...item, kind: 'StatusChanged' }, false)).toBe('Updated Backend Engineer · Stripe — Applied by you')
+  })
+  it('shows an unknown kind as written', () => {
+    expect(activityVerb('Mystery')).toBe('Mystery')
   })
 })

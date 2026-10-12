@@ -53,6 +53,9 @@ export type SourceCapabilityKey =
   | 'workday'
   | 'remotive'
   | 'remoteok'
+  | 'arbeitnow'
+  | 'jobicy'
+  | 'weworkremotely'
 
 export interface Capabilities {
   environment: string
@@ -155,6 +158,9 @@ export type SourceKind =
   | 'JobSearch'
   | 'Remotive'
   | 'RemoteOk'
+  | 'Arbeitnow'
+  | 'Jobicy'
+  | 'WeWorkRemotely'
 export type SourceStatus = 'Pending' | 'Ok' | 'Failed' | 'Skipped'
 export type ResearchJobState = 'Queued' | 'Running' | 'Completed' | 'CompletedWithGaps' | 'Failed' | 'Cancelled'
 export type ResearchStage = 'Prepare' | 'Gather' | 'Extract' | 'Filter' | 'Score' | 'Complete'
@@ -187,6 +193,9 @@ export type JobPlatform =
   | 'Seek'
   | 'Remotive'
   | 'RemoteOk'
+  | 'Arbeitnow'
+  | 'Jobicy'
+  | 'WeWorkRemotely'
 export type EventLevel = 'Info' | 'Warning' | 'Error'
 export type WorkMode = 'Remote' | 'Hybrid' | 'Onsite'
 
@@ -331,6 +340,8 @@ export interface OpportunitySummary {
   status: OpportunityStatus
   gapsCount: number
   updatedAt: string
+  /** When the job or lead was first found, so the list can say which came first. */
+  foundAt: string
 }
 
 export interface OpportunityPage {
@@ -728,4 +739,14 @@ export interface AnalyticsTrend {
   points: TrendPoint[]
   current: TrendTotals
   previous: TrendTotals
+}
+
+/** One recorded action of the signed-in person (GET /api/v1/analytics/activity). */
+export interface ActivityFeedItem {
+  at: string
+  kind: string
+  detail: string
+  opportunityId: string
+  title: string
+  organization: string
 }

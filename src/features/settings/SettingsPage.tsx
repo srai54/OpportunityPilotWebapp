@@ -5,6 +5,7 @@ import { api } from '../../lib/api'
 import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
+import { MailboxesCard } from '../mail/MailboxesCard'
 import { MAIL_APPS, readMailApp, writeMailApp, type MailApp } from '../outreach/composer'
 import { useShell } from '../shell/ShellContext'
 import { WORKSPACES, type Workspace } from '../shell/shellModel'
@@ -125,6 +126,8 @@ export function SettingsPage() {
               </label>
             </div>
           </section>
+
+          <MailboxesCard />
         </div>
 
         <div className="stack-4">

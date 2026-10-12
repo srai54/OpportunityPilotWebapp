@@ -8,6 +8,7 @@ import { api } from '../../lib/api'
 import type { NextAction, Suppression } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { dueLabel } from './followUpModel'
+import { Avatar, CardList } from '../../components/cards'
 
 export function FollowUpsPage() {
   const actions = useApi<NextAction[]>('/api/v1/next-actions?state=Open')
@@ -38,7 +39,15 @@ export function FollowUpsPage() {
     <div className="panel-grid-2">
       <section className="panel" data-coach="follow-list"><header className="panel-head"><h2 className="eyebrow">Open next actions</h2></header>
         {actions.loading && !actions.data ? <div className="panel-body"><LoadingState label="Loading follow-ups…" waking={actions.waking} rows={3} /></div> : actions.data?.length === 0 ? <div className="panel-body"><EmptyState title="Nothing to follow up yet" actions={<><Link className="btn btn-primary btn-sm" to="/outreach">Go to your messages</Link><Link className="btn btn-secondary btn-sm" to="/opportunities">Review jobs</Link></>}><p>When you record a message as sent, a reminder to follow up appears here automatically.</p></EmptyState></div> :
-          <ul className="follow-list">{actions.data?.map((row) => <li key={row.id}><div className="grow stack-1"><span><strong>{row.opportunityTitle}</strong> <Badge tone={row.overdue ? 'danger' : 'neutral'}>{dueLabel(row.dueAt)}</Badge></span><span className="muted-small">{row.organization && row.organization !== row.opportunityTitle ? `${row.organization} · ` : ''}{new Date(row.dueAt).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>{row.note && <span className="muted-small">{row.note}</span>}</div><div className="row wrap"><Link className="btn btn-secondary btn-sm" to={`/opportunities/${row.opportunityId}`}>Open</Link><button className="btn btn-secondary btn-sm" type="button" onClick={() => update(row.id, 'Done')}>Done</button><button className="btn btn-ghost btn-sm" type="button" onClick={() => update(row.id, 'Cancelled')}>Cancel</button></div></li>)}</ul>}
+          <div className="panel-body"><CardList label="Follow-ups">{actions.data?.map((row) => <li key={row.id} className="ccard followup-card">
+            <Avatar name={row.organization || row.opportunityTitle} />
+            <div className="followup-main">
+              <span className="followup-title">{row.opportunityTitle} <Badge tone={row.overdue ? 'danger' : 'neutral'}>{dueLabel(row.dueAt)}</Badge></span>
+              <span className="followup-meta">{row.organization && row.organization !== row.opportunityTitle ? `${row.organization} · ` : ''}{new Date(row.dueAt).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+              {row.note && <span className="followup-note">{row.note}</span>}
+            </div>
+            <div className="followup-actions"><Link className="btn btn-primary btn-sm" to={`/opportunities/${row.opportunityId}`}>Open</Link><button className="btn btn-secondary btn-sm" type="button" onClick={() => update(row.id, 'Done')}>Done</button><button className="btn btn-ghost btn-sm" type="button" onClick={() => update(row.id, 'Cancelled')}>Cancel</button></div>
+          </li>)}</CardList></div>}
       </section>
       <section className="panel" data-coach="follow-suppress"><header className="panel-head"><h2 className="eyebrow">Do not contact</h2></header><div className="panel-body stack-3">
         <p className="muted-small">Suppressed recipients cannot have drafts approved.</p>

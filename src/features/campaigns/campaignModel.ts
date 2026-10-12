@@ -314,6 +314,9 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   JobSearch: 'Job board search (Indeed, LinkedIn, SEEK)',
   Remotive: 'Remotive remote jobs',
   RemoteOk: 'Remote OK jobs',
+  Arbeitnow: 'Arbeitnow jobs (Germany, Europe, remote)',
+  Jobicy: 'Jobicy remote jobs',
+  WeWorkRemotely: 'We Work Remotely jobs',
 }
 
 /** Open job sources the server fetches from documented public APIs. Job campaigns only. */
@@ -330,9 +333,12 @@ export type JobSourceKind = Extract<
   | 'JobSearch'
   | 'Remotive'
   | 'RemoteOk'
+  | 'Arbeitnow'
+  | 'Jobicy'
+  | 'WeWorkRemotely'
 >
 export type BoardKind = Extract<SourceKind, 'Greenhouse' | 'Lever' | 'Ashby' | 'SmartRecruiters' | 'Recruitee' | 'Workable'>
-export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk'>
+export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk' | 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely'>
 
 export const JOB_SOURCE_CAPABILITY: Record<JobSourceKind, SourceCapabilityKey> = {
   Greenhouse: 'greenhouse',
@@ -346,6 +352,9 @@ export const JOB_SOURCE_CAPABILITY: Record<JobSourceKind, SourceCapabilityKey> =
   JobSearch: 'job-boards',
   Remotive: 'remotive',
   RemoteOk: 'remoteok',
+  Arbeitnow: 'arbeitnow',
+  Jobicy: 'jobicy',
+  WeWorkRemotely: 'weworkremotely',
 }
 
 /** The source kinds a campaign of this mode may add; the API rejects the job sources for Customer campaigns. */
