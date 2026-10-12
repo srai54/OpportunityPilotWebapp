@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { ProfileConfirmNotice } from '../profiles/ProfileConfirmNotice'
+import { needsProfileConfirm } from '../profiles/profileFields'
 import { api } from '../../lib/api'
 import type { DraftChannel, NextAction, NextActionKind, OutreachDraft } from '../../lib/types'
 import { useShell } from '../shell/ShellContext'
@@ -21,6 +23,7 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
   const [message, setMessage] = useState('')
+  const [lastQuick, setLastQuick] = useState<DraftChannel>('Email')
 
   async function createDraft() {
     setBusy(true); setError(undefined)
@@ -31,6 +34,7 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
   }
   /** The simple path: one click makes the draft and opens it in Outreach, ready to edit and Approve & send. */
   async function quickDraft(kindOfDraft: DraftChannel) {
+    setLastQuick(kindOfDraft)
     setBusy(true); setError(undefined)
     try {
       const draft = await api<OutreachDraft>(`/api/v1/opportunities/${opportunityId}/drafts`, { method: 'POST', body: JSON.stringify({ channel: kindOfDraft, recipient: null }) })
@@ -46,7 +50,9 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
     } catch (e) { setError(e as Error) } finally { setBusy(false) }
   }
   return <section className="panel" aria-labelledby="outreach-actions-heading"><header className="panel-head"><h3 id="outreach-actions-heading" className="eyebrow">Reach out</h3></header><div className="panel-body stack-3">
-    {error && <ErrorNotice error={error} />}{message && <p className="notice notice-success">{message} <Link to="/outreach">Open outreach</Link></p>}
+    {error && (needsProfileConfirm(error)
+      ? <ProfileConfirmNotice opportunityId={opportunityId} onConfirmed={() => { setError(undefined); void quickDraft(lastQuick) }} />
+      : <ErrorNotice error={error} />)}{message && <p className="notice notice-success">{message} <Link to="/outreach">Open outreach</Link></p>}
     <p className="muted-small">One click writes the message and opens it for you to edit, approve and send. Nothing is sent by the app.</p>
     <div className="row wrap">
       <button className="btn btn-primary" type="button" disabled={busy} onClick={() => void quickDraft('LinkedInMessage')}>Draft LinkedIn note</button>

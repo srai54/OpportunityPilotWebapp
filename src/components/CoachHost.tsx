@@ -23,6 +23,13 @@ function place(rect: DOMRect, height: number): Spot {
   const vw = window.innerWidth
   const vh = window.innerHeight
   if (vw < 640) return { top: vh - height - 12, left: 12, placement: 'sheet', arrow: 0 }
+  // A wide target (a bar across the page) gets its tip centred underneath, not squeezed against a screen edge over the content.
+  if (rect.width > vw * 0.55) {
+    const left = Math.min(Math.max(rect.left + rect.width / 2 - WIDTH / 2, 12), vw - WIDTH - 12)
+    const below = rect.bottom + 14
+    const top = below + height < vh ? below : Math.max(rect.top - height - 14, 12)
+    return { top, left, placement: 'below', arrow: Math.min(Math.max(rect.left + rect.width / 2 - left, 18), WIDTH - 18) }
+  }
   if (rect.right + WIDTH + 24 < vw && rect.top > 8) {
     const top = Math.min(Math.max(rect.top, 12), vh - height - 12)
     return { top, left: rect.right + 14, placement: 'right', arrow: Math.min(Math.max(rect.top + rect.height / 2 - top, 18), height - 18) }

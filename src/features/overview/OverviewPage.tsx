@@ -248,6 +248,7 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
   return (
     <>
       {guided ?? <FindStrip workspace="candidate" />}
+      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
       <div className={advanced ? 'kpi-strip' : 'kpi-strip kpi-strip-4'}>
         <Kpi label="Waiting on you" value={k.awaitingApproval} sub="jobs to approve" tone={k.awaitingApproval ? 'warning' : undefined} />
         <Kpi label="Approved" value={k.shortlisted} sub={`${k.shortlistedNotApplied} not yet applied`} />
@@ -361,6 +362,7 @@ function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overvi
   return (
     <>
       {guided ?? <FindStrip workspace="sales" />}
+      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
       <div className="kpi-strip kpi-strip-5">
         <Kpi label="Companies found" value={k.found} sub={`across ${a.campaignCount} ${a.campaignCount === 1 ? 'campaign' : 'campaigns'}`} />
         <Kpi label="Qualified" value={k.qualified} sub={`${percent(k.qualifyRate)} of what was found`} />

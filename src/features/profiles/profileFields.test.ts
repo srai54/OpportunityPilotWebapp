@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness, simpleCreateFields, starterSearchTerm } from './profileFields'
+import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness, simpleCreateFields, starterSearchTerm, confirmFilledClaims, needsProfileConfirm } from './profileFields'
 
 describe('profile confirmation', () => {
   it('is not confirmed when no claims are filled in', () => {
@@ -75,5 +75,22 @@ describe('readiness', () => {
     })
     expect(r.ready).toBe(true)
     expect(r.requiredFilled).toBe(r.requiredTotal)
+  })
+})
+
+describe('confirmFilledClaims', () => {
+  it('confirms the claims that were typed and leaves empty ones alone', () => {
+    const out = confirmFilledClaims('Candidate', { fields: { offer: 'x', skills: 'C#, Azure', experience: '' }, confirmations: {} })
+    expect(out.confirmations.skills).toBe(true)
+    expect(out.confirmations.experience).toBeUndefined()
+    expect(isFullyConfirmed('Candidate', out)).toBe(true)
+  })
+})
+
+describe('needsProfileConfirm', () => {
+  it('finds the reason in a validation field error, not only in the message', () => {
+    expect(needsProfileConfirm(Object.assign(new Error('Validation failed'), { fieldErrors: { profile: ['Confirm the campaign profile before generating a cover note.'] } }))).toBe(true)
+    expect(needsProfileConfirm(new Error('Validation failed'))).toBe(false)
+    expect(needsProfileConfirm(undefined)).toBe(false)
   })
 })

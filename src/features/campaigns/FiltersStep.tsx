@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/StatusBadge'
 import { TagInput } from '../../components/TagInput'
+import { ROLES, SKILLS } from '../suggest/catalog'
 import type { CampaignCriteria, WorkMode } from '../../lib/types'
 import {
   applicableCriteria,
@@ -47,6 +48,7 @@ export function FiltersStep({ draft, setDraft, mode, fieldErrors }: Props) {
       hint={hint}
       badge={badge}
       error={fieldError(fieldErrors, key)}
+      suggestions={key === 'requiredSkills' || key === 'preferredSkills' ? SKILLS : key === 'keywords' ? ROLES : undefined}
     />
   )
 

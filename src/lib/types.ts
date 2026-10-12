@@ -717,3 +717,15 @@ export interface SalesDemoStatus {
   staffingDeals: number
   jobIds: string[]
 }
+
+/** GET /api/v1/analytics/trend — daily counts for the last N days plus the totals of the window before. */
+export interface TrendPoint { date: string; found: number; qualified: number; approved: number; reached: number; replied: number; sent: number }
+export type TrendTotals = Omit<TrendPoint, 'date'>
+export interface AnalyticsTrend {
+  workspace: AnalyticsWorkspace
+  days: number
+  generatedAt: string
+  points: TrendPoint[]
+  current: TrendTotals
+  previous: TrendTotals
+}

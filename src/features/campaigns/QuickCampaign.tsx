@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
@@ -89,6 +90,7 @@ export function QuickCampaign() {
   }
 
   return <div className="page stack-4">
+    <RoleList />
     <PageHeader title="New campaign" subtitle={wantsCandidate ? 'Tell it what to look for. It reads the jobs, scores them, and suggests the best for your approval.' : 'Tell it who to look for. It reads who is hiring, scores them, and suggests the best leads.'} />
     {profiles.error && <ErrorNotice error={profiles.error} onRetry={profiles.reload} what="your profiles" />}
     {profiles.loading && !profiles.data && <LoadingState label="Loading…" waking={profiles.waking} rows={2} />}
@@ -98,7 +100,7 @@ export function QuickCampaign() {
         : usable.length > 1 && <label className="field"><span>Profile</span><select value={chosen?.id} onChange={(e) => setProfileId(e.target.value)}>{usable.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
       <div className="search-bar" data-coach="quick-role">
         <label className="search-field search-field-main"><span className="sr-only">Role or skill</span>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={wantsCandidate ? 'Role or skill, e.g. .NET developer' : 'What they hire for, e.g. React developer'} /></label>
+          <input list={ROLE_LIST_ID} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={wantsCandidate ? 'Role or skill, e.g. .NET developer' : 'What they hire for, e.g. React developer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>

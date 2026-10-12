@@ -78,6 +78,14 @@ export const COACH_FLOWS: CoachFlow[] = [
       { target: 'follow-suppress', title: 'Someone asked you to stop?', body: 'Add them here. Messages to them can no longer be approved.' },
     ],
   },
+  {
+    id: 'insights', label: 'Insights',
+    steps: [
+      { target: 'insights-range', title: '1. Pick a time range', body: 'Everything on this page follows it: 7, 14, 30 or 90 days, always compared with the same number of days before.' },
+      { target: 'insights-trend', title: '2. Read the trend', body: 'Click a name above the chart to hide or show a line. Hover or use the arrow keys to read one day. The numbers are also in a table below.' },
+      { target: 'insights-progress', title: '3. Set a weekly goal', body: 'Your path shows how far you are. Set a goal for the week and the bar fills as you apply or send.', sales: { body: 'Your path shows how far you are. Set a goal for messages sent this week and the bar fills as you send.' } },
+    ],
+  },
 ]
 
 export const COACH_FLOW_IDS = COACH_FLOWS.map((f) => f.id)

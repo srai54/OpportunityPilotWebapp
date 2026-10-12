@@ -54,6 +54,7 @@ export function flowIdForPath(pathname: string): string | null {
   if (pathname === '/campaigns/new') return 'campaign'
   if (/^\/research\/[^/]+$/.test(pathname)) return 'run'
   if (pathname === '/follow-ups') return 'followups'
+  if (pathname === '/insights') return 'insights'
   if (pathname === '/opportunities') return 'opps'
   if (/^\/opportunities\/[^/]+$/.test(pathname)) return 'opp'
   if (pathname === '/outreach') return 'outreach'

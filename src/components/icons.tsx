@@ -25,8 +25,14 @@ export type IconName =
   | 'projects'
   | 'bids'
   | 'help'
+  | 'insights'
 
 const PATHS: Record<IconName, ReactNode> = {
+  insights: (
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
   overview: (
     <>
       <rect x="3" y="3" width="7.6" height="7.6" rx="1.6" />
