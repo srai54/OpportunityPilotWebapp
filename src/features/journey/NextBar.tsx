@@ -11,7 +11,8 @@ const QUIET = new Set(['/', '/settings', '/how-it-works'])
  * When the button would only reload the page you are on, it shows the sentence alone.
  */
 export function NextBar({ workspace, overview, pathname, search }: Readonly<{ workspace: Workspace; overview: Overview | undefined; pathname: string; search: string }>) {
-  if (QUIET.has(pathname)) return null
+  // The opportunity page already says what to do with this exact job, so the general bar stays out of its way.
+  if (QUIET.has(pathname) || pathname.startsWith('/opportunities/')) return null
   const next = nextStep(workspace, overview)
   if (!next) return null
   const [toPath, toQuery = ''] = next.to.split('?')

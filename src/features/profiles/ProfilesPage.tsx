@@ -124,7 +124,8 @@ export function ProfilesPage() {
             list.reload()
             // Simple mode: a profile is only a means to a search, so go straight on to a campaign that is already filled in.
             if (advanced) { navigate(`/profiles/${p.id}`, { replace: true }); return }
-            const term = starterSearchTerm(p.name)
+            // A Sales profile names what you sell, which is not what companies hire for, so only a Candidate search is pre-filled.
+            const term = p.type === 'Candidate' ? starterSearchTerm(p.name) : ''
             navigate(`/campaigns/new?profile=${p.id}${term ? `&keywords=${encodeURIComponent(term)}` : ''}`, { replace: true })
           }} onCancel={() => navigate(list.data?.[0] ? `/profiles/${list.data[0].id}` : '/')} />
         ) : id ? (
@@ -170,6 +171,13 @@ function cleanData(type: ProfileType, data: ProfileData, keys: FieldDef[] = FIEL
     fields: Object.fromEntries(keys.map((f) => [f.key, data.fields[f.key] ?? ''])),
     confirmations: Object.fromEntries(keys.filter((f) => f.confirmable).map((f) => [f.key, data.confirmations[f.key] === true])),
   }
+}
+
+/** Simple mode: saving the short form is the confirmation, so a claim the person typed counts straight away. */
+function confirmTyped(type: ProfileType, data: ProfileData): ProfileData {
+  const confirmations = { ...data.confirmations }
+  for (const f of FIELDS[type]) if (f.confirmable && data.fields[f.key]?.trim()) confirmations[f.key] = true
+  return { ...data, confirmations }
 }
 
 /** One field in the editor grid: textarea or skill chips, with the inline Confirmed / Confirm chip for claims. */
@@ -233,6 +241,14 @@ function FieldInput({
   )
 }
 
+const PLACEHOLDERS: Record<string, string> = {
+  offer: 'Backend and integration work in .NET: order and warehouse systems, Azure migrations…',
+  idealCustomer: 'Companies with 20–200 staff that are hiring fast and still use spreadsheets',
+  capabilities: 'Automates payroll runs, tax filings and payslips',
+  outreachIdentity: 'Asha Rao',
+  availability: '[YOUR RANGE], e.g. Available mid-October',
+}
+
 /** Design ProfileNew: type as one row of cards, then the few fields needed to start. Claims come after saving. */
 function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCancel: () => void }) {
   const { advanced, workspace } = useShell()
@@ -250,7 +266,6 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
   const types = advanced ? NEW_PROFILE_TYPES : NEW_PROFILE_TYPES.filter((t) => (sales ? t.type === 'Product' || t.type === 'Services' : t.type === 'Candidate'))
   const fields = advanced ? createFields(type) : simpleCreateFields(type)
   const setField = (key: string, value: string) => setData((d) => ({ ...d, fields: { ...d.fields, [key]: value } }))
-  const setConfirmed = (key: string, value: boolean) => setData((d) => ({ ...d, confirmations: { ...d.confirmations, [key]: value } }))
   const offerMissing = !data.fields.offer?.trim()
 
   async function create() {
@@ -258,9 +273,10 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
     setError(undefined)
     setFieldErrors({})
     try {
+      const payload = advanced ? cleanData(type, data) : confirmTyped(type, cleanData(type, data))
       const saved = await api<Profile>('/api/v1/profiles', {
         method: 'POST',
-        body: JSON.stringify({ type, name: name.trim(), data: cleanData(type, data), confirmed: false }),
+        body: JSON.stringify({ type, name: name.trim(), data: payload, confirmed: !advanced && isFullyConfirmed(type, payload) }),
       })
       savedRef.current = true
       onSaved(saved)
@@ -313,8 +329,8 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
               f={f.key === 'offer' ? { ...f, label: `${f.label} *` } : f}
               data={data}
               setField={setField}
-              setConfirmed={advanced ? undefined : setConfirmed}
-              placeholder={f.key === 'offer' ? 'Backend and integration work in .NET: order and warehouse systems, Azure migrations…' : '[YOUR RANGE], e.g. Available mid-October'}
+              
+              placeholder={PLACEHOLDERS[f.key]}
             />
           ))}
           {fieldErrors.data && <p className="field-error grid-wide">{fieldErrors.data.join(' ')}</p>}
@@ -324,7 +340,7 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
                 saved you can add them and confirm each claim. Nothing is ever written for you, and a claim you have not
                 confirmed does not raise a score.
               </div>
-            : <p className="muted-small grid-wide">Nothing is written for you. Tap <strong>Confirm</strong> beside a claim you stand behind; unconfirmed claims do not raise a match score.</p>}
+            : <p className="muted-small grid-wide">Nothing is written for you. By saving you confirm that what you typed above is accurate, so it can count towards a match score.</p>}
         </div>
       </div>
       <div className="save-bar">

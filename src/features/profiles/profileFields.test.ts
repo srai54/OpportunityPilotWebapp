@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness } from './profileFields'
+import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness, simpleCreateFields, starterSearchTerm } from './profileFields'
 
 describe('profile confirmation', () => {
   it('is not confirmed when no claims are filled in', () => {
@@ -41,8 +41,19 @@ describe('round-3 profile editor', () => {
   })
 
   it('creates with the offer and non-claim fields only; claims come after saving', () => {
-    expect(createFields('Candidate').map((f) => f.key)).toEqual(['offer', 'availability'])
+    expect(createFields('Candidate').map((f) => f.key)).toEqual(['offer', 'availability', 'outreachIdentity'])
     expect(createFields('Candidate').some((f) => f.confirmable)).toBe(false)
+  })
+
+  it('simple mode asks only for what a first search and a first message need', () => {
+    expect(simpleCreateFields('Candidate').map((f) => f.key)).toEqual(['offer', 'skills', 'outreachIdentity'])
+    expect(simpleCreateFields('Product').map((f) => f.key)).toEqual(['offer', 'idealCustomer', 'capabilities', 'outreachIdentity'])
+  })
+
+  it('turns a profile name into a search phrase', () => {
+    expect(starterSearchTerm('Data analyst — 5 years')).toBe('Data analyst')
+    expect(starterSearchTerm('.NET developer (remote)')).toBe('.NET developer')
+    expect(starterSearchTerm('React, Node')).toBe('React')
   })
 
   it('makes the offer full width', () => {

@@ -36,7 +36,7 @@
   --op-field-bg: #ffffff;
 
   /* action */
-  --op-primary: #0075de;        /* 4.9:1 on surface; white text on it passes */
+  --op-primary: #006dd0;        /* 5.1:1 on white, 4.9:1 on the page; white text on it passes */
   --op-on-primary: #ffffff;
   --op-primary-hover: #005bab;
   --op-primary-tint: #e8f2fc;

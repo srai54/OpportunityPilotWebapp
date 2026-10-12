@@ -110,7 +110,9 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
 }
 
 function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; campaign: CampaignSummary | undefined }) {
-  const [filters, setFilters] = useState<OpportunityFilters>(DEFAULT_FILTERS)
+  // ?status=Shortlisted opens the list already filtered (used by "see approved jobs" after a batch approval).
+  const [urlParams] = useSearchParams()
+  const [filters, setFilters] = useState<OpportunityFilters>(() => ({ ...DEFAULT_FILTERS, status: (urlParams.get('status') as OpportunityStatus | null) ?? '' }))
   const [refreshes, setRefreshes] = useState(0)
   const [filtersOpen, setFiltersOpen] = useState(useShell().advanced)
   const [exporting, setExporting] = useState(false)

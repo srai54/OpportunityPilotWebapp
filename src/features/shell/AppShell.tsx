@@ -117,6 +117,7 @@ export function AppShell() {
   // For the rail counts and the top-bar hint; screens that show the figures fetch their own copy.
   const overview = useApi<Overview>(apiStatus === 'ready' ? '/api/v1/overview' : null)
   const awaitingApproval = overview.data?.awaitingApproval
+  const reloadOverview = overview.reload
   const location = useLocation()
   const matches = useMatches()
   const isDrawerLayout = useIsDrawerLayout()
@@ -162,6 +163,9 @@ export function AppShell() {
     [...matches].reverse().map((m) => (m.handle as { title?: string } | undefined)?.title).find(Boolean) ??
     'OpportunityPilot'
   const hint = topbarHint(location.pathname, workspace, overview.data)
+
+  // The journey bar and Next bar read these counts, so refresh them whenever the person moves to another screen.
+  useEffect(() => { reloadOverview() }, [location.pathname, reloadOverview])
 
   const closeDrawer = useCallback(() => setDrawerPath(null), [])
   const closeMenu = useCallback(() => setMenuPath(null), [])

@@ -1289,7 +1289,7 @@ p { margin: 0; }
 .activity-list li { font-size: var(--op-text-meta); }
 .panel-body.row { flex-direction: row; flex-wrap: wrap; align-items: center; }
 .table-role a { color: var(--op-ink); font-weight: 600; text-decoration: none; }
-.table-role a:hover { color: var(--op-primary); text-decoration: underline; text-underline-offset: 2px; }
+.table-role a:hover { color: var(--op-primary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .msg-in { border-left: 3px solid var(--op-primary, currentColor); }
 .kpi-strip-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 @media (max-width: 1280px) { .kpi-strip-7 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -1531,3 +1531,9 @@ a.menu-item:hover { text-decoration: none; }
   .menu-switches { display: flex; }
   .topbar-ai { display: none; }
 }
+
+/* Simple mode: the profile form is one calm column, not a wide editor */
+.is-simple .profiles2-main .profiles2-pad { max-width: 720px; margin-inline: auto; }
+.is-simple .profiles2-main .save-bar { justify-content: center; }
+/* Blue text on the hovered grey row is 4.1:1; the darker (light theme) / lighter (dark theme) hover blue passes. */
+.table tbody tr:hover .btn-link, .table tbody tr:hover a { color: var(--op-primary-hover); }

@@ -47,6 +47,7 @@ export const FIELDS: Record<ProfileType, FieldDef[]> = {
     { key: 'experience', label: 'Experience', rows: 4, confirmable: true },
     { key: 'skills', label: 'Skills', rows: 2, confirmable: true },
     { key: 'availability', label: 'Availability and terms', hint: PLACEHOLDER_HINT, rows: 2 },
+    { key: 'outreachIdentity', label: 'Your name for message sign-offs', hint: 'How your messages end, e.g. Asha Rao. Without it a draft ends with a placeholder you must fill in.', rows: 1 },
   ],
   Services: [
     { key: 'offer', label: 'Services you deliver', hint: OFFER_HINT, rows: 3, required: true },
@@ -125,9 +126,10 @@ export function createFields(type: ProfileType): FieldDef[] {
   return FIELDS[type].filter((f) => !f.confirmable)
 }
 
-/** The short create form of simple mode: what you offer, who it is for, and skills (claims you can confirm in place). */
+/** The short create form of simple mode: what you offer, who it is for, one claim to rank by (skills / capabilities), and the sign-off drafts need. */
 export function simpleCreateFields(type: ProfileType): FieldDef[] {
-  return FIELDS[type].filter((f) => f.key === 'offer' || f.key === 'idealCustomer' || f.key === 'skills')
+  const keys = ['offer', 'idealCustomer', 'skills', 'capabilities', 'outreachIdentity']
+  return FIELDS[type].filter((f) => keys.includes(f.key))
 }
 
 /** A search phrase to start the first campaign with: the profile's name without its qualifiers ("Data analyst — 5 years" → "Data analyst"). */
