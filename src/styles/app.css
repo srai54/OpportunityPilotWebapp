@@ -1518,8 +1518,9 @@ a.menu-item:hover { text-decoration: none; }
   .journey { padding: 0 12px 8px; }
   .journey-step + .journey-step::before { width: 8px; margin-right: 2px; }
   .journey-link { padding: 0 6px; gap: 0; }
-  .journey-label, .journey-next { display: none; }
-  .journey-step.is-here .journey-label { display: inline; margin-left: 6px; }
+  /* Visually hidden, not display:none: the link keeps its name for screen readers. */
+  .journey-label, .journey-next { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .journey-step.is-here .journey-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; margin-left: 6px; }
   .journey-step.is-here .journey-link { padding: 0 12px 0 6px; }
   .journey-list { overflow: visible; }
   .next-bar { flex-wrap: wrap; padding: 10px 14px; }
@@ -1537,3 +1538,8 @@ a.menu-item:hover { text-decoration: none; }
 .is-simple .profiles2-main .save-bar { justify-content: center; }
 /* Blue text on the hovered grey row is 4.1:1; the darker (light theme) / lighter (dark theme) hover blue passes. */
 .table tbody tr:hover .btn-link, .table tbody tr:hover a { color: var(--op-primary-hover); }
+@media (max-width: 640px) {
+  .topbar-wrap .topbar-heading { display: none; }
+  .topbar-wrap .topbar { gap: 6px; padding: 0 10px; }
+  .ws-seg-top .ws-seg-btn { padding: 0 6px; }
+}
