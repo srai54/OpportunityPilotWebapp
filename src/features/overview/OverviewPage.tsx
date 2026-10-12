@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
-import { Icon } from '../../components/icons'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { AnalyticsOverview, Overview } from '../../lib/types'
@@ -34,7 +33,7 @@ export function OverviewPage() {
 
   if (overview.error) return <div className="page"><ErrorNotice error={overview.error} onRetry={overview.reload} what="your overview" /></div>
   if (!overview.data) return <div className="page"><LoadingState label="Loading your overview…" waking={overview.waking} stats={5} rows={4} /></div>
-  if (isFirstRun(overview.data)) return <FirstRun />
+  if (isFirstRun(overview.data)) return <FirstRun overview={overview.data} />
 
   const a = analytics.data
   return (
@@ -72,7 +71,7 @@ export function OverviewPage() {
         </p>
       )}
       {a && !hasAnyActivity(a) && workspace === 'candidate' && <SampleRunCard />}
-      {a && (workspace === 'sales' ? <SalesOverview a={a} /> : <CandidateOverview a={a} overview={overview.data} />)}
+      {a && (workspace === 'sales' ? <SalesOverview a={a} overview={overview.data} /> : <CandidateOverview a={a} overview={overview.data} />)}
     </div>
   )
 }
@@ -239,6 +238,7 @@ function Sources({ a }: { a: AnalyticsOverview }) {
 
 function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Overview }) {
   const { advanced } = useShell()
+  const guided = GuidedStart({ overview, workspace: 'candidate' })
   const k = a.kpis
   const perDay = a.applicationsPerDay ?? []
   const dayMax = Math.max(1, ...perDay.map((d) => d.applied))
@@ -246,10 +246,10 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
   const appliedTotal = perDay.reduce((n, d) => n + d.applied, 0)
   return (
     <>
-      <FindStrip workspace="candidate" />
+      {guided ?? <FindStrip workspace="candidate" />}
       <div className={advanced ? 'kpi-strip' : 'kpi-strip kpi-strip-4'}>
         <Kpi label="Waiting on you" value={k.awaitingApproval} sub="jobs to approve" tone={k.awaitingApproval ? 'warning' : undefined} />
-        <Kpi label="Shortlisted" value={k.shortlisted} sub={`${k.shortlistedNotApplied} not yet applied`} />
+        <Kpi label="Approved" value={k.shortlisted} sub={`${k.shortlistedNotApplied} not yet applied`} />
         <Kpi label={`Applied · ${a.days} days`} value={k.applied ?? '—'} sub={advanced ? `${k.appliedByAgent ?? 0} agent · ${k.appliedByYou ?? 0} by you` : 'marked applied by you'} />
         <Kpi label="Responded" value={k.responded ?? '—'} sub={k.respondedRate === null ? 'no applications yet' : `${percent(k.respondedRate)} of applications`} />
         {advanced && <>
@@ -330,8 +330,9 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
   )
 }
 
-function SalesOverview({ a }: { a: AnalyticsOverview }) {
+function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overview }) {
   const { advanced } = useShell()
+  const guided = GuidedStart({ overview, workspace: 'sales' })
   const k = a.kpis
   if (a.campaignCount === 0)
     return (
@@ -351,18 +352,18 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
         }
       >
         Sales works on data you bring: a CSV of companies, a pasted list, a public page or feed, or the live hiring signals from
-        Wellfound (Job discovery). There is no built-in company database, so nothing appears until you add a source.
+        Wellfound (Find companies). There is no built-in company database, so nothing appears until you add a source.
       </EmptyState>
       </>
     )
   const industryTotal = (a.qualifiedByIndustry ?? []).reduce((n, x) => n + x.count, 0)
   return (
     <>
-      <FindStrip workspace="sales" />
+      {guided ?? <FindStrip workspace="sales" />}
       <div className="kpi-strip kpi-strip-5">
         <Kpi label="Companies found" value={k.found} sub={`across ${a.campaignCount} ${a.campaignCount === 1 ? 'campaign' : 'campaigns'}`} />
         <Kpi label="Qualified" value={k.qualified} sub={`${percent(k.qualifyRate)} of what was found`} />
-        <Kpi label="Shortlisted" value={k.shortlisted} sub="ready to contact" />
+        <Kpi label="Approved" value={k.shortlisted} sub="ready to contact" />
         <Kpi label="Contacted" value={k.contacted ?? 0} sub="marked after you sent the approved message" />
         <Kpi label="Responded" value={k.responded ?? 0} sub={k.respondedRate == null ? 'nothing contacted yet' : `${percent(k.respondedRate)} of contacted`} />
       </div>
@@ -410,101 +411,47 @@ function SalesOverview({ a }: { a: AnalyticsOverview }) {
   )
 }
 
-const CHOICES: { key: Workspace; title: string; sub: string; status: string; points: string[] }[] = [
-  {
-    key: 'candidate',
-    title: 'Candidate',
-    sub: 'I am looking for work',
-    status: 'Built',
-    points: ['Every role that fits your skills, scored with evidence', 'Greenhouse, Lever, Wellfound, Indeed and your own browser agent', 'Approve a batch, then apply — nothing goes out without you'],
-  },
-  {
-    key: 'sales',
-    title: 'Sales',
-    sub: 'I am looking for customers',
-    status: 'Built — you send',
-    points: ['Find companies that need what you sell, with evidence', 'Live hiring signals from Wellfound, plus your own CSV, list or page', 'Drafts and deals you approve, then send yourself'],
-  },
-]
-
-/** Design OverviewFirstRun: pick a workspace, then three steps in order. Tiles stay at zero rather than sample data. */
-function FirstRun() {
-  const { workspace, setWorkspace } = useShell()
-  const navigate = useNavigate()
+/** Three steps, one highlighted: the same path for everyone, so a new person never has to choose between screens. */
+function GuidedStart({ overview, workspace }: { overview: Overview; workspace: Workspace }) {
+  const sales = workspace === 'sales'
+  const steps = [
+    { done: overview.profiles > 0, title: 'Create your profile', text: sales ? 'What you sell, in your own words — it takes a minute.' : 'What you offer and your skills — it takes a minute.', to: '/profiles/new', action: 'Create profile' },
+    { done: overview.campaigns > 0, title: sales ? 'Find companies that are hiring' : 'Find jobs', text: sales ? 'Search a role; each hiring company becomes a scored lead.' : 'Search a role and place; the best matches are suggested for you.', to: '/wellfound', action: sales ? 'Find companies' : 'Find jobs' },
+    { done: overview.shortlisted > 0 || overview.applied > 0, title: sales ? 'Approve a lead and reach out' : 'Approve one and apply', text: sales ? 'Approve a lead, then draft a LinkedIn note or email.' : 'Approve a job, open its application page and apply.', to: '/opportunities', action: 'See opportunities' },
+  ]
+  if (steps.every((x) => x.done)) return null
+  const next = steps.findIndex((x) => !x.done)
   return (
-    <div className="page page-wide stack-4">
-      <PageHeader
-        title="Welcome to OpportunityPilot"
-        subtitle="Pick what you are here to do. You can switch any time from the workspace menu."
-      />
-      <div className="choice-grid">
-        {CHOICES.map((c) => (
-          <section key={c.key} className={`choice choice-${c.key} ${workspace === c.key ? 'is-on' : ''}`}>
-            <div className="row">
-              <span className="onboarding-icon" aria-hidden="true">
-                <Icon name={c.key} size={18} />
-              </span>
-              <span className="stack-0">
-                <strong>{c.title}</strong>
-                <span className="muted-small">{c.sub}</span>
-              </span>
-              <div className="grow" />
-              <span className={`badge ${c.key === 'candidate' ? 'badge-success' : 'badge-warning'}`}>{c.status}</span>
+    <section className="card stack-3" aria-label="Getting started">
+      <h3 className="section-heading">Getting started</h3>
+      <ol className="guided-steps plain-list">
+        {steps.map((x, i) => (
+          <li key={x.title} className={`guided-step${x.done ? ' is-done' : ''}${i === next ? ' is-next' : ''}`} aria-current={i === next ? 'step' : undefined}>
+            <span className="step-num">{x.done ? '✓' : i + 1}</span>
+            <div className="stack-1 grow">
+              <strong>{x.title}</strong>
+              <span className="muted-small">{x.text}</span>
             </div>
-            <ul className="onboarding-points">
-              {c.points.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              className={`btn ${workspace === c.key ? 'btn-primary' : 'btn-secondary'} auth-wide`}
-              aria-pressed={workspace === c.key}
-              onClick={() => setWorkspace(c.key)}
-            >
-              {workspace === c.key ? `Using the ${c.title} workspace` : `Use the ${c.title} workspace`}
-            </button>
-          </section>
+            {i === next && <Link className="btn btn-primary btn-sm" to={x.to}>{x.action}</Link>}
+          </li>
         ))}
-      </div>
-
-      {workspace === 'candidate' && <SampleRunCard />}
-
-      <h3 className="section-heading">Or set it up yourself — three steps</h3>
-      <ol className="first-steps plain-list">
-        <li className="card is-next">
-          <span className="step-num">1</span>
-          <div className="stack-2">
-            <strong>Create a profile</strong>
-            <span className="muted-small">What you offer, in your own words. You confirm every claim.</span>
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/profiles/new')}>
-              Start
-            </button>
-          </div>
-        </li>
-        <li className="card">
-          <span className="step-num">2</span>
-          <div className="stack-2">
-            <strong>Add sources</strong>
-            <span className="muted-small">Greenhouse or Lever boards, a job-board search, a CSV, or pasted text.</span>
-            <Link className="btn btn-secondary btn-sm" to="/campaigns/new">
-              Add sources
-            </Link>
-          </div>
-        </li>
-        <li className="card">
-          <span className="step-num">3</span>
-          <div className="stack-2">
-            <strong>Run a campaign</strong>
-            <span className="muted-small">Set criteria, queue a run, then approve what it suggests.</span>
-            <Link className="btn btn-secondary btn-sm" to="/campaigns/new">
-              Build
-            </Link>
-          </div>
-        </li>
       </ol>
+    </section>
+  )
+}
 
-
+/** First visit: pick a side, follow three steps, or watch the sample run on real public job boards. */
+function FirstRun({ overview }: { overview: Overview }) {
+  const { workspace, setWorkspace } = useShell()
+  return (
+    <div className="page stack-4">
+      <PageHeader title="Welcome to OpportunityPilot" subtitle="What do you want to do?" />
+      <div className="segmented" role="group" aria-label="What do you want to do?">
+        <button type="button" className={workspace === 'candidate' ? 'active' : ''} aria-pressed={workspace === 'candidate'} onClick={() => setWorkspace('candidate')}>Find a job</button>
+        <button type="button" className={workspace === 'sales' ? 'active' : ''} aria-pressed={workspace === 'sales'} onClick={() => setWorkspace('sales')}>Find customers</button>
+      </div>
+      <GuidedStart overview={overview} workspace={workspace} />
+      {workspace === 'candidate' && <SampleRunCard />}
     </div>
   )
 }

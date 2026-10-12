@@ -3,10 +3,12 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
-import type { WellfoundJob } from '../../lib/types'
+import { Link } from 'react-router-dom'
+import type { Profile, ProfileSummary, WellfoundJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { useShell } from '../shell/ShellContext'
-import { DATE_OPTIONS, SAMPLE_OPTIONS, headlines, payLine, startupTrend, trendsPath, type TrendCount, type TrendReport, type TrendSearch } from './trendsModel'
+import { splitTags } from '../profiles/profileFields'
+import { DATE_OPTIONS, SAMPLE_OPTIONS, headlines, payLine, skillGap, startupTrend, trendsPath, type TrendCount, type TrendReport, type TrendSearch } from './trendsModel'
 
 function Bars({ title, rows, empty }: Readonly<{ title: string; rows: TrendCount[]; empty: string }>) {
   const max = Math.max(1, ...rows.map((r) => r.count))
@@ -28,6 +30,28 @@ function Stat({ label, value, sub }: Readonly<{ label: string; value: string | n
   return <div className="kpi"><span className="kpi-label">{label}</span><strong className="kpi-value op-numeric">{value}</strong><span className="muted-small">{sub}</span></div>
 }
 
+/** How the person's own profile skills compare with what the sample asks for. Uses data already on screen; no extra search. */
+function SkillGapPanel({ skills }: Readonly<{ skills: TrendCount[] }>) {
+  const { workspace } = useShell()
+  const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
+  const mine = (profiles.data ?? []).find((p) => (p.type === 'Candidate') === (workspace !== 'sales'))
+  const profile = useApi<Profile>(mine ? `/api/v1/profiles/${mine.id}` : null)
+  const gap = useMemo(() => (profile.data ? skillGap(skills, splitTags(profile.data.data.fields?.skills)) : null), [profile.data, skills])
+  if (skills.length === 0) return null
+  const body = !profiles.data ? <LoadingState label="Reading your profile…" waking={profiles.waking} rows={1} />
+    : !mine ? <p className="muted-small">Create a profile with your skills to see how you compare. <Link to="/profiles/new">Create profile</Link></p>
+    : !gap ? <LoadingState label="Reading your profile…" waking={profile.waking} rows={1} />
+    : gap.have.length === 0 && gap.missing.length === skills.length && !splitTags(profile.data?.data.fields?.skills).length
+      ? <p className="muted-small">Your profile has no skills yet. <Link to={`/profiles/${mine.id}`}>Add the skills you really have</Link> to see the comparison.</p>
+      : <div className="stack-3">
+        <p><strong className="op-numeric">{gap.coveragePercent}%</strong> of what these postings ask for is on your profile ({mine.name}).</p>
+        <div><span className="eyebrow">You have</span><div className="row wrap">{gap.have.length ? gap.have.map((s) => <span key={s.name} className="skill-chip skill-have">{s.name} · {s.sharePercent}%</span>) : <span className="muted-small">None of the listed skills yet.</span>}</div></div>
+        <div><span className="eyebrow">In demand, not on your profile</span><div className="row wrap">{gap.missing.length ? gap.missing.map((s) => <span key={s.name} className="skill-chip skill-missing">{s.name} · {s.sharePercent}%</span>) : <span className="muted-small">Nothing missing — you cover every skill listed.</span>}</div></div>
+        <p className="muted-small">Percentages are the share of the sampled postings that mention the skill. Add a skill to your profile only if you really have it — the app never adds one for you.</p>
+      </div>
+  return <section className="panel" aria-label="How you compare"><header className="panel-head"><h3 className="eyebrow">How you compare</h3></header><div className="panel-body">{body}</div></section>
+}
+
 function Report({ r }: Readonly<{ r: TrendReport }>) {
   if (r.status !== 'Ready') {
     return <section className="result-blocked"><Badge tone="warning">{r.status === 'NotConfigured' ? 'Trends not set up' : 'Trends unavailable'}</Badge><p className="grow">{r.message}</p></section>
@@ -47,6 +71,7 @@ function Report({ r }: Readonly<{ r: TrendReport }>) {
       <Bars title="Skills asked for" rows={r.topSkills} empty="No listed skill appears in these postings." />
       <Bars title="Who is hiring" rows={r.topCompanies} empty="No company names." />
     </div>
+    <SkillGapPanel skills={r.topSkills} />
     <div className="panel-grid-3">
       <Bars title="Sites" rows={r.sites} empty="No site names." />
       <Bars title="Job type" rows={r.employmentTypes} empty="No job type given." />
@@ -65,7 +90,7 @@ function Startups({ workspace }: Readonly<{ workspace: 'candidate' | 'sales' }>)
   const t = useMemo(() => (jobs.data ? startupTrend(jobs.data) : null), [jobs.data])
   if (jobs.error) return <ErrorNotice error={jobs.error} onRetry={jobs.reload} what="the Wellfound listings" />
   if (!t) return <LoadingState label="Reading stored Wellfound listings…" waking={jobs.waking} rows={2} />
-  if (t.sampled === 0) return <p className="muted-small">No Wellfound listings are stored yet. Open Job discovery and refresh the Wellfound tab first.</p>
+  if (t.sampled === 0) return <p className="muted-small">No Wellfound listings are stored yet. Open Find jobs and refresh the Wellfound tab first.</p>
   return <div className="stack-4">
     <div className="kpi-strip kpi-strip-5">
       <Stat label="Startup jobs" value={t.sampled} sub="stored public listings" />

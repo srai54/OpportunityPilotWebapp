@@ -32,7 +32,7 @@ const JOB_STEPS = [
   ['Read every source you add', 'Postings are de-duplicated before anything is scored.'],
   ['Score against your criteria', 'Hard filters exclude. Scored criteria give points. Unknown never passes.'],
   ['Suggest what clears the threshold', 'Those land in Approvals, not in your inbox.'],
-  ['Apply only after you approve', 'LinkedIn and Naukri go through the local agent; the rest you open and apply yourself.'],
+  ['Apply only after you approve', 'You open each application page yourself — nothing is applied for you.'],
 ]
 
 export function GoalStep({ draft, setDraft, profiles, profileId, mode, locked, fieldErrors, onEditCriteria }: Props) {

@@ -101,3 +101,19 @@ One **Advanced** switch (sidebar footer and Settings, remembered per browser in 
 | Settings | Account, display, Advanced switch | Rules and deployment facts |
 
 Restore a simple-mode screen's old layout: set Advanced on, or check out the file from the archive branch.
+
+## Round 2 — simpler screens, plain words, guided start (2026-10-12)
+
+| Change | Simple (default) | Under Advanced |
+|---|---|---|
+| Opportunity page | "Reach out": **Draft LinkedIn note** / **Draft email** (one click makes the draft and opens it in Outreach, `?draft=`) and a single "Next" bar | Channel, recipient, contact form, follow-up (next action) |
+| Opportunities list | Job + company, **Match**, Status, one action; search box | Mode, evidence, outcome, updated, campaign picker (shown without Advanced only if there are 2+ campaigns), outcome/status/sort filters, Refresh, Export CSV |
+| Profiles | Name, What you offer, Skills, Availability | Type, experience and other fields, Claims / Summary / Versions tabs |
+| Outreach | Draft list + editor, Approve & send | Channel/state/campaign filters, tick boxes, batch approve |
+| Words | **Approved** (was Shortlisted), **Skipped** (was Dismissed/Rejected), **Match** (was Fit), buttons Approve / Skip. API values are unchanged | — |
+| Chrome | Compact **Candidate \| Sales** toggle (replaces the workspace dropdown); the Demo-mode banner can be dismissed for the session | "Rules mode · no AI key" pill |
+| Run page | "Looking for jobs…" and an automatic jump to the results when it finishes; failed/cancelled runs say so plainly | Stage tracker, counts and event log (`advanced` on) |
+| Getting started | Welcome page: "Find a job / Find customers" + three guided steps (profile → find → approve), the next one highlighted; the same card sits on the Overview until all three are done | — |
+| Removed (dead code) | `features/applications/AgentSetup.tsx` and `HowItWorks.tsx` (apply-agent setup), unused Adzuna / Workday / aggregate source forms, "your agent" wording | Restore from `archive/pre-mvp-cut-2026-10-09` |
+
+New feature: **How you compare** (Find jobs → Trends). It compares the skills the sampled postings ask for with the skills on your profile ("38% of what these postings ask for is on your profile"; "in demand, not on your profile: Databricks 39%"). No extra search is used and the app never adds a skill to your profile.

@@ -40,6 +40,7 @@ import {
  * Opportunities belong to a campaign in the API, so the list is always one campaign's.
  */
 function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
+  const { advanced } = useShell()
   const { id: routeId } = useParams()
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
@@ -55,7 +56,7 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
     <div className="page page-wide stack-4">
       <PageHeader
         title="Opportunities"
-        subtitle="Everything your campaigns found, best fit first. Fit is a ranking out of 100, not a chance of success."
+        subtitle="Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success."
       />
       {tabs}
 
@@ -83,7 +84,7 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
 
       {campaigns.data && list.length > 0 && (
         <>
-          <div className="toolbar">
+          {(list.length > 1 || advanced) && <div className="toolbar">
             <label className="pill-select pill-select-wide" htmlFor="opp-campaign">
               <span>Campaign</span>
               <select id="opp-campaign" value={campaignId ?? ''} onChange={(e) => choose(e.target.value)}>
@@ -95,12 +96,12 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
                 ))}
               </select>
             </label>
-            {campaign?.lastJob && (
+            {advanced && campaign?.lastJob && (
               <Link to={`/research/${campaign.lastJob.id}`} className="small">
                 Latest run
               </Link>
             )}
-          </div>
+          </div>}
           {campaignId && <CampaignOpportunities key={campaignId} campaignId={campaignId} campaign={campaign} />}
         </>
       )}
@@ -111,6 +112,7 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
 function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; campaign: CampaignSummary | undefined }) {
   const [filters, setFilters] = useState<OpportunityFilters>(DEFAULT_FILTERS)
   const [refreshes, setRefreshes] = useState(0)
+  const [filtersOpen, setFiltersOpen] = useState(useShell().advanced)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<Error>()
   const [search, setSearch] = useState('')
@@ -134,6 +136,7 @@ function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; c
         <h3 id="opp-heading" className="sr-only">
           {campaign ? campaign.name : 'Campaign'}
         </h3>
+        {filtersOpen && <>
         <label className="pill-select">
           <span>Outcome</span>
           <select value={filters.outcome} onChange={(e) => setFilters((f) => ({ ...f, outcome: e.target.value as FilterOutcome | '' }))}>
@@ -159,10 +162,11 @@ function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; c
         <label className="pill-select">
           <span>Sort</span>
           <select value={filters.sort} onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as OpportunityFilters['sort'] }))}>
-            <option value="score">Fit, high to low</option>
+            <option value="score">Match, high to low</option>
             <option value="recent">Recently updated</option>
           </select>
         </label>
+        </>}
         <div className="grow" />
         <input
           className="toolbar-search"
@@ -172,12 +176,15 @@ function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; c
           aria-label="Search the loaded opportunities by title, company or place"
           onChange={(e) => setSearch(e.target.value)}
         />
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>{filtersOpen ? 'Hide advanced' : 'Advanced'}</button>
+        {filtersOpen && <>
         <button type="button" className="btn btn-secondary btn-sm" onClick={() => setRefreshes((n) => n + 1)}>
           Refresh
         </button>
         <button type="button" className="btn btn-secondary btn-sm" disabled={exporting} onClick={() => void exportCsv()}>
           {exporting ? 'Exporting…' : '⇩ Export CSV'}
         </button>
+        </>}
       </div>
       {exportError && <ErrorNotice error={exportError} />}
 
@@ -207,6 +214,7 @@ function OpportunityTable({
   search: string
   onClearFilters: () => void
 }) {
+  const { advanced } = useShell()
   const first = useApi<OpportunityPage>(opportunitiesPath(campaignId, filters, 0))
   const [more, setMore] = useState<OpportunitySummary[]>([])
   const [fetchedMore, setFetchedMore] = useState(0)
@@ -329,10 +337,10 @@ function OpportunityTable({
         <div className="selection-bar">
           <strong>{chosen.length} selected</strong>
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Shortlisted')}>
-            Shortlist
+            Approve
           </button>
           <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Dismissed')}>
-            Dismiss
+            Skip
           </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={exportSelection}>
             Export selection
@@ -370,16 +378,16 @@ function OpportunityTable({
                   />
                 </th>
                 <th scope="col">Opportunity</th>
-                <th scope="col">Mode</th>
+                {advanced && <th scope="col">Mode</th>}
                 <th scope="col" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
-                  Fit
+                  Match
                 </th>
-                <th scope="col">Evidence</th>
-                <th scope="col">Outcome</th>
+                {advanced && <th scope="col">Evidence</th>}
+                {advanced && <th scope="col">Outcome</th>}
                 <th scope="col">Status</th>
-                <th scope="col" aria-sort={filters.sort === 'recent' ? 'descending' : undefined}>
+                {advanced && <th scope="col" aria-sort={filters.sort === 'recent' ? 'descending' : undefined}>
                   Updated
-                </th>
+                </th>}
                 <th scope="col">
                   <span className="sr-only">Next step</span>
                 </th>
@@ -401,10 +409,10 @@ function OpportunityTable({
                       <div className="muted-small">{[o.organization, o.location].filter(Boolean).join(' · ')}</div>
                       {o.outcomeReason && excluded && <div className="muted-small clamp-2">{o.outcomeReason}</div>}
                     </td>
-                    <td>
+                    {advanced && <td>
                       <Badge tone={o.mode === 'Job' ? 'success' : 'primary'}>{MODE_LABELS[o.mode] ?? o.mode}</Badge>
                       {platformLabel(o.platform) && <div className="muted-small">{platformLabel(o.platform)}</div>}
-                    </td>
+                    </td>}
                     <td className="nowrap">
                       {excluded ? (
                         <span className="muted">—</span>
@@ -417,7 +425,7 @@ function OpportunityTable({
                         </span>
                       )}
                     </td>
-                    <td className="nowrap">
+                    {advanced && <td className="nowrap">
                       <span className="meter" title={formatCoverage(o.coverage)}>
                         <span className={`meter-track meter-small ${o.coverage < 70 ? 'meter-amber' : ''}`}>
                           <i style={{ width: `${Math.min(100, Math.max(0, o.coverage))}%` }} />
@@ -425,16 +433,16 @@ function OpportunityTable({
                         <span className="muted-small op-numeric">{Math.round(o.coverage)}%</span>
                       </span>
                       {o.gapsCount > 0 && <div className="muted-small">{o.gapsCount} not verified</div>}
-                    </td>
-                    <td>
+                    </td>}
+                    {advanced && <td>
                       <Badge tone={outcome.tone}>{outcome.text}</Badge>
-                    </td>
+                    </td>}
                     <td>
                       <Badge tone={status.tone}>{status.text}</Badge>
                     </td>
-                    <td className="table-when muted-small">
+                    {advanced && <td className="table-when muted-small">
                       <time dateTime={o.updatedAt}>{formatWhen(o.updatedAt)}</time>
-                    </td>
+                    </td>}
                     <td className="nowrap">
                       {next.to ? (
                         <button type="button" className="btn-link" disabled={busy === o.id} onClick={() => void setStatus(o, next.to!)}>

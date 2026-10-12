@@ -19,8 +19,8 @@ export const OUTCOME_LABELS: Record<FilterOutcome, { text: string; tone: string 
 export const STATUS_LABELS: Record<OpportunityStatus, { text: string; tone: string }> = {
   New: { text: 'New', tone: 'neutral' },
   Suggested: { text: 'Awaiting approval', tone: 'warning' },
-  Shortlisted: { text: 'Shortlisted', tone: 'primary' },
-  Dismissed: { text: 'Dismissed', tone: 'neutral' },
+  Shortlisted: { text: 'Approved', tone: 'primary' },
+  Dismissed: { text: 'Skipped', tone: 'neutral' },
   Applied: { text: 'Applied', tone: 'success' },
   Contacted: { text: 'Contacted', tone: 'primary' },
   Responded: { text: 'Responded', tone: 'primary' },
@@ -143,17 +143,17 @@ export function quickActions(status: OpportunityStatus): { label: string; to: Op
     case 'Suggested':
       return [
         { label: 'Approve', to: 'Shortlisted' },
-        { label: 'Reject', to: 'Dismissed' },
+        { label: 'Skip', to: 'Dismissed' },
       ]
     case 'New':
       return [
-        { label: 'Shortlist', to: 'Shortlisted' },
-        { label: 'Dismiss', to: 'Dismissed' },
+        { label: 'Approve', to: 'Shortlisted' },
+        { label: 'Skip', to: 'Dismissed' },
       ]
     case 'Shortlisted':
       return [
         { label: 'Remove from shortlist', to: 'New' },
-        { label: 'Dismiss', to: 'Dismissed' },
+        { label: 'Skip', to: 'Dismissed' },
       ]
     case 'Dismissed':
       return [{ label: 'Restore', to: 'New' }]
@@ -214,7 +214,7 @@ function csvCell(v: string | number | null): string {
 
 /** CSV of the selected rows, built from what is on screen. */
 export function selectionCsv(items: OpportunitySummary[]): string {
-  const head = ['Title', 'Organisation', 'Location', 'Fit', 'Coverage %', 'Outcome', 'Status', 'URL']
+  const head = ['Title', 'Organisation', 'Location', 'Match', 'Coverage %', 'Outcome', 'Status', 'URL']
   const rows = items.map((o) => [o.title, o.organization, o.location, clampPercent(o.score), clampPercent(o.coverage), o.outcome, o.status, o.url])
   return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\n')
 }
@@ -223,22 +223,22 @@ export function selectionCsv(items: OpportunitySummary[]): string {
 export function nextPermittedAction(o: Pick<OpportunitySummary, 'status' | 'outcome' | 'mode'>): string {
   const job = o.mode === 'Job'
   switch (o.status) {
-    case 'Suggested': return 'Approve it to shortlist it, or reject it. Nothing is contacted or applied to until you do.'
+    case 'Suggested': return 'Approve it, or skip it. Nothing is contacted or applied to until you do.'
     case 'New':
       return o.outcome === 'Excluded'
         ? 'Excluded by a hard filter. Restore it only if the filter was wrong for this one.'
         : o.outcome === 'NeedsVerification'
-          ? 'Check the unknown criteria against the evidence, then shortlist or dismiss it.'
-          : 'Shortlist it if the evidence fits, or dismiss it.'
+          ? 'Check the unknown criteria against the evidence, then approve or skip it.'
+          : 'Approve it if the evidence fits, or skip it.'
     case 'Shortlisted':
       return job
-        ? 'Apply: LinkedIn, Naukri and InstaHyre jobs go to your local agent; open the others and apply yourself.'
+        ? 'Open its application page, apply there, then click "I applied".'
         : 'Draft outreach below, approve its exact version, send it yourself, then record that it was sent.'
     case 'Applied': return 'Applied. Add a follow-up so you check the outcome.'
     case 'Contacted': return 'Contacted. Record their reply when it comes, or schedule a follow-up.'
     case 'Responded': return 'They replied. Record whether they are interested and plan the next step.'
     case 'Interested': return 'Interested. Agree the next step and keep a follow-up open until it happens.'
-    case 'Dismissed': return 'Dismissed. Restore it if you change your mind.'
+    case 'Dismissed': return 'Skipped. Restore it if you change your mind.'
     case 'Closed': return 'Closed. No further action.'
     default: return 'Review the evidence.'
   }
@@ -250,6 +250,6 @@ export function primaryAction(o: Pick<OpportunitySummary, 'status' | 'outcome'> 
   if (o.status === 'Dismissed') return { label: 'Restore', to: 'New' }
   // Sales: a shortlisted company is approached with a reviewed draft, not "applied to".
   if (o.status === 'Shortlisted') return o.mode && o.mode !== 'Job' ? { label: 'Draft outreach' } : { label: 'Open posting' }
-  if (o.status === 'New' && o.outcome === 'Qualified') return { label: 'Shortlist', to: 'Shortlisted' }
+  if (o.status === 'New' && o.outcome === 'Qualified') return { label: 'Approve', to: 'Shortlisted' }
   return { label: 'Review' }
 }

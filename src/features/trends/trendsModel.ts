@@ -100,3 +100,31 @@ export function startupTrend(jobs: WellfoundJob[]): StartupTrend {
     stages: top(live.map((j) => j.fundingStage), n, 5),
   }
 }
+
+const ALIASES: Record<string, string> = {
+  dotnet: '.net', 'dot net': '.net', 'asp.net core': 'asp.net', csharp: 'c#', 'c sharp': 'c#', js: 'javascript', ts: 'typescript',
+  node: 'node.js', nodejs: 'node.js', postgres: 'postgresql', k8s: 'kubernetes', 'react.js': 'react', reactjs: 'react', 'vue.js': 'vue',
+  golang: 'golang', gcp: 'gcp', 'google cloud': 'gcp', 'amazon web services': 'aws', ml: 'machine learning', 'ci/cd': 'ci/cd',
+}
+
+const norm = (v: string) => {
+  const k = v.trim().toLowerCase()
+  return ALIASES[k] ?? k
+}
+
+export type SkillGap = {
+  have: TrendCount[]
+  missing: TrendCount[]
+  /** Share of the sampled demand (by how often each skill appears) that the profile covers, 0–100. */
+  coveragePercent: number
+}
+
+/** Which of the skills in demand are on the profile, and which are not. Names are matched after a small alias list; nothing is guessed. */
+export function skillGap(inDemand: TrendCount[], mySkills: string[]): SkillGap {
+  const mine = new Set(mySkills.map(norm).filter(Boolean))
+  const have = inDemand.filter((s) => mine.has(norm(s.name)))
+  const missing = inDemand.filter((s) => !mine.has(norm(s.name)))
+  const total = inDemand.reduce((n, s) => n + s.count, 0)
+  const covered = have.reduce((n, s) => n + s.count, 0)
+  return { have, missing, coveragePercent: total ? Math.round((100 * covered) / total) : 0 }
+}

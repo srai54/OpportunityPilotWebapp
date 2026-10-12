@@ -103,7 +103,7 @@ const router = createBrowserRouter([
       { path: 'profiles', element: <ProfilesPage />, handle: { title: 'Profiles' } },
       { path: 'profiles/:id', element: <ProfilesPage />, handle: { title: 'Profiles' } },
       { path: 'trends', element: <Navigate to="/wellfound?tab=trends" replace />, handle: { title: 'Find jobs' } },
-      { path: 'wellfound', element: <WellfoundPage />, handle: { title: 'Job discovery' } },
+      { path: 'wellfound', element: <WellfoundPage />, handle: { title: 'Find jobs' } },
       { path: 'settings', element: <SettingsPage />, handle: { title: 'Settings' } },
       { path: '*', element: <NotFound />, handle: { title: 'Not found' } },
     ],

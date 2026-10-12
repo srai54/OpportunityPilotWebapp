@@ -113,6 +113,7 @@ export function AppShell() {
     setWorkspaceState(ws)
     writeWorkspace(ws)
   }, [])
+  const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op.demoBanner') === '1' } catch { return false } })
   const [advanced, setAdvancedState] = useState(readAdvanced)
   const setAdvanced = useCallback((on: boolean) => {
     setAdvancedState(on)
@@ -122,14 +123,10 @@ export function AppShell() {
   // Drawer and popovers remember the path they were opened on, so any route change closes them.
   const [drawerPath, setDrawerPath] = useState<string | null>(null)
   const [menuPath, setMenuPath] = useState<string | null>(null)
-  const [wsMenuPath, setWsMenuPath] = useState<string | null>(null)
   const drawerOpen = isDrawerLayout && drawerPath === location.pathname
   const menuOpen = menuPath === location.pathname
-  const wsMenuOpen = wsMenuPath === location.pathname
 
   const menuRef = useRef<HTMLDivElement>(null)
-  const wsRef = useRef<HTMLDivElement>(null)
-  const wsButtonRef = useRef<HTMLButtonElement>(null)
   const avatarRef = useRef<HTMLButtonElement>(null)
   const railRef = useRef<HTMLElement>(null)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
@@ -141,15 +138,12 @@ export function AppShell() {
 
   const closeDrawer = useCallback(() => setDrawerPath(null), [])
   const closeMenu = useCallback(() => setMenuPath(null), [])
-  const closeWsMenu = useCallback(() => setWsMenuPath(null), [])
   useDismiss(menuOpen, closeMenu, menuRef, avatarRef)
-  useDismiss(wsMenuOpen, closeWsMenu, wsRef, wsButtonRef)
 
   const toggleCollapsed = () => {
     const next = !collapsedPref
     setCollapsedPref(next)
     writeNavCollapsed(next)
-    setWsMenuPath(null)
   }
 
   useEffect(() => {
@@ -214,7 +208,6 @@ export function AppShell() {
   const apiLabel = API_STATUS_LABELS[apiStatus]
   const gmailStatus = gmail && gmailLabel(gmail)
   const aiMode = gemini && aiModeLabel(gemini)
-  const ws = WORKSPACES[workspace]
   const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : [])]
 
   const railClass = ['rail', collapsed && 'rail-collapsed', drawerOpen && 'rail-open'].filter(Boolean).join(' ')
@@ -248,69 +241,21 @@ export function AppShell() {
             {!collapsed && <span className="rail-brand-name">OpportunityPilot</span>}
           </div>
 
-          <div className="ws" ref={wsRef}>
-            <button
-              ref={wsButtonRef}
-              type="button"
-              className="ws-button"
-              aria-expanded={wsMenuOpen}
-              aria-controls="ws-options"
-              aria-label={collapsed ? `Workspace: ${ws.label}. Change workspace` : undefined}
-              data-tip={collapsed ? `${ws.label} workspace` : undefined}
-              onClick={() => setWsMenuPath((p) => (p === location.pathname ? null : location.pathname))}
-            >
-              <span className="ws-tile">
-                <Icon name={ws.icon} size={collapsed ? 16 : 15} />
-              </span>
-              {!collapsed && (
-                <>
-                  <span className="ws-text">
-                    <span className="ws-kicker">Workspace</span>
-                    <span className="ws-name">{ws.label}</span>
-                  </span>
-                  <Icon name="chevronDown" size={14} className="ws-chevron" />
-                </>
-              )}
-            </button>
-            {wsMenuOpen && (
-              <div className="ws-options" id="ws-options" role="group" aria-label="Choose a workspace">
-                <div className="ws-options-title">Switch workspace</div>
-                {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`ws-option ws-option-${key}`}
-                    aria-pressed={key === workspace}
-                    onClick={() => {
-                      setWorkspace(key)
-                      setWsMenuPath(null)
-                      wsButtonRef.current?.focus()
-                    }}
-                  >
-                    <span className="ws-tile">
-                      <Icon name={WORKSPACES[key].icon} size={14} />
-                    </span>
-                    <span className="ws-text">
-                      <span className="ws-name">{WORKSPACES[key].label}</span>
-                      <span className="ws-option-tagline">{WORKSPACES[key].option}</span>
-                    </span>
-                    <span className={`badge ${key === 'candidate' ? 'badge-success' : 'badge-warning'} ws-status`}>
-                      {WORKSPACES[key].status}
-                    </span>
-                    {key === workspace && (
-                      <span className="ws-check" aria-hidden="true">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                ))}
-                <p className="ws-note">
-                  Both use the same campaigns engine and the same evidence rules. Switching changes what the rail shows —
-                  it never hides your data. A campaign's mode (Jobs, Customers…) is set inside the campaign.
-                </p>
-              </div>
-            )}
-            {!collapsed && <div className="ws-tagline">{ws.tagline}</div>}
+          <div className="ws-seg" role="group" aria-label="Workspace">
+            {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={`ws-seg-btn ws-seg-${key}`}
+                aria-pressed={key === workspace}
+                aria-label={collapsed ? `${WORKSPACES[key].label} workspace` : undefined}
+                data-tip={collapsed ? `${WORKSPACES[key].label} workspace` : undefined}
+                onClick={() => setWorkspace(key)}
+              >
+                <Icon name={WORKSPACES[key].icon} size={14} />
+                {!collapsed && <span>{WORKSPACES[key].label}</span>}
+              </button>
+            ))}
           </div>
 
           <div className="rail-groups">
@@ -410,7 +355,7 @@ export function AppShell() {
               {hint && <span className="topbar-hint">{hint}</span>}
             </div>
             <div className="grow" />
-            {aiMode && (
+            {advanced && aiMode && (
               <span className={`pill pill-${aiMode.tone}`}>
                 <span className="dot" aria-hidden="true" />
                 {aiMode.text}
@@ -451,7 +396,7 @@ export function AppShell() {
               </span>
             </div>
           )}
-          {(caps?.temporaryStorage || caps?.guestSignIn) && (
+          {(caps?.temporaryStorage || caps?.guestSignIn) && !demoHidden && (
             <div className="banner" role="status">
               <Icon name="alert" size={15} className="banner-icon" />
               <span>
@@ -461,6 +406,7 @@ export function AppShell() {
                   : 'Data is stored, but sign-in is guest-only.'}{' '}
                 {caps.guestSignIn && 'You are signed in as a private guest.'}
               </span>
+              <button type="button" className="btn btn-ghost btn-sm banner-close" aria-label="Dismiss this message" onClick={() => { setDemoHidden(true); try { sessionStorage.setItem('op.demoBanner', '1') } catch { /* shown again next time */ } }}>✕</button>
             </div>
           )}
           {apiStatus === 'degraded' && (

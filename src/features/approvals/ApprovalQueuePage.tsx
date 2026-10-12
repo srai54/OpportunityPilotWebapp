@@ -8,7 +8,7 @@ import { EmptyState, LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
 import type { ApprovalItem, ApprovalPage, CampaignSummary, DecideRequest, DecideResult } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
-import { appliesViaLabel, platformLabel } from '../opportunities/opportunityModel'
+import { platformLabel } from '../opportunities/opportunityModel'
 import { useShell } from '../shell/ShellContext'
 import {
   addResults,
@@ -60,7 +60,7 @@ export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: bo
         subtitle="Jobs that scored at or above your campaign's threshold. Approve to shortlist, reject to dismiss."
       />}
       <HowItWorks summary="What approving does — nothing is applied when you approve">
-        <p>Approve moves a job to Shortlisted. Open its application page to apply yourself, then mark it applied. Reject dismisses a job;
+        <p>Approve marks a job as approved. Open its application page to apply yourself, then mark it applied. Skip hides a job;
           you can restore it from the full list.</p>
       </HowItWorks>
 
@@ -176,12 +176,10 @@ function Queue({
   }
 
   function approveAll() {
-    const agent = items.filter((i) => i.appliesVia === 'Agent').length
     const notLoaded = total - items.length
     const message =
       `Approve all ${total} suggested ${total === 1 ? 'job' : 'jobs'}${notLoaded > 0 ? `, including ${notLoaded} not loaded on this page` : ''}?\n\n` +
-      `They move to Shortlisted. Your agent handles supported platforms on its next apply run; ` +
-      `you open the remaining application pages yourself. Nothing is applied right now.${agent ? ` ${agent} loaded item(s) use the agent.` : ''}`
+      `They are marked approved. You open each application page yourself and apply there. Nothing is applied right now.`
     if (!window.confirm(message)) return
     setBusy(true)
     void api<DecideResult>('/api/v1/approvals/decide-all', { method: 'POST', body: JSON.stringify({ approve: true, campaignId: campaignId || null }) })
@@ -265,7 +263,7 @@ function Queue({
                     </th>
                     <th scope="col">Job</th>
                     <th scope="col">Platform</th>
-                    <th scope="col">Fit</th>
+                    <th scope="col">Match</th>
                     <th scope="col">Evidence</th>
                     <th scope="col">Why it was suggested</th>
                     <th scope="col">Applies via</th>
@@ -316,7 +314,6 @@ function ApprovalRow({
   onToggle: (on: boolean) => void
 }) {
   const platform = platformLabel(item.platform)
-  const agent = item.appliesVia === 'Agent'
   return (
     <tr className={checked ? 'is-selected' : ''}>
       <td className="col-check">
@@ -345,9 +342,7 @@ function ApprovalRow({
       </td>
       <td className="muted-small break">{item.outcomeReason ?? 'Qualified and at or above the threshold.'}</td>
       <td>
-        <span className={`badge ${agent ? 'badge-primary' : ''}`} title={appliesViaLabel(item.appliesVia, item.platform)}>
-          {agent ? 'Your agent' : 'You apply'}
-        </span>
+        <span className="badge">You apply</span>
       </td>
     </tr>
   )

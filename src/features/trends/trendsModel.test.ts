@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { WellfoundJob } from '../../lib/types'
-import { headlines, payLine, startupTrend, trendsPath, type TrendReport } from './trendsModel'
+import { headlines, payLine, skillGap, startupTrend, trendsPath, type TrendReport } from './trendsModel'
 
 const report: TrendReport = {
   status: 'Ready', message: null, sampled: 10, pages: 1,
@@ -60,5 +60,22 @@ describe('startupTrend', () => {
     expect(t.withSalaryPercent).toBe(33)
     expect(t.withEquityPercent).toBe(33)
     expect(t.stages[0]).toMatchObject({ name: 'Seed', count: 2 })
+  })
+})
+
+describe('skillGap', () => {
+  const demand = [
+    { name: 'SQL', count: 12, sharePercent: 60 }, { name: 'Python', count: 10, sharePercent: 50 }, { name: 'Databricks', count: 6, sharePercent: 30 },
+    { name: '.NET', count: 2, sharePercent: 10 },
+  ]
+  it('splits demand into skills you have and skills you lack, matching aliases and case', () => {
+    const g = skillGap(demand, ['sql', 'PYTHON', 'dotnet', ' '])
+    expect(g.have.map((s) => s.name)).toEqual(['SQL', 'Python', '.NET'])
+    expect(g.missing.map((s) => s.name)).toEqual(['Databricks'])
+    expect(g.coveragePercent).toBe(80)   // (12 + 10 + 2) of 30 mentions
+  })
+  it('covers nothing for an empty profile and handles no demand', () => {
+    expect(skillGap(demand, []).coveragePercent).toBe(0)
+    expect(skillGap([], ['sql'])).toEqual({ have: [], missing: [], coveragePercent: 0 })
   })
 })

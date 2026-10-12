@@ -108,10 +108,10 @@ describe('suggested status', () => {
     expect(STATUS_LABELS.Suggested).toEqual({ text: 'Awaiting approval', tone: 'warning' })
   })
 
-  it('offers Approve (→ Shortlisted) and Reject (→ Dismissed) as quick actions', () => {
+  it('offers Approve (→ Shortlisted) and Skip (→ Dismissed) as quick actions', () => {
     expect(quickActions('Suggested')).toEqual([
       { label: 'Approve', to: 'Shortlisted' },
-      { label: 'Reject', to: 'Dismissed' },
+      { label: 'Skip', to: 'Dismissed' },
     ])
   })
 
@@ -175,7 +175,7 @@ describe('opportunity list helpers', () => {
     expect(primaryAction(o({ status: 'Shortlisted' })).label).toBe('Open posting')
     expect(primaryAction(o({ status: 'Shortlisted', mode: 'Customer' })).label).toBe('Draft outreach')
     expect(nextPermittedAction(o({ status: 'Shortlisted', mode: 'Customer' }))).toMatch(/Draft outreach/)
-    expect(nextPermittedAction(o({ status: 'Shortlisted', mode: 'Job' }))).toMatch(/local agent/)
+    expect(nextPermittedAction(o({ status: 'Shortlisted', mode: 'Job' }))).toMatch(/application page/)
     expect(nextPermittedAction(o({ status: 'Suggested' }))).toMatch(/Nothing is contacted/)
   })
 })

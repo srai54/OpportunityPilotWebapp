@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { composerTarget, unresolvedPlaceholder } from './composer'
+import { useShell } from '../shell/ShellContext'
 import { SendPanel } from './SendPanel'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -24,6 +25,8 @@ export function OutreachPage() {
   const [error, setError] = useState<Error>()
   const [notice, setNotice] = useState('')
   const [sendTick, setSendTick] = useState(0)
+  const { advanced } = useShell()
+  const [adv, setAdv] = useState(advanced)
 
   const items = drafts.data?.items ?? []
   const filtered = items.filter((item) =>
@@ -32,7 +35,9 @@ export function OutreachPage() {
   const campaigns = [...new Map(items.map((item) => [item.campaignId, item.campaignName])).entries()]
     .sort((a, b) => a[1].localeCompare(b[1]))
 
-  const firstId = filtered[0]?.id
+  const [params] = useSearchParams()
+  const wanted = params.get('draft')
+  const firstId = (wanted && filtered.some((d) => d.id === wanted) ? wanted : null) ?? filtered[0]?.id
   useEffect(() => {
     if (!selected && firstId) void open({ id: firstId })
     // Opens the first draft once the list arrives so the editor is never an empty pane.
@@ -129,14 +134,17 @@ export function OutreachPage() {
     {drafts.data?.items.length === 0 && <EmptyState title="No outreach drafts yet"><p>Open an opportunity and create a cover note, email, LinkedIn message, or contact-form draft.</p><Link className="btn btn-primary" to="/opportunities">Browse opportunities</Link></EmptyState>}
     {drafts.data && drafts.data.items.length > 0 && <div className="outreach-grid">
       <section className="panel"><header className="panel-head"><h2 className="eyebrow">Draft inbox</h2><span className="grow" /><span className="muted-small">{filtered.length} shown · {drafts.data.total} total</span></header>
+        <div className="panel-body"><button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Advanced: filters, batch approve'}</button></div>
+        {adv && (
         <div className="panel-body filters outreach-filters">
           <label className="field"><span>Channel</span><select value={channel} onChange={(event) => setChannel(event.target.value as DraftChannel | '')}><option value="">All channels</option><option value="Email">Email</option><option value="CoverNote">Cover note</option><option value="LinkedInMessage">LinkedIn</option><option value="ContactForm">Contact form</option></select></label>
           <label className="field"><span>State</span><select value={state} onChange={(event) => setState(event.target.value as DraftState | '')}><option value="">All states</option><option value="Draft">Draft</option><option value="Approved">Approved</option><option value="Sent">Sent</option></select></label>
           <label className="field"><span>Campaign</span><select value={campaignId} onChange={(event) => setCampaignId(event.target.value)}><option value="">All campaigns</option>{campaigns.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
           <div className="row wrap outreach-batch"><button className="btn btn-secondary btn-sm" type="button" disabled={eligible.length === 0} onClick={() => setChecked(eligible.map((item) => item.id))}>Select {eligible.length} eligible</button><button className="btn btn-primary btn-sm" type="button" disabled={working || checked.length === 0} onClick={approveSelected}>Approve selected ({checked.length})</button></div>
         </div>
+        )}
         {filtered.length === 0 ? <div className="panel-body muted">No drafts match these filters.</div> : <ul className="inbox-list">{filtered.map((item) => <li className="inbox-row" key={item.id}>
-          <label className="inbox-check"><input type="checkbox" checked={checked.includes(item.id)} disabled={item.state !== 'Draft'} onChange={() => toggle(item.id)} /><span className="sr-only">Select {item.opportunityTitle} version {item.version}</span></label>
+{adv &&           <label className="inbox-check"><input type="checkbox" checked={checked.includes(item.id)} disabled={item.state !== 'Draft'} onChange={() => toggle(item.id)} /><span className="sr-only">Select {item.opportunityTitle} version {item.version}</span></label>}
           <button type="button" className={selected?.id === item.id ? 'inbox-item is-selected' : 'inbox-item'} onClick={() => open(item)}>
             <span><strong>{item.opportunityTitle}</strong><small>{item.organization || 'Unknown organisation'} · {item.campaignName} · {item.channel}</small>{item.recipient && <small>{item.recipientVerified ? 'Verified recipient' : 'Unverified recipient'}</small>}</span>
             <Badge tone={item.state === 'Sent' ? 'success' : item.state === 'Approved' ? 'primary' : 'warning'}>{item.state}</Badge>

@@ -70,7 +70,7 @@ export function FiltersStep({ draft, setDraft, mode, fieldErrors }: Props) {
               'keywords',
               'Job titles and search phrases',
               'e.g. .NET developer',
-              'Also used by your local agent when it searches LinkedIn or Naukri.',
+              'The job-board search and the scorer both use these.',
             )
           : list('keywords', modeCopy(mode).keywords[0], modeCopy(mode).keywords[1], modeCopy(mode).keywords[2])}
       </section>

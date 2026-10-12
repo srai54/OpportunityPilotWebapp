@@ -1419,3 +1419,22 @@ a.result-title:hover { color: var(--op-primary); }
 @media (max-width: 860px) { .detail2 { grid-template-columns: minmax(0, 1fr); } }
 .kpi-strip-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 860px) { .kpi-strip-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Compact Candidate | Sales toggle in the rail */
+.ws-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 8px 10px; padding: 4px; border-radius: 10px; background: var(--op-nav-border); }
+.rail-collapsed .ws-seg { grid-template-columns: 1fr; margin-inline: 6px; }
+.ws-seg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--op-nav-ink); font: inherit; font-size: var(--op-text-meta); font-weight: 600; cursor: pointer; }
+.ws-seg-btn:hover { color: #fff; }
+.ws-seg-btn[aria-pressed="true"] { background: var(--op-nav-active); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.ws-seg-sales[aria-pressed="true"] { background: var(--op-ws-sales); }
+.ws-seg-candidate[aria-pressed="true"] { background: var(--op-ws-candidate); }
+.banner-close { margin-left: auto; flex: 0 0 auto; }
+
+/* Guided start */
+.guided-steps { display: grid; gap: 10px; margin: 0; padding: 0; }
+.guided-step { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: var(--op-radius-control); border: 1px solid var(--op-line); background: var(--op-surface); }
+.guided-step.is-next { border-color: var(--op-primary); background: var(--op-primary-tint); }
+.guided-step.is-done { opacity: 0.7; }
+
+.skill-have { background: var(--op-green-tint); color: var(--op-on-green-tint); }
+.skill-missing { background: var(--op-amber-tint); color: var(--op-on-amber-tint); }

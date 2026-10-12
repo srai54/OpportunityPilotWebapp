@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { PageHeader } from '../../components/PageHeader'
@@ -7,6 +7,7 @@ import { api, ApiError } from '../../lib/api'
 import type { Campaign, ResearchJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { formatWhen } from '../applications/applicationStatus'
+import { useShell } from '../shell/ShellContext'
 import {
   EVENT_LEVEL_TONES,
   isActive,
@@ -104,6 +105,14 @@ function ResearchProgress({ jobId }: { jobId: string }) {
   const [cancelRequested, setCancelRequested] = useState(false)
   const [cancelError, setCancelError] = useState<Error>()
 
+  const { advanced } = useShell()
+  const navigate = useNavigate()
+  const finishedOk = job?.state === 'Completed' || job?.state === 'CompletedWithGaps'
+  // Simple mode: nobody wants to read a stage tracker — when the run is done, go straight to the results.
+  useEffect(() => {
+    if (!advanced && job && finishedOk) navigate(`/opportunities?campaign=${job.campaignId}`, { replace: true })
+  }, [advanced, job, finishedOk, navigate])
+
   async function cancel() {
     if (!window.confirm('Cancel this run? Opportunities found so far are kept.')) return
     setCancelling(true)
@@ -124,6 +133,40 @@ function ResearchProgress({ jobId }: { jobId: string }) {
     return (
       <div className="page stack-4">
         {error ? <ErrorNotice error={error} onRetry={restart} /> : <p className="muted-small" role="status">Loading research run…</p>}
+      </div>
+    )
+  }
+
+  if (!advanced && !finishedOk) {
+    const found = job.counts.qualified + job.counts.needsVerification + job.counts.excluded
+    const failed = job.state === 'Failed' || job.state === 'Cancelled'
+    return (
+      <div className="page stack-4">
+        <PageHeader title={campaign.data?.name ?? 'Looking for jobs'} />
+        <section className="card stack-3" aria-live="polite">
+          {failed ? (
+            <>
+              <h3 className="section-heading">{job.state === 'Cancelled' ? 'This run was cancelled.' : 'This run did not finish.'}</h3>
+              <p className="muted-small">{job.state === 'Failed' ? 'Something went wrong reading the source. Nothing was lost.' : 'Whatever was found so far is kept.'}</p>
+              <div className="row wrap">
+                <Link className="btn btn-primary btn-sm" to={`/opportunities?campaign=${job.campaignId}`}>See what was found</Link>
+                <Link className="btn btn-ghost btn-sm" to={`/campaigns/${job.campaignId}/edit?full=1`}>Check the campaign</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="section-heading">Looking for jobs…</h3>
+              <p className="muted-small" role="status">
+                {found > 0 ? `${found} read so far.` : 'Reading your sources.'} This usually takes under a minute — you will land on the results automatically.
+              </p>
+              <div className="row wrap">
+                <button type="button" className="btn btn-ghost btn-sm" disabled={cancelling || cancelRequested} onClick={() => void cancel()}>Cancel</button>
+                <Link className="btn btn-ghost btn-sm" to={`/opportunities?campaign=${job.campaignId}`}>Show what is found so far</Link>
+              </div>
+              {cancelError && <ErrorNotice error={cancelError} />}
+            </>
+          )}
+        </section>
       </div>
     )
   }

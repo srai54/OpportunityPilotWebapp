@@ -13,7 +13,6 @@ import { useShell } from '../shell/ShellContext'
 import { CoverNotePanel } from './CoverNotePanel'
 import { OutreachActionsPanel } from './OutreachActionsPanel'
 import {
-  agentApplyPlatform,
   displayUrl,
   factLabel,
   formatPoints,
@@ -75,7 +74,6 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
   const status = STATUS_LABELS[o.status] ?? { text: o.status, tone: 'neutral' }
   const postingHref = safeHref(o.url)
   const applyHref = safeHref(o.applyUrl)
-  const agentPlatform = agentApplyPlatform(o)
   // Greenhouse / Lever / Adzuna: the agent never applies there, so the application page is the way in.
   const userApplies = o.mode === 'Job' && isUserApplyBoard(o.platform)
   const showApply = Boolean(applyHref) && (userApplies || applyHref !== postingHref)
@@ -141,7 +139,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
     <>
       {(o.status === 'New' || o.status === 'Shortlisted' || suggested) && (
         <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void setStatus('Dismissed')}>
-          {suggested ? 'Reject' : 'Dismiss'}
+          Skip
         </button>
       )}
       {o.status === 'Dismissed' && (
@@ -151,12 +149,12 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
       )}
       {(o.status === 'New' || o.status === 'Dismissed') && (
         <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void setStatus('Shortlisted')}>
-          Shortlist
+          Approve
         </button>
       )}
       {suggested && (
         <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void setStatus('Shortlisted')}>
-          ✓ Approve — adds to shortlist
+          ✓ Approve
         </button>
       )}
       {canApplyNow && (
@@ -217,8 +215,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           }
           actions={decisions}
         />
-          <p className={`notice ${suggested ? 'notice-warning' : 'notice-neutral'} small`} aria-live="polite"><strong>Next:</strong> {nextPermittedAction(o)}
-            {suggested && <> It scored at or above your campaign&rsquo;s threshold — you can also decide in bulk on <Link to="/approvals">Approvals</Link>.</>}
+          <p className="notice notice-neutral small" aria-live="polite"><strong>Next:</strong> {nextPermittedAction(o)}
             {o.mode !== 'Job' && (o.status === 'Shortlisted' || o.status === 'Contacted' || o.status === 'Responded' || o.status === 'Interested') && (
               <> <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void makeStaffingLead()}>Make a staffing lead</button></>
             )}</p>
@@ -243,7 +240,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             <div className="panel-body">
               <div className="fit-big op-numeric">
                 <span className="fit-value">{Math.round(o.score)}</span>
-                <span className="fit-of">/ 100 fit</span>
+                <span className="fit-of">% match</span>
               </div>
               <span className="meter-track meter-wide">
                 <i style={{ width: `${Math.min(100, Math.max(0, o.score))}%` }} />
@@ -437,18 +434,6 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                   ))}
                 </ol>
               )}
-              <div className="applies-via">
-                <span className="badge">Applies via: {agentPlatform ? 'your agent' : o.mode === 'Job' ? 'you' : '—'}</span>
-                <span className="muted-small">
-                  {agentPlatform
-                    ? `The agent applies on its next “npm run agent -- apply ${agentPlatform}” run.`
-                    : userApplies
-                      ? `This posting came from ${platform ?? 'a job board'}, so you apply yourself, then mark it applied.`
-                      : o.mode === 'Job'
-                        ? 'Apply on the company site, then mark it applied.'
-                        : 'Create a draft above, approve its exact version, then copy it or use a configured provider.'}
-                </span>
-              </div>
               {showApply && applyHref && (
                 <a className="btn btn-secondary auth-wide" href={applyHref} target="_blank" rel="noopener noreferrer">
                   ↗ Open application page

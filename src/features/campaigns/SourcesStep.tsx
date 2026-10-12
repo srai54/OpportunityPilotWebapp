@@ -94,8 +94,7 @@ export function SourcesStep({ campaign, preferBoard }: { campaign: Campaign; pre
         {sources.loading && !sources.data && <p className="muted-small">Loading sources…</p>}
         {sources.data && list.length === 0 && (
           <p className="notice notice-neutral">
-            No sources yet. A run reads only the sources you add here (and postings your local agent sends), so add at
-            least one below.
+            No sources yet. A run reads only the sources you add here, so add at least one below.
           </p>
         )}
         {list.length > 0 && (

@@ -7,6 +7,7 @@ import { TagInput } from '../../components/TagInput'
 import { api, ApiError } from '../../lib/api'
 import type { Profile, ProfileData, ProfileSummary, ProfileType } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { useShell } from '../shell/ShellContext'
 import {
   buildSummary,
   confirmationState,
@@ -377,6 +378,8 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
     setError(undefined)
   }
 
+  const { advanced } = useShell()
+  const [adv, setAdv] = useState(advanced)
   const TABS: { key: Tab; label: string; count?: string | number }[] = [
     { key: 'details', label: 'Details' },
     { key: 'claims', label: 'Claims', count: state.awaiting.length || undefined },
@@ -408,6 +411,7 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
                 ready.claimsAwaiting.length > 0 && `To confirm: ${ready.claimsAwaiting.join(', ')}.`,
               ].filter(Boolean).join(' ')}
         </p>
+        {adv && (
         <div className="tabs" role="tablist" aria-label="Profile sections">
           {TABS.map((t) => (
             <button
@@ -425,6 +429,10 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
             </button>
           ))}
         </div>
+        )}
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => { setAdv(!adv); if (adv) setTab('details') }}>
+          {adv ? 'Hide advanced' : 'Advanced: all fields, claims, versions'}
+        </button>
       </div>
 
       <div className="profiles2-pad stack-4" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
@@ -438,12 +446,14 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
               <p className="hint">Only you see this. Name it for the kind of work, not the company.</p>
               {fieldErrors.name && <p className="field-error">{fieldErrors.name.join(' ')}</p>}
             </div>
+            {adv && (
             <div className="field">
               <label htmlFor="ptype">Profile type</label>
               <input id="ptype" value={`${type} — ${typeInfo?.description ?? ''}`} readOnly disabled />
               <p className="hint">Fixed once created: campaigns rely on it. Create another profile for a different type.</p>
             </div>
-            {fields.map((f) => (
+            )}
+            {fields.filter((f) => adv || f.required || f.key === 'skills' || f.key === 'availability').map((f) => (
               <FieldInput key={f.key} f={f} data={data} setField={setField} setConfirmed={setConfirmed} />
             ))}
             {fieldErrors.data && <p className="field-error grid-wide">{fieldErrors.data.join(' ')}</p>}

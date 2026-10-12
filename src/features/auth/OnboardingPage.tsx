@@ -15,7 +15,7 @@ const CHOICES: { key: Workspace; title: string; sub: string; status: string; ton
     tone: 'badge-success',
     points: [
       'Roles from Greenhouse, Lever and your own sources',
-      'Approve a batch, then apply — or let the local agent do it',
+      'Approve a batch, then apply with one click on each job',
       'Every score shows the sentence that justifies it',
     ],
   },
