@@ -1,4 +1,4 @@
-# DESIGN.md — OpportunityPilot design rules
+# DESIGN.md — OpportunityPilot design rules (v3: card-first)
 
 **Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/UI_REVAMP_PLAN.md` and `docs/WORKFLOW_GUIDE_PLAN.md`.
 
@@ -18,6 +18,7 @@
 | Zapier | Numbered workflow steps as the main metaphor (journey bar, Getting started) | Orange brand colour |
 | Intercom | Soft white tiles on a tinted canvas, human one-sentence guidance | Illustration-heavy layouts |
 | Cal.com | Whitespace, one clear primary button, friendly type | — |
+| Intercom / Zapier / Cal.com (card chrome) | Floating white tiles on a warm canvas, 12–16px corners, hairline border plus a very soft shadow, one tinted "signature" card for the thing to do now | Marketing-scale type, pill-rounded cards |
 | Linear / Clay / Airtable | — | Dark-first marketing look, illustration, long editorial scroll: wrong density for a task app |
 
 New inspiration is allowed only if it is recorded here with what is borrowed and rejected. Library sources: getdesign.md, github.com/VoltAgent/awesome-design-md, designmd.ai.
@@ -26,7 +27,7 @@ New inspiration is allowed only if it is recorded here with what is borrowed and
 
 | Role | Token | Notes |
 |---|---|---|
-| Page / card / header band | `--op-bg` / `--op-surface` / `--op-panel-head` | Cards are white on the warm page; hairline border, no shadow |
+| Page / card / header band | `--op-bg` / `--op-surface` / `--op-panel-head` | Cards are white on the warm page: hairline border + `--op-shadow-card` (very soft). Popovers and tips use `--op-shadow-popover` |
 | Text | `--op-ink` (body), `--op-muted` (secondary), `--op-faint` | `--op-faint` (3.7:1) is for axis ticks and eyebrow labels **only** |
 | Action | `--op-primary` `#006dd0`, hover `--op-primary-hover`, tint `--op-primary-tint` | White on primary and primary on page both pass 4.5:1. On a grey hover row use `--op-primary-hover` |
 | Status | `*-tint` + `--op-on-*-tint` for green / amber / danger / indigo / teal / neutral | Always with words |
@@ -54,7 +55,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 ## 5. Layout, spacing, shape
 
 - Spacing scale 4/8 (`--op-space-1…6`). No other spacing values.
-- Radius: cards 12 (`--op-radius`), controls 8, chips 6, pills 999.
+- Radius: cards 16 (`--op-radius-card`), panels/popovers 12 (`--op-radius`), controls 8, chips 6, pills 999.
 - Simple mode: one centred column, max 1040px, no sidebar. Advanced: sidebar (236px; collapses to 60px; drawer under 860px) and wide pages (≤ 1320px).
 - Breakpoints: 1080 (grids collapse), 860 (drawer / one column), 640 (compact top bar, bottom-sheet tips), 375 must have no horizontal scroll.
 - Touch target ≥ 44px on phones; row height 36px in tables.
@@ -115,3 +116,28 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 3. Opened in Edge: 1280 and 375, light and dark; axe 0; no horizontal overflow; no console errors.
 4. Unit tests for any new pure logic (`*Model.ts`).
 5. New pattern → recorded in this file.
+6. Simple view: lists are cards (section 13), not tables.
+
+## 13. Card system (v3) — mandatory in the simple view
+
+**Rule: in the simple view, every list of things is a list of cards, never a table. Tables stay in Advanced.** One idea per card, one primary action per card, everything the person needs to decide is on the card itself.
+
+| Card | Used for | Contents |
+|---|---|---|
+| `Card` | Any grouped content | Optional icon + title, one-line subtitle, body, footer actions. 16px radius, 20–24px padding |
+| `StepCard` | Getting started, the path | Number or tick, title, one sentence, one button. The current step is the tinted **signature card** (`--op-primary-tint`); done steps are muted with a tick |
+| `LeadCard` (jobs and companies) | Review, approved list, Find results | Select box · initial avatar · title · company · place · source chips (Remote, pay, new) · **match ring** (score out of 100, with the word "match") · status badge · primary action (Approve / Open / Reach out) |
+| `MessageCard` | Outreach inbox | Company · channel icon · subject line · state badge (Draft / Approved / Sent) · first line of the text |
+| `FollowUpCard` | Follow-ups | Company · what to do · due label · Open / Done |
+| `StatCard` | Key figures | Label, figure, change, sparkline |
+| `ComposeCard` / `SendCard` | Outreach | Compose = fields + the "Before you send" chips. Send = mail app choice + the one big button + the receipt |
+
+Layout: cards sit in a `CardList` (single column, 12px gap) or a `CardGrid` (auto-fill, min 300px, 16px gap). A page is a short stack of cards under the page header; the **signature card** (what to do now) is always first.
+
+Selection and bulk: any card list that can be acted on in bulk shows a select box on each card and a **bulk bar** (sticky at the bottom) once one or more are chosen: "3 selected · Draft messages · Approve · Clear". Bulk never sends anything by itself; sending is always a visible, per-message step or a queue the person steps through.
+
+Interaction: an interactive card lifts 1px and deepens its shadow on hover; the whole card is clickable only when it has a single destination (a link inside the card, stretched); otherwise its buttons are the click targets. Focus ring on the card or its link. Never nest a link inside a clickable card.
+
+Tokens: `--op-radius-card` 16px, `--op-shadow-card`, `--op-shadow-card-hover`, `--op-canvas` (warm page). Dark theme re-declares them (no theme branching in components).
+
+Accessibility: a card list is a `<ul>`; each card an `<li>` with a heading (`h3`) or an `aria-label`; the match ring has the number as text; status is a word plus colour; bulk bar is a `role="region"` with a live count.
