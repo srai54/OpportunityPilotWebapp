@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
@@ -130,10 +131,11 @@ export function WellfoundPage() {
 
     {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
+    <RoleList />
     <form className="search-hero" aria-label="Search Wellfound" onSubmit={(e) => e.preventDefault()}>
       {tabs}
       <div className="search-bar" data-coach="find-search">
-        <label className="search-field search-field-main"><span className="sr-only">Role or keywords</span><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={workspace === 'sales' ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. Backend engineer'} /></label>
+        <label className="search-field search-field-main"><span className="sr-only">Role or keywords</span><input list={ROLE_LIST_ID} value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={workspace === 'sales' ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. Backend engineer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span><input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location, e.g. India, Remote" /></label>
         <button className="btn btn-primary" type="button" disabled={busy} onClick={syncPublic}>{busy ? 'Refreshing…' : 'Refresh live jobs'}</button>
       </div>

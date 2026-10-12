@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { HowItWorks } from '../../components/HowItWorks'
 import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
@@ -51,11 +52,12 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
   }
 
   return <>
+    <RoleList />
     <form className="search-hero" onSubmit={submit} aria-label={`Search ${info.name}`}>
       {tabs}
       <div className="search-bar" data-coach="find-search">
         <label className="search-field search-field-main"><span className="sr-only">{workspace === 'candidate' ? 'Role or keywords' : 'Hiring role or demand signal'}</span>
-          <input value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder={workspace === 'candidate' ? 'Role or keywords, e.g. .NET developer' : 'Role companies are hiring, e.g. React developer'} /></label>
+          <input list={ROLE_LIST_ID} value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder={workspace === 'candidate' ? 'Role or keywords, e.g. .NET developer' : 'Role companies are hiring, e.g. React developer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder={board === 'Seek' ? 'Sydney, Melbourne…' : 'Location, e.g. Bengaluru'} /></label>
         <button className="btn btn-primary" type="submit" disabled={!query}>Search {info.name}</button>

@@ -1551,3 +1551,8 @@ a.menu-item:hover { text-decoration: none; }
 .ready-chip.is-todo { background: var(--op-amber-tint); border-color: transparent; color: var(--op-on-amber-tint); cursor: pointer; }
 .ready-chip.is-todo:hover { filter: brightness(0.96); }
 input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--op-danger, #c62828); }
+
+/* Suggestions under a TagInput (combobox listbox) */
+.suggest-list { list-style: none; margin: 2px 0 0; padding: 4px; border: 1px solid var(--op-line); border-radius: var(--op-radius-control); background: var(--op-surface); box-shadow: var(--op-shadow-popover); max-height: 260px; overflow-y: auto; }
+.suggest-option { padding: 8px 10px; border-radius: var(--op-radius-chip); cursor: pointer; font-size: var(--op-text-body); }
+.suggest-option:hover, .suggest-option.is-active { background: var(--op-primary-tint); color: var(--op-on-primary-tint); }

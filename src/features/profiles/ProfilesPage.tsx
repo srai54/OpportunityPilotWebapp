@@ -7,6 +7,7 @@ import { TagInput } from '../../components/TagInput'
 import { api, ApiError } from '../../lib/api'
 import type { Profile, ProfileData, ProfileSummary, ProfileType } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { SKILLS } from '../suggest/catalog'
 import { useShell } from '../shell/ShellContext'
 import {
   buildSummary,
@@ -211,7 +212,8 @@ function FieldInput({
           label={f.label}
           values={splitTags(value)}
           onChange={(tags) => setField(f.key, joinTags(tags))}
-          placeholder="Add a skill and press Enter"
+          placeholder="Type a skill, e.g. C# or Azure"
+          suggestions={SKILLS}
           hint="Each one can become a scored criterion in a campaign."
           badge={chip}
         />
