@@ -117,7 +117,14 @@ export function OutreachPage() {
       const dirty = body !== row.body || recipient !== (row.recipient ?? '') || subject !== (row.subject ?? '')
       if (dirty) row = await api<OutreachDraft>(`/api/v1/drafts/${row.id}`, { method: 'PUT', body: JSON.stringify({ recipient: recipient || null, subject: subject || null, body, expectedVersion: row.version }) })
       if (row.state === 'Draft') row = await api<OutreachDraft>(`/api/v1/drafts/${row.id}/approve`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
-      await api(`/api/v1/executions/drafts/${row.id}`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
+      const started = await api<{ state: string; reused: boolean }>(`/api/v1/executions/drafts/${row.id}`, { method: 'POST', body: JSON.stringify({ version: row.version }) })
+      if (started.reused && started.state === 'Succeeded') {
+        // Exactly these words were already sent: the app will not record a duplicate send. Change something to send another.
+        tab?.close()
+        setNotice('This exact message was already sent. Change a few words (or the recipient) to send another one.')
+        setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? ''); drafts.reload()
+        return
+      }
       if (target.copy) await navigator.clipboard.writeText(row.body).catch(() => undefined)
       if (target.kind === 'mailto' && target.url) window.location.href = target.url
       else if (tab && target.url) tab.location.href = target.url
@@ -126,6 +133,18 @@ export function OutreachPage() {
       setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? ''); setSendTick((n) => n + 1); drafts.reload()
     } catch (e) { tab?.close(); setError(e as Error) }
     finally { setWorking(false) }
+  }
+
+  /** A sent message cannot change, so "edit and send again" reopens it as a new editable version (the earlier send stays on record). */
+  async function resendAsNew() {
+    if (!selected) return
+    setWorking(true); setError(undefined); setNotice('')
+    try {
+      const copy = await api<OutreachDraft>(`/api/v1/drafts/${selected.id}/reopen`, { method: 'POST' })
+      drafts.reload()
+      setSelected(copy); setBody(copy.body); setRecipient(copy.recipient ?? ''); setSubject(copy.subject ?? ''); setTried(false)
+      setNotice('Ready to edit. Change what you need, then Approve & send. The earlier send stays on record.')
+    } catch (e) { setError(e as Error) } finally { setWorking(false) }
   }
 
   async function copyDraft() {
@@ -171,9 +190,9 @@ export function OutreachPage() {
       <section className="panel"><header className="panel-head"><h2 className="eyebrow">Editor</h2></header>
         {!selected ? <div className="panel-body muted">Select a draft to review it.</div> : <div className="panel-body stack-3">
           <div className="row wrap"><Badge>{selected.channel}</Badge><Badge tone={selected.state === 'Approved' ? 'success' : 'warning'}>{selected.state} · v{selected.version}</Badge><Link to={`/opportunities/${selected.opportunityId}`}>Open opportunity</Link></div>
-          <label className="field"><span>Recipient</span><input id="out-recipient" value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
-          {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
-          <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={14} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+          <label className="field"><span>Recipient</span><input id="out-recipient" readOnly={selected.state === 'Sent'} value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
+          {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" readOnly={selected.state === 'Sent'} value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
+          <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={14} readOnly={selected.state === 'Sent'} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
           {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">
             {checks.map((c) => <li key={c.label}>{c.ok
               ? <span className="ready-chip is-ok"><span aria-hidden="true">✓</span> {c.label}</span>
@@ -187,7 +206,16 @@ export function OutreachPage() {
           {selected.channel === 'Email' && selected.state !== 'Sent' && <label className="field" data-coach="out-mailapp"><span>Open email in</span>
             <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
             <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
-          <div className="row wrap"><button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save new version</button>
+          {selected.state === 'Sent' && (
+            <div className="notice notice-success stack-2" role="status" data-coach="out-resend">
+              <span><strong>Sent.</strong> This message is recorded as sent, so it is locked. To correct it or follow up, edit it and send again; the first send stays on record.</span>
+              <div className="row wrap">
+                <button className="btn btn-primary btn-sm" type="button" disabled={working} onClick={() => void resendAsNew()}>{working ? 'Reopening…' : 'Edit & send again'}</button>
+                <Link className="btn btn-ghost btn-sm" to="/follow-ups">See my follow-up reminder</Link>
+              </div>
+            </div>
+          )}
+          <div className="row wrap">{selected.state !== 'Sent' && <button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save new version</button>}
             {selected.state === 'Sent' ? null : selected.state === 'Approved' ? <button className="btn btn-secondary" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-primary" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve version {selected.version}</button>}
             {selected.state === 'Draft' && <button className="btn btn-primary" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>Approve &amp; send →</button>}
             <button className="btn btn-secondary" type="button" disabled={working} onClick={copyDraft}>Copy text</button></div>
