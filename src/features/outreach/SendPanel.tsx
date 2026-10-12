@@ -33,7 +33,7 @@ export function SendPanel({ draftId, version, state, onChange, onSent, appLabel 
     {error && <ErrorNotice error={error} />}
     {sent ? <p className="small"><Badge tone="success">Sent</Badge> Recorded {sent.completedAt ? new Date(sent.completedAt).toLocaleString() : ''}: {sent.receipt}</p>
       : pending ? <>
-        <p className="small">{pending.instructions}</p>
+        <p className="small">Press Send in your mail app, then come back and click the button.</p>
         <div className="row wrap">
           <button className="btn btn-primary" type="button" disabled={busy}
             onClick={() => void run(`/api/v1/executions/${pending.id}/confirm`, { receipt: `Marked as sent by you after opening ${appLabel ?? 'your mail app'} (${new Date().toLocaleString()})` }, true)}>
