@@ -5,6 +5,7 @@ import { api } from '../../lib/api'
 import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
+import { MAIL_APPS, readMailApp, writeMailApp, type MailApp } from '../outreach/composer'
 import { useShell } from '../shell/ShellContext'
 import { WORKSPACES, type Workspace } from '../shell/shellModel'
 import { ThemeChoiceGroup } from '../shell/ThemeToggle'
@@ -29,6 +30,7 @@ export function SettingsPage() {
   const diagnostics = useApi<{ version: string; database: { pendingMigrations: number | null } }>('/api/v1/diagnostics')
   const { user, mode, signOut } = useAuth()
   const { capabilities, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide } = useShell()
+  const [mailApp, setMailAppState] = useState<MailApp>(readMailApp)
   const [accountError, setAccountError] = useState<Error>()
   const [accountBusy, setAccountBusy] = useState(false)
 
@@ -110,6 +112,9 @@ export function SettingsPage() {
             <div className="panel-body">
               <p className="muted-small">Saved in this browser. System follows your device's light or dark setting.</p>
               <ThemeChoiceGroup />
+              <label className="field"><span><strong>Open emails in</strong></span>
+                <select value={mailApp} onChange={(e) => { setMailAppState(e.target.value as MailApp); writeMailApp(e.target.value as MailApp) }}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
+                <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} Used by "Approve &amp; send"; nothing is sent by the app.</span></label>
               <label className="check-row">
                 <input type="checkbox" checked={guide} onChange={(e) => setGuide(e.target.checked)} />
                 <span><strong>Guide</strong> — tips on every screen and a "Next" bar that says what to do now. Turning it on shows all the tips again.</span>

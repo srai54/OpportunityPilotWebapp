@@ -2,7 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/tokens.css'
 import './styles/app.css'
+import { inject } from '@vercel/analytics'
 import { App } from './App'
+
+// Page views for the Vercel deployment; it does nothing in local development.
+inject()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
