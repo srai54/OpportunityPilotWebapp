@@ -10,6 +10,10 @@ import {
   appendUnique,
   appliesViaForPlatform,
   appliesViaLabel,
+  applyLabel,
+  foundLabel,
+  sortLabel,
+  SORT_OPTIONS,
   DEFAULT_FILTERS,
   factLabel,
   formatCoverage,
@@ -154,7 +158,7 @@ describe('opportunity list helpers', () => {
   const o = (over: Partial<OpportunitySummary>): OpportunitySummary => ({
     id: '1', campaignId: 'c', mode: 'Job', title: 'Backend Engineer', organization: 'Stripe', location: 'Dublin', url: 'https://x',
     applyUrl: null, platform: null, score: 83, coverage: 100, outcome: 'Qualified', outcomeReason: null, status: 'New', gapsCount: 0,
-    updatedAt: '2026-10-06T00:00:00Z', ...over,
+    updatedAt: '2026-10-06T00:00:00Z', foundAt: '2026-10-05T09:30:00Z', ...over,
   })
   it('searches title, organisation and location of loaded rows', () => {
     const rows = [o({ id: 'a' }), o({ id: 'b', title: 'Sales Engineer', organization: 'Leverdemo', location: 'New York' })]
@@ -177,5 +181,23 @@ describe('opportunity list helpers', () => {
     expect(nextPermittedAction(o({ status: 'Shortlisted', mode: 'Customer' }))).toMatch(/Draft outreach/)
     expect(nextPermittedAction(o({ status: 'Shortlisted', mode: 'Job' }))).toMatch(/application page/)
     expect(nextPermittedAction(o({ status: 'Suggested' }))).toMatch(/Nothing is contacted/)
+  })
+})
+
+describe('order and apply wording', () => {
+  it('offers newest and oldest found first and names the order', () => {
+    expect(SORT_OPTIONS.map((s) => s.value)).toEqual(['score', 'found', 'oldest', 'recent'])
+    expect(sortLabel('oldest')).toBe('Oldest found first')
+    expect(opportunitiesPath('c1', { ...DEFAULT_FILTERS, sort: 'found' }, 0)).toContain('sort=found')
+  })
+  it('words when something was found, and says nothing for a missing or broken date', () => {
+    expect(foundLabel('2026-10-12T17:28:00Z', 'en-US')).toMatch(/^Found Oct 1[23], /)
+    expect(foundLabel(undefined)).toBeNull()
+    expect(foundLabel('nonsense')).toBeNull()
+  })
+  it('names where the apply click goes', () => {
+    expect(applyLabel('LinkedIn')).toBe('Apply on LinkedIn')
+    expect(applyLabel(null)).toBe('Apply on the site')
+    expect(applyLabel('Other')).toBe('Apply on the site')
   })
 })

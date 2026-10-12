@@ -81,10 +81,15 @@ export interface LeadCardProps {
   /** The one primary action, already a button or link. */
   action: ReactNode
   coach?: string
+  /** 1-based place in the current order, so "which came first" is visible. */
+  position?: number
+  /** When it was found, already worded ("Found Oct 12, 5:28 PM"). */
+  found?: string | null
+  foundAt?: string
 }
 
 /** A job or a company (lead): everything needed to decide is on the card. */
-export function LeadCard({ id, title, organization, location, to, score, status, chips = [], note, selected = false, onSelect, action, coach }: Readonly<LeadCardProps>) {
+export function LeadCard({ id, title, organization, location, to, score, status, chips = [], note, selected = false, onSelect, action, coach, position, found, foundAt }: Readonly<LeadCardProps>) {
   return (
     <li className={`ccard lead-card${selected ? ' is-selected' : ''}`} data-coach={coach}>
       {onSelect && (
@@ -93,10 +98,12 @@ export function LeadCard({ id, title, organization, location, to, score, status,
           <span className="sr-only">Select {title}</span>
         </label>
       )}
+      {position !== undefined && <span className="lead-order" title={`Number ${position} in this order`}><span className="sr-only">Number </span>{position}</span>}
       <Avatar name={organization || title} />
       <div className="lead-main">
         <h3 className="lead-title"><Link to={to} id={`lead-${id}`}>{title}</Link></h3>
         <p className="lead-meta">{[organization, location].filter(Boolean).join(' · ')}</p>
+        {found && <p className="lead-found muted-small">{foundAt ? <time dateTime={foundAt}>{found}</time> : found}</p>}
         {(chips.length > 0 || note) && (
           <div className="lead-tags">
             {chips.map((c) => <span key={c} className="chip">{c}</span>)}

@@ -1727,3 +1727,38 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .result-lite .lead-side { flex-direction: column; align-items: flex-end; gap: 6px; }
 .result-lite .lead-title a::after { display: none; }
 @media (max-width: 760px) { .result-lite { grid-template-columns: 0 auto minmax(0, 1fr); } .result-lite .lead-side { flex-direction: row; align-items: center; } }
+
+/* L1: native dropdown lists follow the theme (they were light text on a light list in dark mode). */
+select, option, optgroup { color-scheme: inherit; }
+option, optgroup { background-color: var(--op-surface); color: var(--op-ink); }
+option:disabled { color: var(--op-muted); }
+
+/* L2: the order a job or lead was found in. */
+.lead-order { align-self: center; min-width: 26px; height: 26px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 999px; background: var(--op-panel-head); color: var(--op-muted); font-size: var(--op-text-meta); font-weight: 650; font-variant-numeric: tabular-nums; }
+.lead-found, .found-at { margin: 0; }
+.lead-card { grid-template-columns: auto auto auto minmax(0, 1fr) auto; }
+.lead-card:not(:has(.lead-order)) { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+.lead-action { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+
+/* L4: more room. Cards, rows, toolbars and stacked sections breathe instead of being packed. */
+.stack-3 > * + * { margin-top: var(--op-space-5); }
+.card-list { gap: 16px; }
+.lead-card { padding: 20px 24px; gap: 18px; }
+.lead-main { gap: 6px; }
+.lead-tags { margin-top: 4px; }
+.lead-side { gap: 16px; }
+.ccard { padding: 24px 26px; }
+.ccard-head { margin-bottom: 18px; }
+.ccard-body { gap: 16px; }
+.ccard-foot { margin-top: 20px; padding-top: 18px; }
+.table td { padding: var(--op-space-4) var(--op-space-5); }
+.toolbar { gap: 12px; row-gap: 12px; }
+.pill-select { min-height: 40px; padding-inline: 14px; }
+.bulk-bar { padding: 14px 20px; gap: 16px; }
+.panel-body { padding: 18px 24px 22px; gap: 18px; }
+.panel-head { padding: 20px 24px 6px; }
+@media (max-width: 640px) {
+  .lead-card { padding: 16px; gap: 12px; }
+  .ccard { padding: 18px 16px; }
+  .panel-body { padding: 14px 16px 18px; }
+}

@@ -340,6 +340,8 @@ export interface OpportunitySummary {
   status: OpportunityStatus
   gapsCount: number
   updatedAt: string
+  /** When the job or lead was first found, so the list can say which came first. */
+  foundAt: string
 }
 
 export interface OpportunityPage {

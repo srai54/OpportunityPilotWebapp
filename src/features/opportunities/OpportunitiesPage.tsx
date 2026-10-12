@@ -23,16 +23,21 @@ import { ApprovalQueuePage } from '../approvals/ApprovalQueuePage'
 import { useShell } from '../shell/ShellContext'
 import {
   appendUnique,
+  applyLabel,
   canMoveTo,
   DEFAULT_FILTERS,
   formatCoverage,
+  foundLabel,
   opportunitiesPath,
   type OpportunityFilters,
+  type OpportunitySort,
   OUTCOME_LABELS,
   platformLabel,
   primaryAction,
   searchLoaded,
   selectionCsv,
+  SORT_OPTIONS,
+  sortLabel,
   STATUS_LABELS,
   STATUSES,
 } from './opportunityModel'
@@ -166,14 +171,13 @@ function CampaignOpportunities({ campaignId, campaign }: { campaignId: string; c
             ))}
           </select>
         </label>
+        </>}
         <label className="pill-select">
-          <span>Sort</span>
-          <select value={filters.sort} onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as OpportunityFilters['sort'] }))}>
-            <option value="score">Match, high to low</option>
-            <option value="recent">Recently updated</option>
+          <span>Order</span>
+          <select value={filters.sort} onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as OpportunitySort }))}>
+            {SORT_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
-        </>}
         <div className="grow" />
         <input
           className="toolbar-search"
@@ -394,7 +398,7 @@ function OpportunityTable({
         <div className="table-scroll" role="region" aria-labelledby="opp-heading" tabIndex={0}>
           <table className="table opp-table">
             <caption className="sr-only">
-              Opportunities sorted by {filters.sort === 'score' ? 'fit score' : 'most recently updated'}. Showing {items.length} of {total}.
+              Opportunities ordered: {sortLabel(filters.sort).toLowerCase()}. Showing {items.length} of {total}.
             </caption>
             <thead>
               <tr>
@@ -406,7 +410,7 @@ function OpportunityTable({
                     onChange={() => setSelected(allShown ? new Set() : new Set(items.map((o) => o.id)))}
                   />
                 </th>
-                <th scope="col">Opportunity</th>
+                <th scope="col" aria-sort={filters.sort === 'found' ? 'descending' : filters.sort === 'oldest' ? 'ascending' : undefined}>Opportunity</th>
                 {advanced && <th scope="col">Mode</th>}
                 <th scope="col" data-coach="opps-match" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
                   Match
@@ -436,6 +440,7 @@ function OpportunityTable({
                     <td className="table-role">
                       <Link to={`/opportunities/${o.id}`}>{o.title}</Link>
                       <div className="muted-small">{[o.organization, o.location].filter(Boolean).join(' · ')}</div>
+                      {foundLabel(o.foundAt) && <div className="muted-small found-at"><time dateTime={o.foundAt}>{foundLabel(o.foundAt)}</time></div>}
                       {o.outcomeReason && excluded && <div className="muted-small clamp-2">{o.outcomeReason}</div>}
                     </td>
                     {advanced && <td>
@@ -484,7 +489,7 @@ function OpportunityTable({
                         </Link>
                       ) : next.label === 'Open posting' && (o.applyUrl || o.url) ? (
                         <a href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">
-                          Open posting
+                          {applyLabel(o.platform)}
                           <span className="sr-only"> for {o.title} (opens in a new tab)</span>
                         </a>
                       ) : (

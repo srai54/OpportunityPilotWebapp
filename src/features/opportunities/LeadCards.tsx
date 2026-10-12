@@ -8,7 +8,7 @@ import type { DraftChannel, OpportunitySummary, OpportunityStatus, OutreachDraft
 import { ProfileConfirmNotice } from '../profiles/ProfileConfirmNotice'
 import { needsProfileConfirm } from '../profiles/profileFields'
 import { BULK_CHANNELS, BULK_MAX, queuePath, summarizeBulk, type BulkOutcome } from './bulkDraft'
-import { OUTCOME_LABELS, platformLabel, primaryAction, STATUS_LABELS } from './opportunityModel'
+import { applyLabel, foundLabel, OUTCOME_LABELS, platformLabel, primaryAction, STATUS_LABELS } from './opportunityModel'
 
 /** The simple view's list: one card per job or company. The title is the link to the full page; the button does the one useful thing. */
 export function LeadCardList({ items, selected, onToggle, busy, onStatus, label }: Readonly<{
@@ -28,7 +28,12 @@ export function LeadCardList({ items, selected, onToggle, busy, onStatus, label 
         let action
         if (next.to) action = <button type="button" className="btn btn-primary btn-sm" disabled={busy === o.id} onClick={() => onStatus(o, next.to!)}>{next.label}<span className="sr-only"> {o.title}</span></button>
         else if (next.label === 'Draft outreach') action = <Link className="btn btn-primary btn-sm" to={`/opportunities/${o.id}#outreach`}>Reach out<span className="sr-only"> to {o.organization}</span></Link>
-        else if (next.label === 'Open posting' && (o.applyUrl || o.url)) action = <a className="btn btn-primary btn-sm" href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">Open posting<span className="sr-only"> for {o.title} (opens in a new tab)</span></a>
+        else if (next.label === 'Open posting' && (o.applyUrl || o.url)) action = (
+          <>
+            <a className="btn btn-primary btn-sm" href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">{applyLabel(o.platform)}<span className="sr-only"> for {o.title} (opens in a new tab)</span></a>
+            <button type="button" className="btn btn-ghost btn-sm" disabled={busy === o.id} onClick={() => onStatus(o, 'Applied')}>I applied<span className="sr-only"> to {o.title}</span></button>
+          </>
+        )
         else action = <Link className="btn btn-secondary btn-sm" to={`/opportunities/${o.id}`}>Review<span className="sr-only"> {o.title}</span></Link>
         const outcome = OUTCOME_LABELS[o.outcome]
         return (
@@ -47,6 +52,9 @@ export function LeadCardList({ items, selected, onToggle, busy, onStatus, label 
             onSelect={() => onToggle(o.id)}
             action={action}
             coach={i === 0 ? 'opps-action' : undefined}
+            position={i + 1}
+            found={foundLabel(o.foundAt)}
+            foundAt={o.foundAt}
           />
         )
       })}
