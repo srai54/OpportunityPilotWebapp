@@ -1,0 +1,117 @@
+# DESIGN.md — OpportunityPilot design rules
+
+**Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/UI_REVAMP_PLAN.md` and `docs/WORKFLOW_GUIDE_PLAN.md`.
+
+## 1. Principles
+
+1. **The app remembers where you are.** Every screen shows one next action. The journey bar and the Next bar (Guide on) carry the person; menus are for people who already know the product (Advanced).
+2. **Simple by default, everything else under Advanced.** The simple view never shows scoring tables, weights, filters beyond the basics, or analytics panels. Advanced adds them; it never changes what simple does.
+3. **Honest.** Nothing is claimed that did not happen: "sent" only after a receipt, "delivered" never from an API 2xx, AI/generated text is visibly marked and never styled like evidence, sample/fictional data is labelled, a missing figure is a dash with a reason — never an invented number.
+4. **Task-first.** A page = title, one plain sentence, one primary button. Secondary actions are quiet.
+5. **Colour never carries meaning alone.** Status = colour + word (+ icon). Charts have labels or values, not just hues.
+
+## 2. Reference designs (what is borrowed, what is rejected)
+
+| Source | Borrowed | Rejected |
+|---|---|---|
+| Notion (getdesign.md) | Warm paper canvas, hairline borders, one blue, calm density — our base palette | Marketing-scale type |
+| Zapier | Numbered workflow steps as the main metaphor (journey bar, Getting started) | Orange brand colour |
+| Intercom | Soft white tiles on a tinted canvas, human one-sentence guidance | Illustration-heavy layouts |
+| Cal.com | Whitespace, one clear primary button, friendly type | — |
+| Linear / Clay / Airtable | — | Dark-first marketing look, illustration, long editorial scroll: wrong density for a task app |
+
+New inspiration is allowed only if it is recorded here with what is borrowed and rejected. Library sources: getdesign.md, github.com/VoltAgent/awesome-design-md, designmd.ai.
+
+## 3. Colour (tokens only — never a hex in a component)
+
+| Role | Token | Notes |
+|---|---|---|
+| Page / card / header band | `--op-bg` / `--op-surface` / `--op-panel-head` | Cards are white on the warm page; hairline border, no shadow |
+| Text | `--op-ink` (body), `--op-muted` (secondary), `--op-faint` | `--op-faint` (3.7:1) is for axis ticks and eyebrow labels **only** |
+| Action | `--op-primary` `#006dd0`, hover `--op-primary-hover`, tint `--op-primary-tint` | White on primary and primary on page both pass 4.5:1. On a grey hover row use `--op-primary-hover` |
+| Status | `*-tint` + `--op-on-*-tint` for green / amber / danger / indigo / teal / neutral | Always with words |
+| Generated text | `--op-ai-*` | Must never share styling with source evidence |
+| Workspace | Candidate = blue `--op-ws-candidate`, Sales = orange `--op-ws-sales` | Used only on the workspace toggle icon and small markers, never on buttons |
+| Charts | `--op-c1…c4` (fixed order, never cycled), sequential `--op-seq-1…5` (one hue), track `--op-chart-track`, grid `--op-chart-grid` | Max 4 series. No rainbow. No red/green as the only difference |
+
+**Dark theme is a selected palette**, not an inversion (same token names re-declared). Never branch on theme in a component. Every new colour pair is measured: body text ≥ 4.5:1, large text/graphics ≥ 3:1; write the figure in the token comment.
+
+## 4. Typography
+
+Inter (`--op-font`); numbers use `.op-numeric` (tabular). Mono (`--op-font-mono`) only for ids and references.
+
+| Use | Size | Weight |
+|---|---|---|
+| Page title (`PageHeader`, `h2`) | `--op-text-page` 24px | 650, tracking −0.025em |
+| Section heading | 16px (`--op-text-screen`) | 600 |
+| Body | 14px (`--op-text-body`) | 400 |
+| Meta, hints, table secondary | 12.5px (`--op-text-meta`) | 400 |
+| KPI figure | `--op-text-metric` 30px | 650 |
+| Eyebrow label | 11.5px uppercase, tracking 0.04em | 600, `--op-muted` |
+
+Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidden in simple mode); pages use `PageHeader` (`h2`). No skipped heading levels.
+
+## 5. Layout, spacing, shape
+
+- Spacing scale 4/8 (`--op-space-1…6`). No other spacing values.
+- Radius: cards 12 (`--op-radius`), controls 8, chips 6, pills 999.
+- Simple mode: one centred column, max 1040px, no sidebar. Advanced: sidebar (236px; collapses to 60px; drawer under 860px) and wide pages (≤ 1320px).
+- Breakpoints: 1080 (grids collapse), 860 (drawer / one column), 640 (compact top bar, bottom-sheet tips), 375 must have no horizontal scroll.
+- Touch target ≥ 44px on phones; row height 36px in tables.
+
+## 6. Shell and navigation
+
+- **Top bar:** brand · Candidate | Sales toggle · title (Advanced only) · Guide switch · Advanced switch · `?` · theme · account. On phones the switches move into the account menu.
+- **Journey bar** under it, always: ① Profile ② Find ③ Review ④ Reach out ⑤ Follow up. Done = tick, here = highlighted, recommended = "Next" tag, badge = count waiting. On phones only the current step shows its label (others stay as visually-hidden text, never `display:none`).
+- **Next bar** (Guide on): one sentence + one button from real counts; hidden on Home (the Getting-started card does the job), Settings, How it works, and the opportunity page.
+- Advanced adds the sidebar; the journey bar stays.
+- Sales vocabulary: Companies/Leads, Find companies, Review leads, Reach out. Candidate: Jobs, Find jobs, Review, Apply & reach out.
+
+## 7. Components (use these; do not re-create)
+
+| Need | Use |
+|---|---|
+| Page heading | `PageHeader` |
+| Loading / empty / waking | `States` (`LoadingState`, `EmptyState`) — an empty state **always ends in a button for the next step** |
+| Error | `ErrorNotice` — inline for action failures; `what="…"` card **only** for a failed load; show the server's field reasons, never a bare "Validation failed" |
+| Status | `Badge` / `StatusBadge` (word + tint) |
+| Skills / tags | `TagInput` (with suggestions) |
+| Tips | Coachmarks via `data-coach` + `coachFlows.ts` (≤ 4 steps per screen, ≤ 260 characters per body, Sales wording via `sales`) |
+| Buttons | One `btn-primary` per view; `btn-secondary` beside it; `btn-ghost` for the rest; disabled buttons explain why nearby |
+| Readiness | "Before you send" chip list: ✓ done, ○ to do (clickable → focuses the field) |
+
+## 8. Forms
+
+- Label above the field; hint under it; error under it in `.field-error` and `aria-invalid`. Never placeholder-as-label.
+- Ask only what the next step needs. Simple forms ≤ 5 fields. Saving a short form goes straight to the next step (profile → pre-filled search).
+- Where a list of known values exists (skills, roles, countries) offer suggestions; free text is always allowed.
+- Validate before the server round trip when the rule is known; on failure focus the first fix.
+
+## 9. Charts and data display
+
+- Use SVG drawn from tokens (no chart library). Every chart has: a title, a one-line takeaway in text, labelled axes or direct value labels, an accessible name (`role="img"` + `aria-label` summarising the numbers) and a table or list fallback for the figures.
+- Bars for counts and comparisons, lines for change over time, funnel = horizontal bars with conversion %, progress = a bar with "n of m". Zero data → an empty state with the action that creates data, never an empty axis.
+- Label what the data is and how much of it: "sample of 25 postings", "last 14 days", "from your own records". Market data from a third party is labelled with its source.
+- Numbers: tabular figures, thousands separators, percentages rounded to whole numbers unless < 10%.
+
+## 10. Guidance and copy
+
+- Plain words, second person, sentence case, verbs on buttons ("Review 4 leads", not "Proceed"). No jargon (no "execution", "idempotent"); the product words are job/company, lead, review, reach out, follow up, receipt.
+- State what the app does **and does not** do near any send/apply action: "Nothing is sent by approving", "You press Send there".
+- Error text says what happened and the next step, never a stack or a bare status.
+- Tips explain the next action, not how the app works inside.
+
+## 11. Accessibility (gate, not a nice-to-have)
+
+- axe WCAG 2.1 AA: **0 violations** in light and dark, 1280px and 375px, on every page touched.
+- Visible focus on everything (`--op-focus`); keyboard reachable; Esc closes tips and popovers; focus returns to the trigger.
+- Respect `prefers-reduced-motion`. No information in colour alone. Switches use `role="switch"` + `aria-checked`.
+- Hidden-on-small-screens text uses the visually-hidden pattern, not `display:none`, when it names a control.
+
+## 12. Definition of done for any UI change
+
+1. Uses tokens and components above; no new hex, no new spacing value.
+2. Works signed-out of Advanced (simple) and with Advanced; Candidate and Sales wording both checked.
+3. Opened in Edge: 1280 and 375, light and dark; axe 0; no horizontal overflow; no console errors.
+4. Unit tests for any new pure logic (`*Model.ts`).
+5. New pattern → recorded in this file.

@@ -18,10 +18,14 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | Tests | Vitest 5, `environment: node`, only `src/**/*.test.ts` (pure logic; there are no component/DOM tests) |
 | Lint | oxlint (`.oxlintrc.json`: react, typescript, oxc plugins) |
 | Styling | Plain CSS: `src/styles/tokens.css` (design tokens, copied verbatim from `../opportunitypilot-ui/tokens.css`) + `src/styles/app.css`. No CSS framework, no CSS-in-JS |
-| Fonts | IBM Plex Sans / Plex Mono from Google Fonts (`index.html`) |
+| Fonts | Inter (UI) and IBM Plex Mono (ids) from Google Fonts (`index.html`) |
 | Hosting | Vercel (current, `vercel.json`) and a Render static-site Blueprint (`render.yaml`). Both: `npm run build` → `dist/`, SPA rewrite to `/index.html`. Details: `docs/PROJECT_REF.md` |
 | Node | `^20.19.0 || >=22.12.0` (Render pins 22.12.0) |
 | Docker | None for the web app |
+
+## 1a. Design rules — mandatory
+
+**Before touching any screen, component, colour, copy or chart, read [`DESIGN.md`](DESIGN.md).** It is the single source of design rules (tokens, type, layout, shell, components, forms, charts, copy, accessibility, definition of done). Do not invent styles, hex colours, spacing or chart looks from memory; use the tokens and components it names. If a case is not covered, add the rule to `DESIGN.md` in the same change. A UI change is not done until it meets section 12 of `DESIGN.md` (Edge at 1280 and 375, light and dark, axe 0).
 
 ## 2. Cheat-sheet commands
 
