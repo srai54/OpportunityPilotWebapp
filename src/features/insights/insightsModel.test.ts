@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrendPoint } from '../../lib/types'
 import {
-  clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
+  axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
 } from './insightsModel'
 
 const pt = (date: string, o: Partial<TrendPoint> = {}): TrendPoint => ({ date, found: 0, qualified: 0, approved: 0, reached: 0, replied: 0, sent: 0, ...o })
@@ -51,6 +51,23 @@ describe('chart maths', () => {
     expect(sumOf(pts, 'sent')).toBe(7)
     expect(sumOf(lastDays(pts, 2), 'sent')).toBe(6)
     expect(lastDays(pts, 10)).toHaveLength(3)
+  })
+})
+
+describe('axis ticks and bands', () => {
+  it('gives whole-number, evenly spaced gridlines for every nice maximum', () => {
+    expect(axisTicks(5)).toEqual([0, 1, 2, 3, 4, 5])
+    expect(axisTicks(10)).toEqual([0, 2, 4, 6, 8, 10])
+    expect(axisTicks(20)).toEqual([0, 5, 10, 15, 20])
+    expect(axisTicks(50)).toEqual([0, 10, 20, 30, 40, 50])
+    expect(axisTicks(100)).toEqual([0, 25, 50, 75, 100])
+    expect(axisTicks(200)).toEqual([0, 50, 100, 150, 200])
+    for (const m of [5, 10, 20, 50, 100, 200, 500, 1000]) expect(axisTicks(m).every(Number.isInteger)).toBe(true)
+  })
+  it('trims empty bands at the ends only', () => {
+    const b = [0, 0, 2, 0, 5, 0, 0].map((count) => ({ count }))
+    expect(trimBands(b).map((x) => x.count)).toEqual([2, 0, 5])
+    expect(trimBands([{ count: 0 }, { count: 0 }])).toHaveLength(1)
   })
 })
 

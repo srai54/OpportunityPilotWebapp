@@ -52,6 +52,21 @@ export function niceMax(max: number): number {
   return 10 * pow
 }
 
+/** Whole-number gridline values from 0 to `max` (a value from `niceMax`), e.g. 5 → 0..5, 10 → 0,2,…,10, 100 → 0,25,…,100. */
+export function axisTicks(max: number): number[] {
+  const intervals = max <= 5 ? Math.max(1, max) : max % 4 === 0 ? 4 : max % 5 === 0 ? 5 : 2
+  return Array.from({ length: intervals + 1 }, (_, i) => Math.round((max * i) / intervals))
+}
+
+/** Drops empty bands at both ends of a histogram so a few real bands are not buried in zeros; always keeps at least one. */
+export function trimBands<T extends { count: number }>(bands: readonly T[]): T[] {
+  const first = bands.findIndex((b) => b.count > 0)
+  if (first < 0) return bands.slice(-1)
+  let last = bands.length - 1
+  while (last > first && bands[last].count === 0) last--
+  return bands.slice(first, last + 1)
+}
+
 /** SVG polyline points for a series: x spread across the width, y inverted against `max`. One point sits in the middle. */
 export function linePoints(values: readonly number[], width: number, height: number, pad: { l: number; r: number; t: number; b: number }, max: number): string {
   const innerW = width - pad.l - pad.r

@@ -1,6 +1,6 @@
 import { useId, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { TrendPoint } from '../../lib/types'
-import { linePoints, nearestIndex, niceMax, type SeriesDef } from './insightsModel'
+import { axisTicks, linePoints, nearestIndex, niceMax, type SeriesDef } from './insightsModel'
 
 const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 const fmtDay = (iso: string) => dayFmt.format(new Date(`${iso}T00:00:00`))
@@ -19,7 +19,7 @@ export function TrendChart({ points, series, summary }: Readonly<{ points: Trend
   const readoutId = useId()
   const visible = series.filter((s) => !hidden.has(s.key))
   const max = niceMax(Math.max(0, ...visible.flatMap((s) => points.map((p) => p[s.key]))))
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(max * t))
+  const ticks = axisTicks(max)
   const labelEvery = Math.max(1, Math.round(points.length / 6))
   const innerW = W - PAD.l - PAD.r
   const xAt = (i: number) => (points.length === 1 ? PAD.l + innerW / 2 : PAD.l + (innerW * i) / (points.length - 1))
@@ -52,7 +52,7 @@ export function TrendChart({ points, series, summary }: Readonly<{ points: Trend
       <div className="chart-plot" tabIndex={0} onKeyDown={onKey} onBlur={() => setIndex(null)} aria-describedby={readoutId}>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={summary} onPointerMove={onPointer} onPointerLeave={() => setIndex(null)} className="chart-svg">
           {ticks.map((t, i) => {
-            const y = PAD.t + (H - PAD.t - PAD.b) * (1 - i / 4)
+            const y = PAD.t + (H - PAD.t - PAD.b) * (1 - t / max)
             return (
               <g key={t + ':' + i}>
                 <line x1={PAD.l} x2={W - PAD.r} y1={y} y2={y} stroke="var(--op-chart-grid)" />
@@ -61,7 +61,7 @@ export function TrendChart({ points, series, summary }: Readonly<{ points: Trend
             )
           })}
           {points.map((p, i) => (i % labelEvery === 0 || i === points.length - 1) && (
-            <text key={p.date} x={xAt(i)} y={H - 6} textAnchor="middle" className="chart-tick">{fmtDay(p.date)}</text>
+            <text key={p.date} x={xAt(i)} y={H - 6} textAnchor={i === points.length - 1 ? 'end' : i === 0 ? 'start' : 'middle'} className="chart-tick">{fmtDay(p.date)}</text>
           ))}
           {visible.map((s) => (
             <polyline key={s.key} points={linePoints(points.map((p) => p[s.key]), W, H, PAD, max)} fill="none" stroke={`var(${s.token})`} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />

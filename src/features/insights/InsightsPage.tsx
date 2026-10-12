@@ -10,7 +10,7 @@ import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
 import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
 import {
-  clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  clampGoal, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
@@ -142,7 +142,7 @@ function InsightsView() {
               <section className="panel">
                 <header className="panel-head"><h3 className="eyebrow">How well they fit</h3></header>
                 <div className="panel-body stack-2">
-                  <HBars rows={a.fitHistogram.bands.map((b) => ({ label: `${b.from}–${b.to}`, value: b.count }))} empty="No scores yet." />
+                  <HBars rows={trimBands(a.fitHistogram.bands).map((b) => ({ label: `${b.from}–${b.to}`, value: b.count }))} empty="No scores yet." />
                   <p className="muted-small">Match score of everything found, in bands of ten. A ranking against your criteria, not a chance of success.</p>
                 </div>
               </section>
