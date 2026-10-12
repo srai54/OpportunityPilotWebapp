@@ -117,3 +117,7 @@ Restore a simple-mode screen's old layout: set Advanced on, or check out the fil
 | Removed (dead code) | `features/applications/AgentSetup.tsx` and `HowItWorks.tsx` (apply-agent setup), unused Adzuna / Workday / aggregate source forms, "your agent" wording | Restore from `archive/pre-mvp-cut-2026-10-09` |
 
 New feature: **How you compare** (Find jobs → Trends). It compares the skills the sampled postings ask for with the skills on your profile ("38% of what these postings ask for is on your profile"; "in demand, not on your profile: Databricks 39%"). No extra search is used and the app never adds a skill to your profile.
+
+## Round 3 — new look, per-platform filters, coachmarks (2026-10-12)
+
+See `docs/UI_REVAMP_PLAN.md` (plan and status). Nothing was removed: the look changed (Notion-style tokens), every Find-jobs tab got a **More filters** control, and first-time **coachmarks** guide each workflow (Help `?` replays them; Settings → "Show the tips again"). Restore the previous look from `main` before PR "UI revamp" or the archive branches.

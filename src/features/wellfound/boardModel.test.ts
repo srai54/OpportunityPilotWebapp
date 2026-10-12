@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BOARDS, campaignFromSearchPath, recruiterSearchUrl, boardJobsPath, datePostedFor, employmentLabel, formatSalary, type BoardSearch } from './boardModel'
+import { BOARDS, applyView, isAgency, NO_VIEW, campaignFromSearchPath, recruiterSearchUrl, boardJobsPath, datePostedFor, employmentLabel, formatSalary, type BoardSearch } from './boardModel'
 
 const base: BoardSearch = { query: 'react developer', location: 'Bengaluru', workMode: 'remote', postedWithinDays: '7', country: '' }
 const params = (path: string) => new URL(path, 'http://x').searchParams
@@ -17,7 +17,7 @@ describe('boardJobsPath', () => {
   })
   it('sends the country only for SEEK', () => {
     expect(params(boardJobsPath('Seek', { ...base, country: 'nz' })!).get('country')).toBe('nz')
-    expect(params(boardJobsPath('Indeed', { ...base, country: 'nz' })!).get('country')).toBeNull()
+    expect(params(boardJobsPath('Indeed', { ...base, country: 'IN' })!).get('country')).toBe('in')   // any board may set a country
   })
   it('sends the optional provider filters and ignores a radius without a location', () => {
     const p = params(boardJobsPath('Indeed', { ...base, employmentType: 'FULLTIME,CONTRACTOR', experience: 'under_3_years_experience', radiusKm: '25' })!)
@@ -72,4 +72,25 @@ describe('recruiterSearchUrl', () => {
     expect(u.searchParams.get('keywords')).toBe('"Acme Labs" (recruiter OR "talent acquisition" OR "hiring manager") .NET')
   })
   it('still works without a company', () => expect(new URL(recruiterSearchUrl('')).searchParams.get('keywords')).toBe('(recruiter OR "talent acquisition" OR "hiring manager")'))
+})
+
+describe('result view filters', () => {
+  const job = (o: Partial<import('./boardModel').BoardJob>) => ({ providerJobId: 'a', title: 't', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x', location: null, isRemote: false,
+    employmentType: null, salaryMin: null, salaryMax: null, salaryCurrency: null, salaryPeriod: null, postedAt: null, snippet: null, ...o })
+  it('recognises staffing and recruiting firms by name only', () => {
+    expect(isAgency('ABC Staffing Solutions')).toBe(true)
+    expect(isAgency('Hunter Bond Recruitment')).toBe(true)
+    expect(isAgency('Talent Acquisition Partners')).toBe(true)
+    expect(isAgency('Tata Consultancy Services')).toBe(false)
+    expect(isAgency('Stripe')).toBe(false)
+  })
+  it('keeps only jobs with pay, hides agencies and sorts newest first, counting what it hid', () => {
+    const jobs = [job({ providerJobId: '1', salaryMin: 50, postedAt: '2026-10-01T00:00:00Z' }), job({ providerJobId: '2', companyName: 'X Staffing', salaryMax: 90, postedAt: '2026-10-05T00:00:00Z' }),
+      job({ providerJobId: '3', postedAt: '2026-10-09T00:00:00Z' }), job({ providerJobId: '4', salaryMax: 70, postedAt: '2026-10-07T00:00:00Z' })]
+    expect(applyView(jobs, NO_VIEW)).toEqual({ shown: jobs, hidden: 0 })
+    expect(applyView(jobs, { ...NO_VIEW, payOnly: true }).shown.map((j) => j.providerJobId)).toEqual(['1', '2', '4'])
+    const v = applyView(jobs, { payOnly: true, hideAgencies: true, newestFirst: true })
+    expect(v.shown.map((j) => j.providerJobId)).toEqual(['4', '1'])
+    expect(v.hidden).toBe(2)
+  })
 })

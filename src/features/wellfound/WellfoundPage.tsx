@@ -116,7 +116,7 @@ export function WellfoundPage() {
     setJobState(''); setSort('newest')
   }
 
-  const tabs = <div className="segmented" role="group" aria-label="Job source">
+  const tabs = <div className="segmented" role="group" aria-label="Job source" data-coach="find-tabs">
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
     {(['Indeed', 'LinkedIn', 'Seek'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
     <button type="button" className={provider === 'trends' ? 'active' : ''} aria-pressed={provider === 'trends'} onClick={() => setProvider('trends')}>Trends</button>
@@ -132,13 +132,13 @@ export function WellfoundPage() {
 
     <form className="search-hero" aria-label="Search Wellfound" onSubmit={(e) => e.preventDefault()}>
       {tabs}
-      <div className="search-bar">
+      <div className="search-bar" data-coach="find-search">
         <label className="search-field search-field-main"><span className="sr-only">Role or keywords</span><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={workspace === 'sales' ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. Backend engineer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span><input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Location, e.g. India, Remote" /></label>
         <button className="btn btn-primary" type="button" disabled={busy} onClick={syncPublic}>{busy ? 'Refreshing…' : 'Refresh live jobs'}</button>
       </div>
       <div className="search-tools">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide advanced' : `Advanced${extraCount ? ` (${extraCount})` : ''}`}</button>
+        <button type="button" className="btn btn-ghost btn-sm" data-coach="find-filters" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide filters' : `More filters${extraCount ? ` (${extraCount})` : ''}`}</button>
         {activeFilterCount > 0 && <button className="btn btn-ghost btn-sm" type="button" onClick={clearFilters}>Clear {activeFilterCount} filter{activeFilterCount === 1 ? '' : 's'}</button>}
         <span className="grow" />
         <label className="inline-select"><span>Sort</span><select value={sort} onChange={(e) => setSort(e.target.value)}><option value="newest">Newest</option><option value="salary">Highest salary</option><option value="company">Company A–Z</option><option value="match">Best match</option></select></label>

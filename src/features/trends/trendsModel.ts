@@ -25,7 +25,7 @@ export type TrendReport = {
   source: string
 }
 
-export type TrendSearch = { query: string; location: string; datePosted: string; pages: number }
+export type TrendSearch = { query: string; location: string; datePosted: string; pages: number; country?: string }
 
 export const DATE_OPTIONS = [
   { value: 'week', label: 'Past week' },
@@ -47,6 +47,7 @@ export function trendsPath(s: TrendSearch): string | null {
   if (!q) return null
   const p = new URLSearchParams({ query: q.slice(0, 200), datePosted: s.datePosted, pages: String(Math.min(3, Math.max(1, s.pages))) })
   if (s.location.trim()) p.set('location', s.location.trim().slice(0, 100))
+  if (s.country) p.set('country', s.country.toLowerCase())
   return `/api/v1/trends?${p}`
 }
 

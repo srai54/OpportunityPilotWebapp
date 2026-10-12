@@ -158,7 +158,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
         </button>
       )}
       {canApplyNow && (
-        <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void approveAndApply()}>
+        <button type="button" className="btn btn-primary btn-sm" data-coach="opp-approve" disabled={busy} onClick={() => void approveAndApply()}>
           {o.status === 'Shortlisted' ? 'Open application page →' : 'Approve & apply →'}
         </button>
       )}
@@ -227,7 +227,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
       {error && <ErrorNotice error={error} />}
 
       <div className="row">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={details} onClick={() => setDetails(!details)}>
+        <button type="button" className="btn btn-ghost btn-sm" data-coach="opp-advanced" aria-expanded={details} onClick={() => setDetails(!details)}>
           {details ? 'Hide score details' : 'Advanced: how the score was built, facts and evidence'}
         </button>
       </div>
@@ -389,7 +389,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
 
         <div className="stack-4">
           {o.mode === 'Job' && <CoverNotePanel opportunityId={o.id} />}
-          <div id="outreach">
+          <div id="outreach" data-coach="opp-reach">
             <OutreachActionsPanel opportunityId={o.id} />
           </div>
 

@@ -29,7 +29,7 @@ export function SendPanel({ draftId, version, state, onChange }: { draftId: stri
   }
 
   if (state !== 'Approved' && state !== 'Sent') return null
-  return <section className="subtle-box stack-2" aria-label="Send">
+  return <section className="subtle-box stack-2" aria-label="Send" data-coach="out-receipt">
     {error && <ErrorNotice error={error} />}
     {sent ? <p className="small"><Badge tone="success">Sent</Badge> Recorded {sent.completedAt ? new Date(sent.completedAt).toLocaleString() : ''}: {sent.receipt}</p>
       : pending ? <>

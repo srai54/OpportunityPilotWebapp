@@ -90,19 +90,19 @@ export function QuickCampaign() {
       {usable.length === 0
         ? <p className="notice notice-warning">A campaign needs a profile that says what you offer. <Link to="/profiles/new">Create your profile</Link>, then come back — it takes about a minute.</p>
         : usable.length > 1 && <label className="field"><span>Profile</span><select value={chosen?.id} onChange={(e) => setProfileId(e.target.value)}>{usable.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>}
-      <div className="search-bar">
+      <div className="search-bar" data-coach="quick-role">
         <label className="search-field search-field-main"><span className="sr-only">Role or skill</span>
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={wantsCandidate ? 'Role or skill, e.g. .NET developer' : 'What they hire for, e.g. React developer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>
-      <label className="field"><span>Where to look</span>
+      <label className="field" data-coach="quick-source"><span>Where to look</span>
         <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>{CHOICES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}
       {error && <ErrorNotice error={error} what="creating the campaign" />}
       <div className="row wrap">
-        <button className="btn btn-primary" type="submit" disabled={busy || problems.length > 0}>{busy ? 'Starting…' : 'Create & run'}</button>
+        <button className="btn btn-primary" type="submit" data-coach="quick-run" disabled={busy || problems.length > 0}>{busy ? 'Starting…' : 'Create & run'}</button>
         <Link className="btn btn-ghost btn-sm" to={fullPath}>Advanced: weights, filters, more sources</Link>
         <span className="muted-small grow">{problems[0] ?? 'Nothing is applied or sent: you approve what it suggests.'}</span>
       </div>

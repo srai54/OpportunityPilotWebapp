@@ -6,6 +6,8 @@ import type { Capabilities, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { ShellContext } from './ShellContext'
+import { CoachHost } from '../../components/CoachHost'
+import { flowIdForPath } from '../coach/coachModel'
 import { ThemeToggle } from './ThemeToggle'
 import {
   aiModeLabel,
@@ -114,6 +116,7 @@ export function AppShell() {
     writeWorkspace(ws)
   }, [])
   const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op.demoBanner') === '1' } catch { return false } })
+  const [replay, setReplay] = useState(0)
   const [advanced, setAdvancedState] = useState(readAdvanced)
   const setAdvanced = useCallback((on: boolean) => {
     setAdvancedState(on)
@@ -283,6 +286,7 @@ export function AppShell() {
                           to={n.to}
                           end={n.end}
                           className="rail-link"
+                          data-coach={n.to === '/wellfound' ? 'nav-find' : n.to === '/opportunities' ? 'nav-opps' : n.to === '/outreach' ? 'nav-outreach' : undefined}
                           aria-label={collapsed ? name : undefined}
                           data-tip={collapsed ? name : undefined}
                           onClick={drawerOpen ? closeDrawer : undefined}
@@ -361,6 +365,9 @@ export function AppShell() {
                 {aiMode.text}
               </span>
             )}
+            {flowIdForPath(location.pathname) && (
+              <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" onClick={() => setReplay((n) => n + 1)}>?</button>
+            )}
             <ThemeToggle />
             <div className="account" ref={menuRef}>
               <button
@@ -421,6 +428,7 @@ export function AppShell() {
           <main id="main" className="content" tabIndex={-1}>
             <Outlet />
           </main>
+          <CoachHost pathname={location.pathname} replay={replay} />
         </div>
       </div>
     </ShellContext.Provider>

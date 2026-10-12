@@ -18,6 +18,7 @@ describe('trendsPath', () => {
     expect(p.searchParams.get('pages')).toBe('3')
     expect(p.searchParams.get('location')).toBe('Pune')
     expect(new URL('http://x' + trendsPath({ query: 'react', location: '', datePosted: 'week', pages: 0 })!).searchParams.get('pages')).toBe('1')
+    expect(new URL('http://x' + trendsPath({ query: 'react', location: '', datePosted: 'week', pages: 1, country: 'IN' })!).searchParams.get('country')).toBe('in')
   })
 })
 

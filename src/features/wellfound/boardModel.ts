@@ -111,7 +111,7 @@ export function boardJobsPath(board: JobBoard, s: BoardSearch): string | null {
   const params = new URLSearchParams({ board, query: q.slice(0, 200), datePosted: datePostedFor(s.postedWithinDays) })
   if (s.location.trim()) params.set('location', s.location.trim().slice(0, 100))
   if (s.workMode === 'remote') params.set('remoteOnly', 'true')
-  if (board === 'Seek' && s.country) params.set('country', s.country)
+  if (s.country) params.set('country', s.country.toLowerCase())
   if (s.employmentType) params.set('employmentType', s.employmentType)
   if (s.experience) params.set('experience', s.experience)
   if (s.radiusKm && s.location.trim() && Number(s.radiusKm) > 0) params.set('radiusKm', String(Math.min(500, Math.floor(Number(s.radiusKm)))))
@@ -141,4 +141,31 @@ export function recruiterSearchUrl(company: string, skill = ''): string {
   const k = skill.trim().replaceAll('"', '').slice(0, 60)
   const keywords = `${c ? `"${c}" ` : ''}(recruiter OR "talent acquisition" OR "hiring manager")${k ? ` ${k}` : ''}`
   return `https://www.linkedin.com/search/results/people/?${new URLSearchParams({ keywords })}`
+}
+
+/** Countries JSearch understands (two-letter codes). A search without one takes its country from the location. */
+export const COUNTRIES: { value: string; label: string }[] = [
+  { value: '', label: 'Any country' }, { value: 'in', label: 'India' }, { value: 'us', label: 'United States' }, { value: 'gb', label: 'United Kingdom' },
+  { value: 'ca', label: 'Canada' }, { value: 'au', label: 'Australia' }, { value: 'nz', label: 'New Zealand' }, { value: 'sg', label: 'Singapore' },
+  { value: 'ae', label: 'United Arab Emirates' }, { value: 'de', label: 'Germany' }, { value: 'fr', label: 'France' }, { value: 'nl', label: 'Netherlands' },
+  { value: 'ie', label: 'Ireland' }, { value: 'es', label: 'Spain' }, { value: 'it', label: 'Italy' }, { value: 'br', label: 'Brazil' }, { value: 'za', label: 'South Africa' },
+]
+
+/** Filters applied to the postings already on screen (no extra search). */
+export type ResultView = { payOnly: boolean; hideAgencies: boolean; newestFirst: boolean }
+export const NO_VIEW: ResultView = { payOnly: false, hideAgencies: false, newestFirst: false }
+
+const AGENCY = /\b(staffing|recruit(?:ing|ment|ers?)|manpower|placement|head ?hunt(?:ers?|ing)|talent (?:acquisition|solutions|partners)|employment agency|workforce)\b/i
+
+/** A deliberately conservative name check for staffing and recruiting firms; it never looks at anything but the company name. */
+export function isAgency(companyName: string): boolean {
+  return AGENCY.test(companyName)
+}
+
+export function applyView(jobs: BoardJob[], v: ResultView): { shown: BoardJob[]; hidden: number } {
+  let out = jobs
+  if (v.payOnly) out = out.filter((j) => j.salaryMin != null || j.salaryMax != null)
+  if (v.hideAgencies) out = out.filter((j) => !isAgency(j.companyName))
+  if (v.newestFirst) out = [...out].sort((a, b) => (b.postedAt ? Date.parse(b.postedAt) : 0) - (a.postedAt ? Date.parse(a.postedAt) : 0))
+  return { shown: out, hidden: jobs.length - out.length }
 }

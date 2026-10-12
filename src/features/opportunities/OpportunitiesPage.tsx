@@ -379,7 +379,7 @@ function OpportunityTable({
                 </th>
                 <th scope="col">Opportunity</th>
                 {advanced && <th scope="col">Mode</th>}
-                <th scope="col" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
+                <th scope="col" data-coach="opps-match" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
                   Match
                 </th>
                 {advanced && <th scope="col">Evidence</th>}
@@ -443,7 +443,7 @@ function OpportunityTable({
                     {advanced && <td className="table-when muted-small">
                       <time dateTime={o.updatedAt}>{formatWhen(o.updatedAt)}</time>
                     </td>}
-                    <td className="nowrap">
+                    <td className="nowrap" data-coach={items[0]?.id === o.id ? 'opps-action' : undefined}>
                       {next.to ? (
                         <button type="button" className="btn-link" disabled={busy === o.id} onClick={() => void setStatus(o, next.to!)}>
                           {next.label}
@@ -493,7 +493,7 @@ export function OpportunitiesPage() {
   const awaiting = useShell().awaitingApproval ?? 0
   const view = params.get('view') === 'approvals' ? 'approvals' : 'all'
   const tabs = (
-    <div className="segmented" role="group" aria-label="View">
+    <div className="segmented" role="group" aria-label="View" data-coach="opps-tabs">
       <button type="button" className={view === 'all' ? 'active' : ''} aria-pressed={view === 'all'} onClick={() => setParams({}, { replace: true })}>All</button>
       <button type="button" className={view === 'approvals' ? 'active' : ''} aria-pressed={view === 'approvals'} onClick={() => setParams({ view: 'approvals' }, { replace: true })}>
         Waiting for approval{awaiting > 0 ? ` · ${awaiting}` : ''}

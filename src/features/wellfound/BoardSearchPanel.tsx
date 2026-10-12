@@ -3,7 +3,7 @@ import { HowItWorks } from '../../components/HowItWorks'
 import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
 import { BoardLiveResults } from './BoardLiveResults'
-import { BOARDS, boardJobsPath, type JobBoard } from './boardModel'
+import { BOARDS, COUNTRIES, NO_VIEW, boardJobsPath, type JobBoard, type ResultView } from './boardModel'
 
 function terms(value: string) {
   return value.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 12)
@@ -17,6 +17,7 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
   const [company, setCompany] = useState('')
   const [location, setLocation] = useState('')
   const [country, setCountry] = useState(info.countries?.[0].value ?? '')
+  const [view, setView] = useState<ResultView>(NO_VIEW)
   const [workMode, setWorkMode] = useState('')
   const [jobType, setJobType] = useState('')
   const [experience, setExperience] = useState('')
@@ -37,7 +38,7 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
   const searchUrl = info.searchUrl(search)
   const canSearch = Boolean(query || location.trim())
   const extraCount = [techStack, company, exclude].filter(Boolean).length
-  const filterCount = [workMode, jobType, experience, postedWithinDays, radius].filter(Boolean).length
+  const filterCount = [workMode, jobType, experience, postedWithinDays, radius, board === 'Seek' ? '' : country, view.payOnly, view.hideAgencies, view.newestFirst].filter(Boolean).length
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -46,22 +47,21 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
 
   function clear() {
     setKeywords(''); setTechStack(''); setCompany(''); setLocation(''); setWorkMode(''); setJobType('')
-    setExperience(''); setPostedWithinDays(''); setExclude(''); setRadius(''); setLivePath(null)
+    setExperience(''); setPostedWithinDays(''); setExclude(''); setRadius(''); setView(NO_VIEW); setCountry(info.countries?.[0].value ?? ''); setLivePath(null)
   }
 
   return <>
     <form className="search-hero" onSubmit={submit} aria-label={`Search ${info.name}`}>
       {tabs}
-      <div className="search-bar">
+      <div className="search-bar" data-coach="find-search">
         <label className="search-field search-field-main"><span className="sr-only">{workspace === 'candidate' ? 'Role or keywords' : 'Hiring role or demand signal'}</span>
           <input value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder={workspace === 'candidate' ? 'Role or keywords, e.g. .NET developer' : 'Role companies are hiring, e.g. React developer'} /></label>
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={location} onChange={(event) => setLocation(event.target.value)} placeholder={board === 'Seek' ? 'Sydney, Melbourne…' : 'Location, e.g. Bengaluru'} /></label>
-        {info.countries ? <label className="search-field search-field-small"><span className="sr-only">Country</span><select value={country} onChange={(event) => setCountry(event.target.value)}>{info.countries.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label> : null}
         <button className="btn btn-primary" type="submit" disabled={!query}>Search {info.name}</button>
       </div>
       <div className="search-tools">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide advanced' : `Advanced${extraCount + filterCount ? ` (${extraCount + filterCount})` : ''}`}</button>
+        <button type="button" className="btn btn-ghost btn-sm" data-coach="find-filters" aria-expanded={moreOpen} onClick={() => setMoreOpen(!moreOpen)}>{moreOpen ? 'Hide filters' : `More filters${extraCount + filterCount ? ` (${extraCount + filterCount})` : ''}`}</button>
         {(canSearch || extraCount > 0 || filterCount > 0) && <button type="button" className="btn btn-ghost btn-sm" onClick={clear}>Clear</button>}
         <span className="grow" />
         {query && <span className="muted-small search-query" title="The query sent to the job board">Query: {query}</span>}
@@ -74,6 +74,10 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
         <label className="chip-select"><span>Experience</span><select value={experience} onChange={(event) => setExperience(event.target.value)}><option value="">Any level</option><option value="no_experience">No experience</option><option value="under_3_years_experience">Under 3 years</option><option value="more_than_3_years_experience">3+ years</option><option value="no_degree">No degree needed</option></select></label>
         <label className="chip-select"><span>Work mode</span><select value={workMode} onChange={(event) => setWorkMode(event.target.value)}><option value="">Any mode</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="in-person">In person</option></select></label>
         <label className="chip-select"><span>Within</span><select value={radius} onChange={(event) => setRadius(event.target.value)} disabled={!location.trim()} title={location.trim() ? undefined : 'Enter a location first'}><option value="">Any distance</option><option value="10">10 km</option><option value="25">25 km</option><option value="50">50 km</option><option value="100">100 km</option></select></label>
+        <label className="chip-select"><span>Country</span><select value={country} onChange={(event) => setCountry(event.target.value)}>{(info.countries ?? COUNTRIES).map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
+        <label className="chip-check"><input type="checkbox" checked={view.payOnly} onChange={(e) => setView({ ...view, payOnly: e.target.checked })} />Pay shown only</label>
+        <label className="chip-check"><input type="checkbox" checked={view.hideAgencies} onChange={(e) => setView({ ...view, hideAgencies: e.target.checked })} />Hide staffing &amp; recruiting firms</label>
+        <label className="chip-check"><input type="checkbox" checked={view.newestFirst} onChange={(e) => setView({ ...view, newestFirst: e.target.checked })} />Newest first</label>
       </div>
       </>}
       {moreOpen && <div className="search-more filters">
@@ -89,7 +93,7 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
       </HowItWorks>
     </form>
 
-    {livePath ? <BoardLiveResults key={livePath} board={board} path={livePath} searchUrl={searchUrl} workspace={workspace} query={query} location={location} />
+    {livePath ? <BoardLiveResults key={livePath} board={board} path={livePath} searchUrl={searchUrl} workspace={workspace} query={query} location={location} view={view} />
       : <p className="muted-small search-hint">{workspace === 'candidate' ? `Type a role and press Search to see live ${info.name} jobs.` : `Type a role and press Search to see which companies are hiring on ${info.name}.`}</p>}
   </>
 }

@@ -156,14 +156,14 @@ export function OutreachPage() {
           <div className="row wrap"><Badge>{selected.channel}</Badge><Badge tone={selected.state === 'Approved' ? 'success' : 'warning'}>{selected.state} · v{selected.version}</Badge><Link to={`/opportunities/${selected.opportunityId}`}>Open opportunity</Link></div>
           <label className="field"><span>Recipient</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
           {selected.channel === 'Email' && <label className="field"><span>Subject</span><input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
-          <label className="field"><span>Message</span><textarea rows={14} value={body} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+          <label className="field" data-coach="out-editor"><span>Message</span><textarea rows={14} value={body} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
           {selected.channel === 'LinkedInMessage' && <p className={`muted-small${body.length > 300 ? ' text-danger' : ''}`}>
             {body.length}/300 characters — a LinkedIn connection note is short{body.length > 300 ? ' (LinkedIn will cut it)' : ''}. After they accept, <Link to={`/opportunities/${selected.opportunityId}`}>create the follow-up email</Link> and send it the same way.
           </p>}
           {selected.sendBlockers.length > 0 && <ul className="hint-list">{selected.sendBlockers.map((x) => <li key={x}>{x}</li>)}</ul>}
           <div className="row wrap"><button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save new version</button>
             {selected.state === 'Sent' ? null : selected.state === 'Approved' ? <button className="btn btn-secondary" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-primary" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve version {selected.version}</button>}
-            {selected.state === 'Draft' && <button className="btn btn-primary" type="button" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>Approve &amp; send →</button>}
+            {selected.state === 'Draft' && <button className="btn btn-primary" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>Approve &amp; send →</button>}
             <button className="btn btn-secondary" type="button" disabled={working} onClick={copyDraft}>Copy text</button></div>
           <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} onChange={() => { drafts.reload(); void open(selected) }} />
         </div>}

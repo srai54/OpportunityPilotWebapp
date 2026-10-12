@@ -8,7 +8,7 @@ import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { safeHref } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
-import { BOARDS, campaignFromSearchPath, employmentLabel, recruiterSearchUrl, formatSalary, type BoardJob, type BoardSearchResult, type JobBoard } from './boardModel'
+import { BOARDS, campaignFromSearchPath, employmentLabel, recruiterSearchUrl, formatSalary, applyView, type BoardJob, type BoardSearchResult, type JobBoard, type ResultView } from './boardModel'
 
 const SALES_STEPS = [
   'Click "Start a campaign from this search". The builder opens filled in; pick a Product or Services profile and save.',
@@ -24,10 +24,10 @@ const CANDIDATE_STEPS = [
   'Approve in one click, then apply on the board yourself and mark the job applied so your numbers stay true.',
 ]
 
-type Props = Readonly<{ board: JobBoard; path: string | null; searchUrl: string; workspace: Workspace; query: string; location: string }>
+type Props = Readonly<{ board: JobBoard; path: string | null; searchUrl: string; workspace: Workspace; query: string; location: string; view: ResultView }>
 
 /** Live postings from one job board (through the licensed JSearch aggregator). Read-only; each card links to the board. */
-export function BoardLiveResults({ board, path, searchUrl, workspace, query, location }: Props) {
+export function BoardLiveResults({ board, path, searchUrl, workspace, query, location, view }: Props) {
   const first = useApi<BoardSearchResult>(path)
   const name = BOARDS[board].name
   const [pages, setPages] = useState<BoardSearchResult[]>([])
@@ -40,6 +40,7 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
     for (const r of [first.data, ...pages]) for (const j of r?.jobs ?? []) if (!seen.has(j.providerJobId)) { seen.add(j.providerJobId); all.push(j) }
     return all
   }, [first.data, pages])
+  const { shown, hidden } = useMemo(() => applyView(jobs, view), [jobs, view])
 
   if (!path) return null
   if (first.error) return <ErrorNotice error={first.error} onRetry={first.reload} what={`live ${name} jobs`} />
@@ -66,11 +67,12 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
   const left = last.quotaRemaining
   return <section aria-label={`Live ${name} jobs`} className="stack-3">
     <div className="results-head">
-      <h3 className="results-title">{jobs.length} live {name} job{jobs.length === 1 ? '' : 's'}</h3>
+      <h3 className="results-title">{shown.length} live {name} job{shown.length === 1 ? '' : 's'}</h3>
       <Badge tone="success">Live</Badge>
       <span className="grow" />
       <span className="muted-small">Retrieved {observed}{r.fromCache ? ' (cached, no search used)' : ''}{left != null ? ` · ${left} searches left` : ''}</span>
     </div>
+    {hidden > 0 && <p className="muted-small">{hidden} of {jobs.length} loaded job{jobs.length === 1 ? '' : 's'} hidden by your filters. <strong>Load more</strong> to look further.</p>}
     {jobs.length > 0 && <div className="hero-strip">
       <div className="hero-strip-text">
         <strong>{workspace === 'sales' ? 'Turn this into leads' : 'Track these jobs'}</strong>
@@ -78,15 +80,15 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
           ? 'Start a campaign from this search: each hiring company becomes a scored lead with its postings as evidence, then outreach drafts, follow-ups and a staffing deal.'
           : 'Start a campaign from this search: jobs are scored against your profile, suggested for approval, and tracked until applied.'}</p>
       </div>
-      <div className="row wrap hero-strip-actions"><Link className="btn btn-primary btn-sm" to={campaignFromSearchPath(workspace, { query, location }, board, name)}>Start a campaign from this search</Link></div>
+      <div className="row wrap hero-strip-actions"><Link className="btn btn-primary btn-sm" data-coach="find-campaign" to={campaignFromSearchPath(workspace, { query, location }, board, name)}>Start a campaign from this search</Link></div>
     </div>}
     {jobs.length > 0 && <HowItWorks summary="What happens next — step by step">
       <ol className="guide-steps">{(workspace === 'sales' ? SALES_STEPS : CANDIDATE_STEPS).map((step) => <li key={step}>{step}</li>)}</ol>
     </HowItWorks>}
-    {jobs.length === 0
-      ? <p className="muted-small">{r.message}</p>
+    {shown.length === 0
+      ? <p className="muted-small">{jobs.length > 0 ? 'Every loaded job is hidden by your filters. Turn one off, or load more.' : r.message}</p>
       : <ul className="result-list">
-        {jobs.map((job) => {
+        {shown.map((job) => {
           const salary = formatSalary(job)
           const href = safeHref(job.boardUrl) ?? undefined
           return <li key={job.providerJobId} className="result-card">

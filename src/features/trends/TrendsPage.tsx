@@ -8,6 +8,7 @@ import type { Profile, ProfileSummary, WellfoundJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { useShell } from '../shell/ShellContext'
 import { splitTags } from '../profiles/profileFields'
+import { COUNTRIES } from '../wellfound/boardModel'
 import { DATE_OPTIONS, SAMPLE_OPTIONS, headlines, payLine, skillGap, startupTrend, trendsPath, type TrendCount, type TrendReport, type TrendSearch } from './trendsModel'
 
 function Bars({ title, rows, empty }: Readonly<{ title: string; rows: TrendCount[]; empty: string }>) {
@@ -130,10 +131,11 @@ export function TrendsPanel({ workspace, tabs }: Readonly<{ workspace: 'candidat
         <button className="btn btn-primary" type="submit" disabled={!form.query.trim()}>Show trends</button>
       </div>
       <div className="search-tools">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Advanced'}</button>
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide filters' : 'More filters'}</button>
       </div>
       {adv && <div className="filter-row" role="group" aria-label="Advanced settings">
         <label className="chip-select"><span>Posted</span><select value={form.datePosted} onChange={(e) => setForm({ ...form, datePosted: e.target.value })}>{DATE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
+        <label className="chip-select"><span>Country</span><select value={form.country ?? ''} onChange={(e) => setForm({ ...form, country: e.target.value })}>{COUNTRIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
         <label className="chip-select"><span>Sample</span><select value={form.pages} onChange={(e) => setForm({ ...form, pages: Number(e.target.value) })}>{SAMPLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
       </div>}
       <HowItWorks summary="How to read this — a sample, not the whole market">

@@ -14,39 +14,39 @@
   color-scheme: light;
 
   /* surfaces */
-  --op-bg: #f4f6f9;
+  --op-bg: #fbfaf9;
   --op-surface: #ffffff;
-  --op-panel-head: #fbfcfd;
+  --op-panel-head: #f6f5f4;
   --op-raised: #ffffff;
-  --op-nav: #101e30;
-  --op-nav-active: #1b2f49;
-  --op-nav-border: #22364f;
-  --op-nav-ink: #a2b4c8;        /* 7.3:1 on --op-nav */
-  --op-nav-label: #6b8099;
+  --op-nav: #f7f6f3;
+  --op-nav-active: #ebeae8;
+  --op-nav-border: #e6e4e1;
+  --op-nav-ink: #55524e;        /* 7.3:1 on --op-nav */
+  --op-nav-label: #6b6762;
 
   /* ink */
-  --op-ink: #16253a;            /* 13.9:1 on surface */
-  --op-muted: #5a6b80;          /* 6.0:1  on surface */
-  --op-faint: #8395a8;          /* 3.4:1  — axis ticks and eyebrow labels ONLY, never body */
+  --op-ink: #31302e;            /* 13.2:1 on surface */
+  --op-muted: #615d59;          /* 6.5:1  on surface */
+  --op-faint: #8a857f;          /* 3.7:1  — axis ticks and eyebrow labels ONLY, never body */
 
   /* lines */
-  --op-line: #dfe5ec;
-  --op-hair: #eef2f6;
-  --op-field-border: #c9d4e0;
+  --op-line: #e6e6e6;
+  --op-hair: #efeeed;
+  --op-field-border: #d9d6d2;
   --op-field-bg: #ffffff;
 
   /* action */
-  --op-primary: #087f72;        /* 4.9:1 on surface; white text on it passes */
+  --op-primary: #0075de;        /* 4.9:1 on surface; white text on it passes */
   --op-on-primary: #ffffff;
-  --op-primary-hover: #06685e;
-  --op-primary-tint: #e9f4f2;
-  --op-primary-tint-border: #bfe3dd;
-  --op-on-primary-tint: #065f55;
-  --op-focus: #087f72;
+  --op-primary-hover: #005bab;
+  --op-primary-tint: #e8f2fc;
+  --op-primary-tint-border: #b9d8f5;
+  --op-on-primary-tint: #005bab;
+  --op-focus: #0075de;
 
   /* status — always paired with words, never colour alone */
-  --op-neutral-tint: #edf1f6;  --op-on-neutral-tint: #3b4d63;
-  --op-teal-tint:    #e4f2f0;  --op-on-teal-tint:    #065f55;
+  --op-neutral-tint: #f1f0ee;  --op-on-neutral-tint: #4a4743;
+  --op-teal-tint: #e3f1f0;  --op-on-teal-tint: #1d6b68;
   --op-green-tint:   #e6f3ea;  --op-on-green-tint:   #13603a;
   --op-amber-tint:   #fbf1dc;  --op-on-amber-tint:   #7a4f00;
   --op-danger-tint:  #fbeaec;  --op-on-danger-tint:  #8f2129;
@@ -65,27 +65,27 @@
   --op-ai-badge: #4b3f86;
 
   /* workspace accents */
-  --op-ws-candidate: #00897c;
-  --op-ws-sales: #3159a8;
+  --op-ws-candidate: #0075de;
+  --op-ws-sales: #dd5b00;
 
   /* chart — categorical, fixed order, never cycled.
      Validated against #ffffff: lightness band, chroma floor, CVD separation
      (worst adjacent pair dE 10.4 protan), normal-vision floor (19.3), contrast >= 3:1. */
-  --op-c1: #00897c;
+  --op-c1: #0075de;
   --op-c2: #a66400;
-  --op-c3: #3159a8;
+  --op-c3: #2a9d99;
   --op-c4: #9b3a6a;
-  --op-chart-track: #f1f4f8;
-  --op-chart-grid: #eef2f6;
-  --op-skeleton: #e9eef4;
+  --op-chart-track: #f1f0ee;
+  --op-chart-grid: #efeeed;
+  --op-skeleton: #efeeed;
   --op-overlay: rgba(16, 30, 48, 0.46);
 
   /* sequential — one hue, light to dark. Never a rainbow. */
-  --op-seq-1: #d9ece9;
-  --op-seq-2: #aedad4;
-  --op-seq-3: #7fc5bc;
-  --op-seq-4: #1c9589;
-  --op-seq-5: #04776c;
+  --op-seq-1: #e3effb;
+  --op-seq-2: #bcd9f5;
+  --op-seq-3: #8fbeee;
+  --op-seq-4: #3f8fe0;
+  --op-seq-5: #0060b8;
 
   /* shape */
   --op-radius: 12px;
@@ -93,7 +93,7 @@
   --op-radius-chip: 6px;
 
   /* type */
-  --op-font: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --op-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --op-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --op-text-page: 24px;
   --op-text-screen: 16px;
@@ -123,35 +123,35 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --op-bg: #0d1520;
-  --op-surface: #141f2e;
-  --op-panel-head: #182537;
-  --op-raised: #1a2739;
-  --op-nav: #0a1019;
-  --op-nav-active: #1d2f49;
-  --op-nav-border: #22364f;
-  --op-nav-ink: #a9bacd;
-  --op-nav-label: #7389a3;
+  --op-bg: #191919;
+  --op-surface: #202020;
+  --op-panel-head: #252525;
+  --op-raised: #2a2a2a;
+  --op-nav: #171717;
+  --op-nav-active: #2f2f2f;
+  --op-nav-border: #2f2f2f;
+  --op-nav-ink: #b4aea8;
+  --op-nav-label: #8f8983;
 
-  --op-ink: #e6edf5;            /* 12.6:1 on surface */
-  --op-muted: #9aabbf;          /* 7.1:1  on surface */
-  --op-faint: #8298b0;          /* 5.6:1  — clears body text in dark, unlike light */
+  --op-ink: #f1efed;            /* 12.6:1 on surface */
+  --op-muted: #a8a29b;          /* 7.1:1  on surface */
+  --op-faint: #8f8983;          /* 5.6:1  — clears body text in dark, unlike light */
 
-  --op-line: #26344a;
-  --op-hair: #1e2b3d;
-  --op-field-border: #33425a;
-  --op-field-bg: #0f1927;
+  --op-line: #33312f;
+  --op-hair: #2a2927;
+  --op-field-border: #454340;
+  --op-field-bg: #1b1b1b;
 
-  --op-primary: #2fb5a4;        /* 6.6:1 on surface */
-  --op-on-primary: #06231f;     /* dark ink on a bright button, not white */
-  --op-primary-hover: #4ac6b6;
-  --op-primary-tint: #10322e;
-  --op-primary-tint-border: #1d5750;
-  --op-on-primary-tint: #7fd9cc;
-  --op-focus: #4ac6b6;
+  --op-primary: #4da3f5;        /* 6.6:1 on surface */
+  --op-on-primary: #04213f;     /* dark ink on a bright button, not white */
+  --op-primary-hover: #74b8f8;
+  --op-primary-tint: #16293f;
+  --op-primary-tint-border: #24476b;
+  --op-on-primary-tint: #9fcdfa;
+  --op-focus: #74b8f8;
 
-  --op-neutral-tint: #1e2b3d;  --op-on-neutral-tint: #b3c2d2;
-  --op-teal-tint:    #10322e;  --op-on-teal-tint:    #7fd9cc;
+  --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
+  --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;
   --op-green-tint:   #11301f;  --op-on-green-tint:   #72d6a0;
   --op-amber-tint:   #33260f;  --op-on-amber-tint:   #e4ae55;
   --op-danger-tint:  #36181c;  --op-on-danger-tint:  #f2929a;
@@ -169,20 +169,20 @@
 
   /* re-validated against #141f2e: all six checks pass,
      worst adjacent pair dE 9.2 protan / 17.7 normal vision */
-  --op-c1: #1fa392;
+  --op-c1: #4da3f5;
   --op-c2: #c08324;
-  --op-c3: #5b80d4;
+  --op-c3: #2fb4ae;
   --op-c4: #c46a99;
-  --op-chart-track: #1c2839;
-  --op-chart-grid: #1e2b3d;
-  --op-skeleton: #1e2b3d;
+  --op-chart-track: #2a2927;
+  --op-chart-grid: #2a2927;
+  --op-skeleton: #2a2927;
   --op-overlay: rgba(3, 8, 14, 0.62);
 
-  --op-seq-1: #11332f;
-  --op-seq-2: #15534a;
-  --op-seq-3: #1a7568;
-  --op-seq-4: #1fa392;
-  --op-seq-5: #4ac6b6;
+  --op-seq-1: #16293f;
+  --op-seq-2: #1f3f63;
+  --op-seq-3: #2a5f98;
+  --op-seq-4: #3f8fe0;
+  --op-seq-5: #74b8f8;
 }
 
 /* System preference, only when the user has not chosen explicitly. */
@@ -190,35 +190,35 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --op-bg: #0d1520;
-    --op-surface: #141f2e;
-    --op-panel-head: #182537;
-    --op-raised: #1a2739;
-    --op-nav: #0a1019;
-    --op-nav-active: #1d2f49;
-    --op-nav-border: #22364f;
-    --op-nav-ink: #a9bacd;
-    --op-nav-label: #7389a3;
+    --op-bg: #191919;
+    --op-surface: #202020;
+    --op-panel-head: #252525;
+    --op-raised: #2a2a2a;
+    --op-nav: #171717;
+    --op-nav-active: #2f2f2f;
+    --op-nav-border: #2f2f2f;
+    --op-nav-ink: #b4aea8;
+    --op-nav-label: #8f8983;
 
-    --op-ink: #e6edf5;
-    --op-muted: #9aabbf;
-    --op-faint: #8298b0;
+    --op-ink: #f1efed;
+    --op-muted: #a8a29b;
+    --op-faint: #8f8983;
 
-    --op-line: #26344a;
-    --op-hair: #1e2b3d;
-    --op-field-border: #33425a;
-    --op-field-bg: #0f1927;
+    --op-line: #33312f;
+    --op-hair: #2a2927;
+    --op-field-border: #454340;
+    --op-field-bg: #1b1b1b;
 
-    --op-primary: #2fb5a4;
-    --op-on-primary: #06231f;
-    --op-primary-hover: #4ac6b6;
-    --op-primary-tint: #10322e;
-    --op-primary-tint-border: #1d5750;
-    --op-on-primary-tint: #7fd9cc;
-    --op-focus: #4ac6b6;
+    --op-primary: #4da3f5;
+    --op-on-primary: #04213f;
+    --op-primary-hover: #74b8f8;
+    --op-primary-tint: #16293f;
+    --op-primary-tint-border: #24476b;
+    --op-on-primary-tint: #9fcdfa;
+    --op-focus: #74b8f8;
 
-    --op-neutral-tint: #1e2b3d;  --op-on-neutral-tint: #b3c2d2;
-    --op-teal-tint:    #10322e;  --op-on-teal-tint:    #7fd9cc;
+    --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
+    --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;
     --op-green-tint:   #11301f;  --op-on-green-tint:   #72d6a0;
     --op-amber-tint:   #33260f;  --op-on-amber-tint:   #e4ae55;
     --op-danger-tint:  #36181c;  --op-on-danger-tint:  #f2929a;
@@ -234,20 +234,20 @@
     --op-ai-ink: #cfc8ea;
     --op-ai-badge: #8a7ad0;
 
-    --op-c1: #1fa392;
+    --op-c1: #4da3f5;
     --op-c2: #c08324;
-    --op-c3: #5b80d4;
+    --op-c3: #2fb4ae;
     --op-c4: #c46a99;
-    --op-chart-track: #1c2839;
-    --op-chart-grid: #1e2b3d;
-    --op-skeleton: #1e2b3d;
+    --op-chart-track: #2a2927;
+    --op-chart-grid: #2a2927;
+    --op-skeleton: #2a2927;
     --op-overlay: rgba(3, 8, 14, 0.62);
 
-    --op-seq-1: #11332f;
-    --op-seq-2: #15534a;
-    --op-seq-3: #1a7568;
-    --op-seq-4: #1fa392;
-    --op-seq-5: #4ac6b6;
+    --op-seq-1: #16293f;
+    --op-seq-2: #1f3f63;
+    --op-seq-3: #2a5f98;
+    --op-seq-4: #3f8fe0;
+    --op-seq-5: #74b8f8;
   }
 }
 
@@ -311,16 +311,16 @@ body {
   --op-text-inverse: #ffffff;
 
   /* Rail (ShellStates.dc.html, Main.dc.html) */
-  --op-nav-ink-strong: #cbd8e6;     /* rail hamburger — 11.6:1 on --op-nav */
-  --op-nav-ink-soft: #93a6bc;       /* rail footer status text — 6.7:1 on --op-nav */
-  --op-nav-ink-muted: #7d92aa;      /* counts, group labels, "Soon" — 5.2:1 on --op-nav, 4.2:1 on
+  --op-nav-ink-strong: #37352f;     /* rail hamburger — 11.6:1 on --op-nav */
+  --op-nav-ink-soft: #6b6762;       /* rail footer status text — 6.7:1 on --op-nav */
+  --op-nav-ink-muted: #6b6762;      /* counts, group labels, "Soon" — 5.2:1 on --op-nav, 4.7:1 on
                                        --op-nav-active (lifted to --op-nav-ink there). Used instead of
                                        --op-nav-label (#6b8099, 4.1:1) for text: OQ-FE-040 */
-  --op-nav-raised: #16263c;         /* workspace switch button */
-  --op-nav-raised-border: #2b4263;
+  --op-nav-raised: #efeeed;         /* workspace switch button */
+  --op-nav-raised-border: #e0ddd9;
   --op-nav-badge: #e4a93c;          /* "waiting on you" count badge */
   --op-on-nav-badge: #2a1d00;       /* 7.9:1 on --op-nav-badge */
-  --op-nav-focus: #7fc5bc;          /* focus ring on the rail — 8.5:1 on --op-nav */
+  --op-nav-focus: #0075de;          /* focus ring on the rail — 8.5:1 on --op-nav */
   --op-dot-success: #3fbfa9;
   --op-dot-warning: #e4a93c;
   --op-dot-danger: #e5646c;
@@ -346,6 +346,8 @@ body {
 
 /* App additions, dark values. The rail is dark in both schemes, so rail tokens keep their values. */
 :root[data-theme="dark"] {
+  --op-nav-ink-strong: #e8e4df; --op-nav-ink-soft: #a8a29b; --op-nav-ink-muted: #8f8983;
+  --op-nav-raised: #252525; --op-nav-raised-border: #3a3836; --op-nav-focus: #74b8f8;
   --op-warning-icon: #e2ad52;
   --op-danger-border: #5a2a30;
   --op-shadow-raised: 0 2px 8px rgb(0 0 0 / 0.5);
@@ -358,6 +360,8 @@ body {
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    --op-nav-ink-strong: #e8e4df; --op-nav-ink-soft: #a8a29b; --op-nav-ink-muted: #8f8983;
+    --op-nav-raised: #252525; --op-nav-raised-border: #3a3836; --op-nav-focus: #74b8f8;
     --op-warning-icon: #e2ad52;
     --op-danger-border: #5a2a30;
     --op-shadow-raised: 0 2px 8px rgb(0 0 0 / 0.5);
