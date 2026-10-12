@@ -108,6 +108,11 @@ export function nextStep(workspace: Workspace, o: Overview | undefined): NextSte
       step: 'reach', action: sales ? 'Reach out to a lead' : 'Apply or reach out', to: '/opportunities',
       text: sales ? 'Open an approved lead and draft a LinkedIn note or an email.' : 'Open an approved job: apply on its page, or message the recruiter.',
     }
+  if (n(o.qualifiedToReview) > 0)
+    return {
+      step: 'review', action: `Review ${thing(o.qualifiedToReview ?? 0)}`, to: '/opportunities',
+      text: sales ? 'Approve the companies worth contacting. Nothing is sent by approving.' : 'Approve the jobs worth your time. Nothing is applied by approving.',
+    }
   if (n(o.draftsSent) > 0 || n(o.applied) > 0)
     return {
       step: 'follow', action: 'Check replies & follow up', to: '/follow-ups',

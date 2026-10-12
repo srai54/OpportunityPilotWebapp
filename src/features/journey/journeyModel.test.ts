@@ -4,7 +4,7 @@ import { journeySteps, nextStep, stepForPath } from './journeyModel'
 
 const base: Overview = {
   profiles: 1, applied: 0, needsManual: 0, campaigns: 1, shortlisted: 0, awaitingApproval: 0,
-  draftsAwaitingReview: 0, followUpsDue: 0, draftsApproved: 0, draftsSent: 0, followUpsOpen: 0,
+  draftsAwaitingReview: 0, followUpsDue: 0, draftsApproved: 0, draftsSent: 0, followUpsOpen: 0, qualifiedToReview: 0,
 }
 const o = (p: Partial<Overview>): Overview => ({ ...base, ...p })
 
@@ -34,6 +34,11 @@ describe('nextStep', () => {
   it('then at follow-ups, due ones first', () => {
     expect(nextStep('candidate', o({ shortlisted: 1, draftsSent: 1, followUpsDue: 2 }))).toMatchObject({ step: 'follow', action: 'Follow up (2 due)' })
     expect(nextStep('candidate', o({ shortlisted: 1, draftsSent: 1 }))).toMatchObject({ step: 'follow', to: '/follow-ups' })
+  })
+  it('asks to review qualified leads when nothing is suggested (Sales has no suggestion queue)', () => {
+    expect(nextStep('sales', o({ qualifiedToReview: 4 }))).toMatchObject({ step: 'review', to: '/opportunities', action: 'Review 4 leads' })
+    // approved-but-untouched work comes first
+    expect(nextStep('sales', o({ qualifiedToReview: 4, shortlisted: 1 }))).toMatchObject({ step: 'reach' })
   })
   it('falls back to finding more', () => {
     expect(nextStep('candidate', o({}))).toMatchObject({ step: 'find', to: '/wellfound' })

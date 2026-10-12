@@ -81,6 +81,8 @@ export interface Overview {
   draftsApproved?: number
   draftsSent?: number
   followUpsOpen?: number
+  /** Qualified opportunities nobody has decided on (the review queue when a campaign does not suggest, e.g. Sales). */
+  qualifiedToReview?: number
 }
 
 export type ApplicationPlatform = 'LinkedIn' | 'Naukri' | 'Instahyre'
