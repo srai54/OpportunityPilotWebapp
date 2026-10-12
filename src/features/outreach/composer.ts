@@ -83,3 +83,28 @@ export function unresolvedPlaceholder(...texts: string[]): string | null {
   }
   return null
 }
+
+export interface ReadyCheck {
+  /** Which field to focus to fix it. */
+  field: 'recipient' | 'subject' | 'body'
+  label: string
+  ok: boolean
+  /** What to do when it is not OK. */
+  fix: string
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** What must be true before a message can be approved and sent, so the person is told up front instead of by a server error. */
+export function readyChecks(channel: DraftChannel, d: { recipient: string; subject: string; body: string }): ReadyCheck[] {
+  const checks: ReadyCheck[] = []
+  if (channel === 'Email') {
+    checks.push({ field: 'recipient', label: 'Recipient', ok: EMAIL.test(d.recipient.trim()), fix: 'Add the recipient email address (name@company.com).' })
+    checks.push({ field: 'subject', label: 'Subject', ok: d.subject.trim().length > 0, fix: 'Add a subject line.' })
+  }
+  checks.push({ field: 'body', label: 'Message', ok: d.body.trim().length > 0, fix: 'Write the message.' })
+  const left = unresolvedPlaceholder(d.body, d.subject)
+  checks.push({ field: 'body', label: 'No placeholders', ok: left === null, fix: left ? `Replace ${left} with your own words.` : '' })
+  if (channel === 'LinkedInMessage') checks.push({ field: 'body', label: 'Under 300 characters', ok: d.body.length <= 300, fix: 'Shorten it — LinkedIn cuts connection notes at 300 characters.' })
+  return checks
+}

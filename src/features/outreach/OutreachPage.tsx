@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { composerTarget, MAIL_APPS, readMailApp, unresolvedPlaceholder, writeMailApp, type MailApp } from './composer'
+import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -14,6 +14,8 @@ import { useApi } from '../../lib/useApi'
 export function OutreachPage() {
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const [selected, setSelected] = useState<OutreachDraft>()
+  const [loadError, setLoadError] = useState(false)
+  const [tried, setTried] = useState(false)
   const [mailApp, setMailAppState] = useState<MailApp>(readMailApp)
   const setMailApp = (m: MailApp) => { setMailAppState(m); writeMailApp(m) }
   const [checked, setChecked] = useState<string[]>([])
@@ -47,15 +49,27 @@ export function OutreachPage() {
   }, [firstId, selected])
 
   async function open(item: Pick<DraftListItem, 'id'>) {
-    setError(undefined); setNotice('')
+    setError(undefined); setNotice(''); setLoadError(false); setTried(false)
     try {
       const row = await api<OutreachDraft>(`/api/v1/drafts/${item.id}`)
       setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? '')
-    } catch (e) { setError(e as Error) }
+    } catch (e) { setLoadError(true); setError(e as Error) }
+  }
+
+  const checks = selected ? readyChecks(selected.channel, { recipient, subject, body }) : []
+  /** Tell the person what is missing, point at the first field to fix, and stop before a server round trip. */
+  function blocked(): boolean {
+    const first = checks.find((c) => !c.ok)
+    if (!first) return false
+    setTried(true); setError(undefined)
+    setNotice(`Before this can be approved: ${first.fix}`)
+    document.getElementById(`out-${first.field}`)?.focus()
+    return true
   }
 
   async function mutate(action: 'save' | 'approve' | 'revoke') {
     if (!selected) return
+    if (action === 'approve' && blocked()) return
     setWorking(true); setError(undefined); setNotice('')
     try {
       const path = action === 'save' ? `/api/v1/drafts/${selected.id}` : `/api/v1/drafts/${selected.id}/${action === 'approve' ? 'approve' : 'revoke-approval'}`
@@ -92,8 +106,7 @@ export function OutreachPage() {
   /** One click: save edits, approve this exact version, start the send record, then open the composer. The user sends and records a receipt. */
   async function approveAndSend() {
     if (!selected) return
-    const left = unresolvedPlaceholder(body, subject)
-    if (left) { setError(undefined); setNotice(`Replace ${left} in the message first — a draft with a placeholder cannot be approved.`); return }
+    if (blocked()) return
     const target = composerTarget(selected.channel, { recipient, subject, body }, mailApp)
     // Open the tab inside the click so the browser does not block it; point it at the site once the server calls finish.
     const tab = target.kind === 'site' ? window.open('about:blank', '_blank') : null
@@ -130,7 +143,9 @@ export function OutreachPage() {
   return <div className="page page-wide stack-4">
     <PageHeader title="Outreach" subtitle="Review every message, edit it safely, and approve the exact version you intend to use." />
     {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
-    {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="the draft" />}
+    {error && (loadError
+      ? <ErrorNotice error={error} onRetry={() => { setError(undefined); setLoadError(false) }} what="the draft" />
+      : <ErrorNotice error={error} />)}
     {drafts.error && <ErrorNotice error={drafts.error} onRetry={drafts.reload} what="outreach drafts" />}
     {drafts.loading && !drafts.data && <LoadingState label="Loading outreach drafts…" waking={drafts.waking} rows={4} />}
     {drafts.data?.items.length === 0 && <EmptyState title="No outreach drafts yet"><p>Open an opportunity and create a cover note, email, LinkedIn message, or contact-form draft.</p><Link className="btn btn-primary" to="/opportunities">Browse opportunities</Link></EmptyState>}
@@ -156,9 +171,15 @@ export function OutreachPage() {
       <section className="panel"><header className="panel-head"><h2 className="eyebrow">Editor</h2></header>
         {!selected ? <div className="panel-body muted">Select a draft to review it.</div> : <div className="panel-body stack-3">
           <div className="row wrap"><Badge>{selected.channel}</Badge><Badge tone={selected.state === 'Approved' ? 'success' : 'warning'}>{selected.state} · v{selected.version}</Badge><Link to={`/opportunities/${selected.opportunityId}`}>Open opportunity</Link></div>
-          <label className="field"><span>Recipient</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
-          {selected.channel === 'Email' && <label className="field"><span>Subject</span><input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
-          <label className="field" data-coach="out-editor"><span>Message</span><textarea rows={14} value={body} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+          <label className="field"><span>Recipient</span><input id="out-recipient" value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'User-entered recipient · not verified.'}</small></label>
+          {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
+          <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={14} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+          {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">
+            {checks.map((c) => <li key={c.label}>{c.ok
+              ? <span className="ready-chip is-ok"><span aria-hidden="true">✓</span> {c.label}</span>
+              : <button type="button" className="ready-chip is-todo" onClick={() => { setTried(true); document.getElementById(`out-${c.field}`)?.focus() }} title={c.fix}><span aria-hidden="true">○</span> {c.label}<span className="sr-only"> — {c.fix}</span></button>}</li>)}
+          </ul>}
+          {tried && checks.filter((c) => !c.ok).map((c) => <p key={c.label} className="field-error">{c.fix}</p>)}
           {selected.channel === 'LinkedInMessage' && <p className={`muted-small${body.length > 300 ? ' text-danger' : ''}`}>
             {body.length}/300 characters — a LinkedIn connection note is short{body.length > 300 ? ' (LinkedIn will cut it)' : ''}. After they accept, <Link to={`/opportunities/${selected.opportunityId}`}>create the follow-up email</Link> and send it the same way.
           </p>}

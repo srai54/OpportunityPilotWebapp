@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { composerTarget, unresolvedPlaceholder, webComposeUrl } from './composer'
+import { composerTarget, readyChecks, unresolvedPlaceholder, webComposeUrl } from './composer'
 
 describe('composerTarget', () => {
   it('pre-fills an email in the mail app', () => {
@@ -53,5 +53,19 @@ describe('unresolvedPlaceholder', () => {
     expect(unresolvedPlaceholder('Regards, [Your name]')).toBe('[Your name]')
     expect(unresolvedPlaceholder('all good', 'also fine')).toBeNull()
     expect(unresolvedPlaceholder('[]')).toBeNull()
+  })
+})
+
+describe('readyChecks', () => {
+  const ok = { recipient: 'a@b.co', subject: 'Hi', body: 'Hello' }
+  it('passes a complete email', () => expect(readyChecks('Email', ok).every((c) => c.ok)).toBe(true))
+  it('says what is missing, in order', () => {
+    const bad = readyChecks('Email', { recipient: 'not-an-email', subject: ' ', body: 'Regards, [Your name]' }).filter((c) => !c.ok)
+    expect(bad.map((c) => c.label)).toEqual(['Recipient', 'Subject', 'No placeholders'])
+    expect(bad[2].fix).toContain('[Your name]')
+  })
+  it('does not ask a LinkedIn note for a recipient or subject', () => {
+    expect(readyChecks('LinkedInMessage', { recipient: '', subject: '', body: 'Hi' }).every((c) => c.ok)).toBe(true)
+    expect(readyChecks('LinkedInMessage', { recipient: '', subject: '', body: 'x'.repeat(301) }).filter((c) => !c.ok).map((c) => c.label)).toEqual(['Under 300 characters'])
   })
 })

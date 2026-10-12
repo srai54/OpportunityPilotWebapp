@@ -8,6 +8,11 @@ function describe(error: Error): string {
     return 'The API is still not responding after retrying for about two minutes. The free host may be restarting — try again in a moment.'
   if (error instanceof ApiUnreachableError)
     return 'The API could not be reached. On free hosting it sleeps when idle and can take up to a minute to wake — try again in a moment.'
+  // A validation failure carries the real reasons per field; show those, not just "Validation failed".
+  if (error instanceof ApiError && error.fieldErrors) {
+    const reasons = Object.values(error.fieldErrors).flat().filter(Boolean)
+    if (reasons.length > 0) return reasons.join(' ')
+  }
   return error.message
 }
 

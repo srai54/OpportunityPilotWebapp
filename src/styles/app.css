@@ -1543,3 +1543,11 @@ a.menu-item:hover { text-decoration: none; }
   .topbar-wrap .topbar { gap: 6px; padding: 0 10px; }
   .ws-seg-top .ws-seg-btn { padding: 0 6px; }
 }
+
+/* Outreach: "before you send" checklist */
+.ready-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.ready-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--op-line); font: inherit; font-size: var(--op-text-meta); background: var(--op-surface); color: var(--op-muted); }
+.ready-chip.is-ok { background: var(--op-green-tint); border-color: transparent; color: var(--op-on-green-tint); }
+.ready-chip.is-todo { background: var(--op-amber-tint); border-color: transparent; color: var(--op-on-amber-tint); cursor: pointer; }
+.ready-chip.is-todo:hover { filter: brightness(0.96); }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--op-danger, #c62828); }

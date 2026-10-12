@@ -269,8 +269,8 @@ function OpportunityTable({
         body: JSON.stringify({ status }),
       })
       setPatched((p) => ({ ...p, [o.id]: { ...o, status: updated.status, updatedAt: updated.updatedAt } }))
-      // The nav's approval count changes when a suggestion is approved or rejected here.
-      if (o.status === 'Suggested' || updated.status === 'Suggested') refreshOverview()
+      // The counts behind the journey bar and the Next bar change with every decision.
+      refreshOverview()
       setAnnouncement(`${o.title} is now ${STATUS_LABELS[updated.status]?.text ?? updated.status}.`)
       return true
     } catch (e) {
