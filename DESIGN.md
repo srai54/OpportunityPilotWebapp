@@ -21,6 +21,16 @@
 | Intercom / Zapier / Cal.com (card chrome) | Floating white tiles on a warm canvas, 12–16px corners, hairline border plus a very soft shadow, one tinted "signature" card for the thing to do now | Marketing-scale type, pill-rounded cards |
 | Linear / Clay / Airtable | — | Dark-first marketing look, illustration, long editorial scroll: wrong density for a task app |
 
+**Skill libraries reviewed (open source, read as text only, nothing installed or run), 2026-10-12:**
+
+| Repo | Used? | Why |
+|---|---|---|
+| `jakubkrehel/skills` (better-ui, better-layout, better-writing, better-accessibility) | **Yes** | Exact radius, press, layout-grouping and writing rules that match this app (sections 14–15) |
+| `emilkowalski/skills` (emil-design-eng, break-ui) | **Yes** | Concrete motion values and a worst-case-data checklist (sections 14, 16) |
+| `Owl-Listener/designer-skills` (interaction-design: onboarding, forms, error flows, state mapping) | **As a checklist** | Same goals as our journey and forms; used when designing a new flow, not copied |
+| `codeswithroh/tastemaker` | **Partly** | The "anti-slop" list (no `transition: all`, no `ease-in`, no `scale(0)`, no layout-property animation, always reduced motion) is adopted in section 14 |
+| `MengTo/Skills`, `elayadesign/ai-design-skills`, `ConardLi/garden-skills` | No | Landing pages, games, illustration, prompt libraries, video/article tools: not a task app |
+
 New inspiration is allowed only if it is recorded here with what is borrowed and rejected. Library sources: getdesign.md, github.com/VoltAgent/awesome-design-md, designmd.ai.
 
 ## 3. Colour (tokens only — never a hex in a component)
@@ -117,6 +127,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 4. Unit tests for any new pure logic (`*Model.ts`).
 5. New pattern → recorded in this file.
 6. Simple view: lists are cards (section 13), not tables.
+7. Motion, layout and writing follow sections 14–15; the break test in section 16 was run.
 
 ## 13. Card system (v3) — mandatory in the simple view
 
@@ -141,3 +152,37 @@ Interaction: an interactive card lifts 1px and deepens its shadow on hover; the 
 Tokens: `--op-radius-card` 16px, `--op-shadow-card`, `--op-shadow-card-hover`, `--op-canvas` (warm page). Dark theme re-declares them (no theme branching in components).
 
 Accessibility: a card list is a `<ul>`; each card an `<li>` with a heading (`h3`) or an `aria-label`; the match ring has the number as text; status is a word plus colour; bulk bar is a `role="region"` with a live count.
+
+## 14. Motion and interaction polish (from emilkowalski/skills and jakubkrehel/skills)
+
+- **Easing:** exits and entrances use ease-out `cubic-bezier(0.23, 1, 0.32, 1)` (`--op-ease-out`); things already on screen use ease-in-out `cubic-bezier(0.77, 0, 0.175, 1)`. **Never ease-in** for UI.
+- **Durations:** press feedback 100–160 ms; tooltips and small popovers 125–200 ms; dropdowns 150–250 ms; dialogs and drawers 200–500 ms. Any UI animation over 300 ms is cut to 150–250 ms. Exits are faster than entrances.
+- **Frequency:** things used many times a day (typing, table rows, keyboard-driven actions) are not animated at all.
+- **Press:** `:active` scales to **0.97** (range 0.95–0.98) with `transform 160ms ease-out`. Disabled controls never scale.
+- **Entrances:** never from `scale(0)`; start at `scale(0.95)` and `opacity: 0`. Staggers are 30–80 ms apart and never block interaction.
+- **Animate only `transform` and `opacity`.** Name transition properties explicitly: **never `transition: all`**; never animate layout properties.
+- **Hover** styles are wrapped in `@media (hover: hover) and (pointer: fine)` so phones do not get sticky hover.
+- **Reduced motion:** under `prefers-reduced-motion: reduce` keep opacity and colour changes, remove movement and scale.
+- **Overlays** (menus, drawers, dialogs, the coach tip): `overscroll-behavior: contain`.
+- **Nested rounding:** outer radius = inner radius + padding (+ border). Past 24 px padding use separate radius tokens.
+- **Rings and outlines:** a `box-shadow: 0 0 0 1px` ring also needs `border: 1px solid transparent` so it survives forced-colours mode. Icons use `currentColor` only.
+- **Theme switch:** transitions are disabled for the frame of the switch.
+
+## 15. Layout and writing details (from jakubkrehel/skills)
+
+- Space between groups is **at least 2×** the space inside a group (8 px inside → 16 px+ between). Use space first, background shape second, separator line last.
+- Adjacent bordered or filled controls are **≥ 12 px** apart; borderless text/icon controls ≥ 24 px between glyphs.
+- One primary action per view; once there are more than three secondary actions, move them into a menu.
+- Visual order matches DOM order (no `order`, `row-reverse`, or grid placement tricks). Identifying content leads a row; metadata and actions trail.
+- Text containers use `max-width` and `min-height`, never fixed width/height. Grid tracks `minmax(0, 1fr)`; overflowing flex children `min-width: 0`. Use `100%` not `100vw`, and `100dvh` not `100vh` on phones.
+- Breakpoints come from content, not devices. Check 320 px, 200 % zoom and a long-string language.
+- **Buttons** start with a verb and name the object ("Send message", "Review 4 leads"). Icon-only buttons have a verb-plus-object accessible name.
+- **Toggles** are worded for the ON state ("Send read receipts"). Sentence case everywhere. One vocabulary: if the menu says "Archive", the toast says "archived".
+- **Errors** say what failed and how to fix it, next to the field; no blame, no "Oops", no exclamation marks; show known requirements before input, not only after.
+- **Empty states** say what the place is for and offer one next action; a filtered-empty names the filter and offers "Clear filters".
+- **Confirmations:** prefer **undo** for reversible actions; confirm only irreversible, affects-others or bulk-destructive ones; the title names the action and object ("Delete 'Q3 report'?"), with counts; buttons are verb + object, never Yes/No.
+- Cut filler ("successfully", routine "please"). Build sentences with placeholders and plural rules, not fragments.
+
+## 16. Break test (from emilkowalski/skills break-ui) — before any UI change is done
+
+Open the screen with: a very long name and long unbroken email; a one-letter name; missing optional fields and a failed avatar; a name that makes wrong initials (emoji first); **0, 1, and 1,000+ items**; counts of exactly 1 (plurals) and 1,284 (separators); null or zero numbers; 320 px width and 200 % zoom; dark mode. Nothing may overflow, clip, mis-pluralise or show "undefined". Also check slow network (the host sleeps up to a minute).

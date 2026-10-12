@@ -90,6 +90,8 @@
   /* shape */
   --op-radius: 12px;
   --op-radius-card: 16px;
+  --op-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --op-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --op-radius-control: 8px;
   --op-radius-chip: 6px;
 

@@ -1697,3 +1697,11 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .followup-title { font-weight: 650; }
 .followup-meta, .followup-note { color: var(--op-muted); font-size: var(--op-text-meta); }
 .followup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Motion polish (DESIGN.md section 14): press feedback, explicit transitions, hover only where hover exists */
+.btn, .legend-btn, .ready-chip, .top-switch, .journey-link, .menu-item { transition: transform 160ms var(--op-ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease; }
+.btn:active:not(:disabled), .legend-btn:active, .ready-chip:active, .journey-link:active { transform: scale(0.97); }
+.lead-card, .message-card { transition: transform 160ms var(--op-ease-out), box-shadow 160ms var(--op-ease-out), border-color 150ms ease; }
+@media (hover: none) { .lead-card:hover { transform: none; box-shadow: var(--op-shadow-card); } .message-open:hover { background: none; } }
+.menu, .coach, .suggest-list, .rail { overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) { .btn, .legend-btn, .ready-chip, .journey-link, .lead-card, .message-card { transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease; } .btn:active:not(:disabled), .journey-link:active, .legend-btn:active, .ready-chip:active { transform: none; } }
