@@ -41,6 +41,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/outreach', label: 'Outreach', icon: 'outreach' },
       { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', advanced: true, count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
       { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps', advanced: true },
+      { to: '/insights', label: 'Insights', icon: 'insights', advanced: true },
     ],
   },
   {
@@ -66,6 +67,7 @@ export const SALES_NAV_GROUPS: NavGroup[] = [
       { to: '/outreach', label: 'Outreach', icon: 'outreach' },
       { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', advanced: true, count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
       { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps', advanced: true },
+      { to: '/insights', label: 'Insights', icon: 'insights', advanced: true },
     ],
   },
   {

@@ -1,0 +1,138 @@
+import type { TrendPoint, TrendTotals } from '../../lib/types'
+import type { Workspace } from '../shell/shellModel'
+
+/** The four lines on the trend chart, fixed order (DESIGN.md: max four series, never cycled). `reached` is Applied or Contacted. */
+export type SeriesKey = 'found' | 'approved' | 'reached' | 'replied'
+
+export interface SeriesDef { key: SeriesKey; label: string; token: string }
+
+export function seriesFor(workspace: Workspace): SeriesDef[] {
+  const sales = workspace === 'sales'
+  return [
+    { key: 'found', label: sales ? 'Companies found' : 'Jobs found', token: '--op-c1' },
+    { key: 'approved', label: sales ? 'Leads approved' : 'Jobs approved', token: '--op-c3' },
+    { key: 'reached', label: sales ? 'Contacted' : 'Applied', token: '--op-c2' },
+    { key: 'replied', label: 'Replies', token: '--op-c4' },
+  ]
+}
+
+export interface KpiDef { key: keyof TrendTotals; label: string }
+
+export function kpisFor(workspace: Workspace): KpiDef[] {
+  const sales = workspace === 'sales'
+  return [
+    { key: 'found', label: sales ? 'Companies found' : 'Jobs found' },
+    { key: 'qualified', label: 'Qualified' },
+    { key: 'approved', label: 'Approved' },
+    { key: 'reached', label: sales ? 'Contacted' : 'Applied' },
+    { key: 'sent', label: 'Messages sent' },
+    { key: 'replied', label: 'Replies' },
+  ]
+}
+
+export interface Delta { text: string; tone: 'up' | 'down' | 'flat' }
+
+/** "up 3" / "down 2" / "same" compared with the window before; a plain statement, no invented percentage on tiny numbers. */
+export function delta(current: number, previous: number): Delta {
+  const diff = current - previous
+  if (diff === 0) return { text: 'same as before', tone: 'flat' }
+  return diff > 0 ? { text: `up ${diff}`, tone: 'up' } : { text: `down ${-diff}`, tone: 'down' }
+}
+
+export const sumOf = (points: readonly TrendPoint[], key: keyof TrendTotals): number => points.reduce((n, p) => n + p[key], 0)
+
+/** Total of the most recent `days` points (the last point is today). */
+export const lastDays = (points: readonly TrendPoint[], days: number): TrendPoint[] => points.slice(Math.max(0, points.length - days))
+
+/** A friendly axis maximum: 5, 10, 20, 50, 100… at least 5, never below the data. */
+export function niceMax(max: number): number {
+  if (max <= 5) return 5
+  const pow = 10 ** Math.floor(Math.log10(max))
+  for (const step of [1, 2, 5, 10]) if (step * pow >= max) return step * pow
+  return 10 * pow
+}
+
+/** SVG polyline points for a series: x spread across the width, y inverted against `max`. One point sits in the middle. */
+export function linePoints(values: readonly number[], width: number, height: number, pad: { l: number; r: number; t: number; b: number }, max: number): string {
+  const innerW = width - pad.l - pad.r
+  const innerH = height - pad.t - pad.b
+  return values
+    .map((v, i) => {
+      const x = values.length === 1 ? pad.l + innerW / 2 : pad.l + (innerW * i) / (values.length - 1)
+      const y = pad.t + innerH - (innerH * Math.min(v, max)) / max
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+}
+
+/** Index of the point nearest an x position inside the plot, for hover and keyboard readouts. */
+export function nearestIndex(x: number, count: number, width: number, padL: number, padR: number): number {
+  if (count <= 1) return 0
+  const t = (x - padL) / (width - padL - padR)
+  return Math.min(count - 1, Math.max(0, Math.round(t * (count - 1))))
+}
+
+/** Share of `part` in `whole` as a whole percent; null when there is nothing to divide by. */
+export function percent(part: number, whole: number): number | null {
+  return whole > 0 ? Math.round((part / whole) * 100) : null
+}
+
+export interface FunnelRow { key: string; label: string; count: number; fromPrevious: number | null }
+
+/** Found → Qualified → Approved → Applied/Contacted → Replied for a window, with each step as a share of the one before. */
+export function funnelRows(workspace: Workspace, t: TrendTotals): FunnelRow[] {
+  const sales = workspace === 'sales'
+  const steps: { key: string; label: string; count: number }[] = [
+    { key: 'found', label: sales ? 'Companies found' : 'Jobs found', count: t.found },
+    { key: 'qualified', label: 'Qualified', count: t.qualified },
+    { key: 'approved', label: 'Approved', count: t.approved },
+    { key: 'reached', label: sales ? 'Contacted' : 'Applied', count: t.reached },
+    { key: 'replied', label: 'Replied', count: t.replied },
+  ]
+  return steps.map((s, i) => ({ ...s, fromPrevious: i === 0 ? null : percent(s.count, steps[i - 1].count) }))
+}
+
+/* ---- Weekly goal -------------------------------------------------------------- */
+
+export const GOAL_MIN = 1
+export const GOAL_MAX = 200
+export const GOAL_DEFAULT = 10
+
+export const goalKey = (workspace: Workspace) => `op.goal.${workspace}`
+
+export function clampGoal(n: number): number {
+  return Number.isFinite(n) ? Math.min(GOAL_MAX, Math.max(GOAL_MIN, Math.round(n))) : GOAL_DEFAULT
+}
+
+export function readGoal(workspace: Workspace): number {
+  try {
+    const raw = window.localStorage.getItem(goalKey(workspace))
+    return raw === null ? GOAL_DEFAULT : clampGoal(Number(raw))
+  } catch {
+    return GOAL_DEFAULT
+  }
+}
+
+export function writeGoal(workspace: Workspace, n: number): void {
+  try { window.localStorage.setItem(goalKey(workspace), String(clampGoal(n))) } catch { /* the goal lasts for this page view only */ }
+}
+
+/** What the weekly goal counts: Candidate = applications made, Sales = messages sent. */
+export function goalMetric(workspace: Workspace): { key: 'reached' | 'sent'; label: string } {
+  return workspace === 'sales' ? { key: 'sent', label: 'messages sent' } : { key: 'reached', label: 'applications made' }
+}
+
+export function goalProgress(done: number, goal: number): { pct: number; text: string } {
+  const g = clampGoal(goal)
+  return { pct: Math.min(100, Math.round((done / g) * 100)), text: `${done} of ${g}` }
+}
+
+/** Plain-language one-line takeaway for the trend chart, so the picture is also said in words. */
+export function trendSummary(workspace: Workspace, days: number, current: TrendTotals, previous: TrendTotals): string {
+  const s = seriesFor(workspace)
+  const label = (k: SeriesKey) => s.find((x) => x.key === k)!.label.toLowerCase()
+  if (current.found + current.approved + current.reached + current.replied + current.sent === 0)
+    return `Nothing recorded in the last ${days} days yet.`
+  const d = delta(current.found, previous.found)
+  return `Last ${days} days: ${current.found} ${label('found')} (${d.text}), ${current.approved} ${label('approved')}, ${current.reached} ${label('reached')}, ${current.replied} replies.`
+}

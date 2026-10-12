@@ -12,6 +12,7 @@ import { EmptyState } from './components/States'
 
 const CampaignBuilder = lazy(() => import('./features/campaigns/CampaignBuilder').then((m) => ({ default: m.CampaignBuilder })))
 const CampaignsPage = lazy(() => import('./features/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage })))
+const InsightsPage = lazy(() => import('./features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })))
 const OpportunitiesPage = lazy(() => import('./features/opportunities/OpportunitiesPage').then((m) => ({ default: m.OpportunitiesPage })))
 const OpportunityDetailPage = lazy(() => import('./features/opportunities/OpportunityDetailPage').then((m) => ({ default: m.OpportunityDetailPage })))
 const OverviewPage = lazy(() => import('./features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })))
@@ -104,6 +105,7 @@ const router = createBrowserRouter([
       { path: 'profiles/:id', element: <ProfilesPage />, handle: { title: 'Profiles' } },
       { path: 'trends', element: <Navigate to="/wellfound?tab=trends" replace />, handle: { title: 'Find jobs' } },
       { path: 'wellfound', element: <WellfoundPage />, handle: { title: 'Find jobs' } },
+      { path: 'insights', element: <InsightsPage />, handle: { title: 'Insights' } },
       { path: 'settings', element: <SettingsPage />, handle: { title: 'Settings' } },
       { path: '*', element: <NotFound />, handle: { title: 'Not found' } },
     ],

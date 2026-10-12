@@ -18,8 +18,8 @@ describe('coach flows', () => {
   })
   it('uses each target id once per flow and gives every flow a route', () => {
     for (const f of COACH_FLOWS) expect(new Set(f.steps.map((s) => s.target)).size).toBe(f.steps.length)
-    expect(['/', '/profiles/new', '/profiles/abc', '/wellfound', '/campaigns/new', '/research/abc', '/opportunities', '/opportunities/abc', '/outreach', '/follow-ups'].map(flowIdForPath))
-      .toEqual(['overview', 'profile', 'profile', 'find', 'campaign', 'run', 'opps', 'opp', 'outreach', 'followups'])
+    expect(['/', '/profiles/new', '/profiles/abc', '/wellfound', '/campaigns/new', '/research/abc', '/opportunities', '/opportunities/abc', '/outreach', '/follow-ups', '/insights'].map(flowIdForPath))
+      .toEqual(['overview', 'profile', 'profile', 'find', 'campaign', 'run', 'opps', 'opp', 'outreach', 'followups', 'insights'])
     expect(flowIdForPath('/settings')).toBeNull()
     expect(flowIdForPath('/opportunities/abc/edit')).toBeNull()
   })
