@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { dedupeKey, feedsPath, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { dedupeKey, feedsPath, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -47,6 +47,15 @@ describe('relevance', () => {
     expect(merged.map((m) => m.job.providerJobId)).toEqual(['l', 'f'])
     expect(relevance(job({ title: 'Sales Manager' }), 'sales manager')).toBe(8)
     expect(relevance(job({ title: 'X', companyName: 'Y' }), '')).toBe(0)
+  })
+})
+
+describe('mentionsVisaOrRelocation', () => {
+  it('finds visa and relocation wording in the posting text, and nothing else', () => {
+    for (const text of ['We offer visa sponsorship for the right person.', 'Relocation package included', 'EU Blue Card holders welcome', 'We can relocate you to Berlin', 'Visa support and a work permit are provided'])
+      expect(mentionsVisaOrRelocation(job({ description: text }))).toBe(true)
+    for (const text of ['Remote role in sales', 'Our office relocated last year', 'Travel visa for conferences is paid by you'])
+      expect(mentionsVisaOrRelocation(job({ description: text }))).toBe(false)
   })
 })
 

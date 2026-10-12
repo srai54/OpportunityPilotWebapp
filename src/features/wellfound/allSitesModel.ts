@@ -54,6 +54,13 @@ export function mergeAll(feed: readonly FeedJob[], boards: readonly { board: Job
   return all.sort((a, b) => relevance(b.job, query) - relevance(a.job, query) || ts(b.job) - ts(a.job))
 }
 
+const VISA = /\b(visa sponsorship|visa support|sponsor(?:s|ship)?.{0,20}visa|work permit|blue card|relocation (?:package|support|assistance|bonus|allowance)|we (?:can )?relocate|relocate you|will relocate)\b/i
+
+/** True when the posting's own text mentions visa sponsorship, a work permit or relocation help. A text signal, not a verified fact. */
+export function mentionsVisaOrRelocation(j: Pick<BoardJob, 'title' | 'snippet' | 'description'>): boolean {
+  return VISA.test(`${j.title} ${j.description ?? j.snippet ?? ''}`)
+}
+
 /** One honest line per site: how many matched, or why it did not answer. */
 export function siteLines(feed: FeedSearchResult | undefined, boards: readonly { board: JobBoard; result: BoardSearchResult | Error }[]): { name: string; text: string; ok: boolean }[] {
   const lines: { name: string; text: string; ok: boolean }[] = []
