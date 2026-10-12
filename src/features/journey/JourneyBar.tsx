@@ -13,8 +13,8 @@ export function JourneyBar({ workspace, overview, pathname }: Readonly<{ workspa
   const next = nextStep(workspace, overview)?.step
   const hereIndex = steps.findIndex((s) => s.id === here)
   return (
-    <nav className="journey" aria-label="Your steps" data-coach="journey">
-      <ol className="journey-list">
+    <nav className="journey" aria-label="Your steps">
+      <ol className="journey-list" data-coach="journey">
         {steps.map((s, i) => {
           const waiting = s.id === 'review' ? overview?.awaitingApproval ?? 0 : 0
           const isHere = s.id === here
