@@ -422,7 +422,7 @@ function GuidedStart({ overview, workspace }: { overview: Overview; workspace: W
   if (steps.every((x) => x.done)) return null
   const next = steps.findIndex((x) => !x.done)
   return (
-    <section className="card stack-3" aria-label="Getting started">
+    <section className="card stack-3" aria-label="Getting started" data-coach="start-card">
       <h3 className="section-heading">Getting started</h3>
       <ol className="guided-steps plain-list">
         {steps.map((x, i) => (

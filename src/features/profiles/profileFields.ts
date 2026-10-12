@@ -125,6 +125,16 @@ export function createFields(type: ProfileType): FieldDef[] {
   return FIELDS[type].filter((f) => !f.confirmable)
 }
 
+/** The short create form of simple mode: what you offer, who it is for, and skills (claims you can confirm in place). */
+export function simpleCreateFields(type: ProfileType): FieldDef[] {
+  return FIELDS[type].filter((f) => f.key === 'offer' || f.key === 'idealCustomer' || f.key === 'skills')
+}
+
+/** A search phrase to start the first campaign with: the profile's name without its qualifiers ("Data analyst — 5 years" → "Data analyst"). */
+export function starterSearchTerm(name: string): string {
+  return name.split(/\s[—–-]\s|\s\(|,/)[0].trim().slice(0, 80)
+}
+
 /** Order and wording of the type cards on the create form (design ProfileNew). */
 export const NEW_PROFILE_TYPES: { type: ProfileType; label: string; description: string }[] = [
   { type: 'Candidate', label: 'Candidate', description: 'Your experience — scores job postings' },

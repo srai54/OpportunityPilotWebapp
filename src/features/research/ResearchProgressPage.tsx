@@ -105,13 +105,26 @@ function ResearchProgress({ jobId }: { jobId: string }) {
   const [cancelRequested, setCancelRequested] = useState(false)
   const [cancelError, setCancelError] = useState<Error>()
 
-  const { advanced } = useShell()
+  const { advanced, workspace } = useShell()
   const navigate = useNavigate()
   const finishedOk = job?.state === 'Completed' || job?.state === 'CompletedWithGaps'
   // Simple mode: nobody wants to read a stage tracker — when the run is done, go straight to the results.
+  // Land on the "waiting for approval" view when the run suggested something, otherwise on the full list.
+  const { refreshOverview } = useShell()
+  const lookingFor = workspace === 'sales' ? 'companies' : 'jobs'
   useEffect(() => {
-    if (!advanced && job && finishedOk) navigate(`/opportunities?campaign=${job.campaignId}`, { replace: true })
-  }, [advanced, job, finishedOk, navigate])
+    if (advanced || !job || !finishedOk) return
+    let live = true
+    const campaignId = job.campaignId
+    void (async () => {
+      let waiting = 0
+      try { waiting = (await api<{ awaitingApproval: number }>('/api/v1/overview')).awaitingApproval } catch { /* fall back to the full list */ }
+      if (!live) return
+      refreshOverview()
+      navigate(waiting > 0 ? '/opportunities?view=approvals' : `/opportunities?campaign=${campaignId}`, { replace: true })
+    })()
+    return () => { live = false }
+  }, [advanced, job, finishedOk, navigate, refreshOverview])
 
   async function cancel() {
     if (!window.confirm('Cancel this run? Opportunities found so far are kept.')) return
@@ -142,8 +155,8 @@ function ResearchProgress({ jobId }: { jobId: string }) {
     const failed = job.state === 'Failed' || job.state === 'Cancelled'
     return (
       <div className="page stack-4">
-        <PageHeader title={campaign.data?.name ?? 'Looking for jobs'} />
-        <section className="card stack-3" aria-live="polite">
+        <PageHeader title={campaign.data?.name ?? `Looking for ${lookingFor}`} />
+        <section className="card stack-3" aria-live="polite" data-coach="run-status">
           {failed ? (
             <>
               <h3 className="section-heading">{job.state === 'Cancelled' ? 'This run was cancelled.' : 'This run did not finish.'}</h3>
@@ -155,9 +168,9 @@ function ResearchProgress({ jobId }: { jobId: string }) {
             </>
           ) : (
             <>
-              <h3 className="section-heading">Looking for jobs…</h3>
+              <h3 className="section-heading">Looking for {lookingFor}…</h3>
               <p className="muted-small" role="status">
-                {found > 0 ? `${found} read so far.` : 'Reading your sources.'} This usually takes under a minute — you will land on the results automatically.
+                {found > 0 ? `${found} read so far.` : 'Reading your sources.'} This usually takes under a minute — you will land on the matches to review automatically.
               </p>
               <div className="row wrap">
                 <button type="button" className="btn btn-ghost btn-sm" disabled={cancelling || cancelRequested} onClick={() => void cancel()}>Cancel</button>

@@ -77,6 +77,10 @@ export interface Overview {
   awaitingApproval: number
   draftsAwaitingReview: number
   followUpsDue: number
+  /** Drafts approved and ready to send, drafts recorded as sent, and follow-ups still open (older servers omit these). */
+  draftsApproved?: number
+  draftsSent?: number
+  followUpsOpen?: number
 }
 
 export type ApplicationPlatform = 'LinkedIn' | 'Naukri' | 'Instahyre'

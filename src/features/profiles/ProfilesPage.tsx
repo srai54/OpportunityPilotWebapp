@@ -12,6 +12,8 @@ import {
   buildSummary,
   confirmationState,
   readiness,
+  simpleCreateFields,
+  starterSearchTerm,
   createFields,
   emptyData,
   FIELDS,
@@ -39,6 +41,7 @@ function readListHidden(): boolean {
 
 /** Design round 3 (Profiles, ProfileNew): a profile list beside a full-width editor. */
 export function ProfilesPage() {
+  const { advanced } = useShell()
   const { id } = useParams()
   const navigate = useNavigate()
   const list = useApi<ProfileSummary[]>('/api/v1/profiles')
@@ -117,7 +120,13 @@ export function ProfilesPage() {
           </button>
         )}
         {creating ? (
-          <NewProfile key="new" onSaved={(p) => { list.reload(); navigate(`/profiles/${p.id}`, { replace: true }) }} onCancel={() => navigate(list.data?.[0] ? `/profiles/${list.data[0].id}` : '/')} />
+          <NewProfile key="new" onSaved={(p) => {
+            list.reload()
+            // Simple mode: a profile is only a means to a search, so go straight on to a campaign that is already filled in.
+            if (advanced) { navigate(`/profiles/${p.id}`, { replace: true }); return }
+            const term = starterSearchTerm(p.name)
+            navigate(`/campaigns/new?profile=${p.id}${term ? `&keywords=${encodeURIComponent(term)}` : ''}`, { replace: true })
+          }} onCancel={() => navigate(list.data?.[0] ? `/profiles/${list.data[0].id}` : '/')} />
         ) : id ? (
           <ExistingProfile key={id} id={id} onSaved={list.reload} />
         ) : null}
@@ -226,7 +235,9 @@ function FieldInput({
 
 /** Design ProfileNew: type as one row of cards, then the few fields needed to start. Claims come after saving. */
 function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCancel: () => void }) {
-  const [type, setType] = useState<ProfileType>('Candidate')
+  const { advanced, workspace } = useShell()
+  const sales = workspace === 'sales'
+  const [type, setType] = useState<ProfileType>(sales ? 'Product' : 'Candidate')
   const [name, setName] = useState('')
   const [data, setData] = useState<ProfileData>(emptyData)
   const [saving, setSaving] = useState(false)
@@ -235,8 +246,11 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
   const savedRef = useRef(false)
   const dirty = name.trim() !== '' || Object.values(data.fields).some((v) => v.trim())
   useUnsavedGuard(dirty, savedRef)
-  const fields = createFields(type)
+  // Simple mode: only the types that belong to this workspace, and only the few fields a first search needs.
+  const types = advanced ? NEW_PROFILE_TYPES : NEW_PROFILE_TYPES.filter((t) => (sales ? t.type === 'Product' || t.type === 'Services' : t.type === 'Candidate'))
+  const fields = advanced ? createFields(type) : simpleCreateFields(type)
   const setField = (key: string, value: string) => setData((d) => ({ ...d, fields: { ...d.fields, [key]: value } }))
+  const setConfirmed = (key: string, value: boolean) => setData((d) => ({ ...d, confirmations: { ...d.confirmations, [key]: value } }))
   const offerMissing = !data.fields.offer?.trim()
 
   async function create() {
@@ -261,16 +275,20 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
     <form className="profiles2-form" onSubmit={(e) => { e.preventDefault(); void create() }}>
       <div className="profiles2-pad stack-4">
         <header>
-          <h2 className="editor-title">New profile</h2>
-          <p className="muted-small">Not saved yet. Three fields are enough to start — you can deepen it later.</p>
+          <h2 className="editor-title">{advanced ? 'New profile' : sales ? 'What do you sell?' : 'Tell us about you'}</h2>
+          <p className="muted-small" data-coach="profile-intro">
+            {advanced
+              ? 'Not saved yet. Three fields are enough to start — you can deepen it later.'
+              : 'A minute is enough. When you save, you go straight to your first search — nothing else to set up.'}
+          </p>
         </header>
         {error && <ErrorNotice error={saveError(error)} />}
-        <fieldset className="field">
+        {types.length > 1 && <fieldset className="field">
           <legend>
-            Profile type <span className="muted-small">decides which campaigns can use it</span>
+            {advanced ? 'Profile type' : 'I sell'} <span className="muted-small">{advanced ? 'decides which campaigns can use it' : 'pick the closest'}</span>
           </legend>
           <div className="type-row">
-            {NEW_PROFILE_TYPES.map((t) => (
+            {types.map((t) => (
               <label key={t.type} className={`type-option ${type === t.type ? 'type-option-active' : ''}`}>
                 <input type="radio" name="ptype" value={t.type} checked={type === t.type} onChange={() => setType(t.type)} />
                 <span className="type-option-label">
@@ -281,12 +299,12 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
               </label>
             ))}
           </div>
-        </fieldset>
-        <div className="editor-grid">
+        </fieldset>}
+        <div className="editor-grid" data-coach="profile-fields">
           <div className="field grid-wide">
-            <label htmlFor="pname">Profile name *</label>
-            <input id="pname" required value={name} maxLength={200} onChange={(e) => setName(e.target.value)} placeholder="e.g. .NET full-stack — 5 years" />
-            <p className="hint">Only you see this. Name it for the kind of work, not the company.</p>
+            <label htmlFor="pname">{advanced ? 'Profile name *' : sales ? 'Name it *' : 'What kind of work are you after? *'}</label>
+            <input id="pname" required value={name} maxLength={200} onChange={(e) => setName(e.target.value)} placeholder={sales ? 'e.g. Payroll software for SMEs' : advanced ? 'e.g. .NET full-stack — 5 years' : 'e.g. .NET developer'} />
+            <p className="hint">{advanced ? 'Only you see this. Name it for the kind of work, not the company.' : 'Only you see this. It also becomes your first search.'}</p>
             {fieldErrors.name && <p className="field-error">{fieldErrors.name.join(' ')}</p>}
           </div>
           {fields.map((f) => (
@@ -295,15 +313,18 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
               f={f.key === 'offer' ? { ...f, label: `${f.label} *` } : f}
               data={data}
               setField={setField}
+              setConfirmed={advanced ? undefined : setConfirmed}
               placeholder={f.key === 'offer' ? 'Backend and integration work in .NET: order and warehouse systems, Azure migrations…' : '[YOUR RANGE], e.g. Available mid-October'}
             />
           ))}
           {fieldErrors.data && <p className="field-error grid-wide">{fieldErrors.data.join(' ')}</p>}
-          <div className="notice notice-neutral grid-wide">
-            <strong>{FIELDS[type].filter((f) => f.confirmable).map((f) => f.label).join(' and ')} come next.</strong> Once this is
-            saved you can add them and confirm each claim. Nothing is ever written for you, and a claim you have not
-            confirmed does not raise a score.
-          </div>
+          {advanced
+            ? <div className="notice notice-neutral grid-wide">
+                <strong>{FIELDS[type].filter((f) => f.confirmable).map((f) => f.label).join(' and ')} come next.</strong> Once this is
+                saved you can add them and confirm each claim. Nothing is ever written for you, and a claim you have not
+                confirmed does not raise a score.
+              </div>
+            : <p className="muted-small grid-wide">Nothing is written for you. Tap <strong>Confirm</strong> beside a claim you stand behind; unconfirmed claims do not raise a match score.</p>}
         </div>
       </div>
       <div className="save-bar">
@@ -312,8 +333,8 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
         <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={saving}>
           Cancel
         </button>
-        <button type="submit" className="btn btn-primary" disabled={saving || !name.trim() || offerMissing}>
-          {saving ? 'Creating…' : 'Create profile'}
+        <button type="submit" className="btn btn-primary" data-coach="profile-save" disabled={saving || !name.trim() || offerMissing}>
+          {saving ? 'Creating…' : advanced ? 'Create profile' : sales ? 'Save & find companies' : 'Save & find jobs'}
         </button>
       </div>
     </form>

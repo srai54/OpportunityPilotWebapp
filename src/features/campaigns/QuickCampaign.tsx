@@ -29,7 +29,7 @@ export function QuickCampaign() {
   const [params] = useSearchParams()
   const { workspace } = useShell()
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
-  const [profileId, setProfileId] = useState('')
+  const [profileId, setProfileId] = useState(params.get('profile') ?? '')
   const [query, setQuery] = useState(params.get('keywords') ?? '')
   const [place, setPlace] = useState(params.get('location') ?? '')
   const preferred = CHOICES.find((c) => c.value === params.get('board'))?.value
