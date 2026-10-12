@@ -5,6 +5,8 @@ import { api } from '../../lib/api'
 import type { OutreachDraft } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { formatWhen } from '../applications/applicationStatus'
+import { ProfileConfirmNotice } from '../profiles/ProfileConfirmNotice'
+import { needsProfileConfirm } from '../profiles/profileFields'
 
 export function CoverNotePanel({ opportunityId }: { opportunityId: string }) {
   const loaded = useApi<OutreachDraft[]>(`/api/v1/opportunities/${encodeURIComponent(opportunityId)}/drafts`)
@@ -92,7 +94,9 @@ export function CoverNotePanel({ opportunityId }: { opportunityId: string }) {
         <span className="sr-only" role="status" aria-live="polite">
           {announcement}
         </span>
-        {error && <ErrorNotice error={error} onRetry={loaded.reload} />}
+        {error && (needsProfileConfirm(error)
+          ? <ProfileConfirmNotice opportunityId={opportunityId} onConfirmed={() => { setError(undefined); generate() }} />
+          : <ErrorNotice error={error} onRetry={loaded.reload} />)}
         {loaded.waking && !loaded.data && <p className="muted-small">The API is waking up…</p>}
         {!loaded.data && !loaded.error ? (
           <p className="muted-small">Loading cover note…</p>

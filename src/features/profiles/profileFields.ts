@@ -159,3 +159,17 @@ export function readiness(type: ProfileType, data: ProfileData) {
     ready: missingRequired.length === 0 && claims.awaiting.length === 0,
   }
 }
+
+/** Marks every claim the person has filled in as confirmed (their own saved words); empty claims stay unconfirmed. */
+export function confirmFilledClaims(type: ProfileType, data: ProfileData): ProfileData {
+  const confirmations = { ...data.confirmations }
+  for (const f of FIELDS[type]) if (f.confirmable && data.fields[f.key]?.trim()) confirmations[f.key] = true
+  return { ...data, confirmations }
+}
+
+/** True when a draft failed only because the campaign's profile was never confirmed (the reason arrives as a field error). */
+export function needsProfileConfirm(error: (Error & { fieldErrors?: Record<string, string[]> }) | undefined): boolean {
+  if (!error) return false
+  const text = [error.message, ...Object.values(error.fieldErrors ?? {}).flat()].join(' ')
+  return /confirm the campaign profile/i.test(text)
+}

@@ -1,0 +1,41 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { ErrorNotice } from '../../components/ErrorNotice'
+import { api } from '../../lib/api'
+import type { Campaign, OpportunityDetail, Profile } from '../../lib/types'
+import { confirmFilledClaims, normalizeData } from './profileFields'
+
+/**
+ * Replaces the dead-end "Confirm the campaign profile…" error with one button that confirms the profile (the person's own
+ * saved claims) and carries on. If the profile has nothing to confirm, it says so and links to it instead.
+ */
+export function ProfileConfirmNotice({ opportunityId, onConfirmed }: Readonly<{ opportunityId: string; onConfirmed: () => void }>) {
+  const [busy, setBusy] = useState(false)
+  const [problem, setProblem] = useState<Error>()
+  const [profileId, setProfileId] = useState<string>()
+
+  async function confirm() {
+    setBusy(true); setProblem(undefined)
+    try {
+      const opp = await api<OpportunityDetail>(`/api/v1/opportunities/${opportunityId}`)
+      const campaign = await api<Campaign>(`/api/v1/campaigns/${opp.campaignId}`)
+      setProfileId(campaign.profileId)
+      const profile = await api<Profile>(`/api/v1/profiles/${campaign.profileId}`)
+      const data = confirmFilledClaims(profile.type, normalizeData(profile.data))
+      if (!Object.values(data.confirmations).some(Boolean)) throw new Error('This profile has no skills or claims written down yet, so there is nothing to confirm. Add some to the profile first.')
+      await api<Profile>(`/api/v1/profiles/${profile.id}`, { method: 'PUT', body: JSON.stringify({ name: profile.name, data, confirmed: true, expectedVersion: profile.version }) })
+      onConfirmed()
+    } catch (e) { setProblem(e as Error) } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="notice notice-warning stack-2" role="alert">
+      <span><strong>Your profile needs one confirmation first.</strong> Messages are written from your profile, and only claims you have confirmed are used. Confirming marks what you have already written there as accurate.</span>
+      <div className="row wrap">
+        <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirming…' : 'Confirm my profile and continue'}</button>
+        <Link className="btn btn-ghost btn-sm" to={profileId ? `/profiles/${profileId}` : '/profiles'}>Review my profile first</Link>
+      </div>
+      {problem && <ErrorNotice error={problem} />}
+    </div>
+  )
+}

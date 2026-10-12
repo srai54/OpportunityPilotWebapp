@@ -11,6 +11,7 @@ import { useShell } from '../shell/ShellContext'
 import {
   buildSummary,
   confirmationState,
+  confirmFilledClaims,
   readiness,
   simpleCreateFields,
   starterSearchTerm,
@@ -173,13 +174,6 @@ function cleanData(type: ProfileType, data: ProfileData, keys: FieldDef[] = FIEL
   }
 }
 
-/** Simple mode: saving the short form is the confirmation, so a claim the person typed counts straight away. */
-function confirmTyped(type: ProfileType, data: ProfileData): ProfileData {
-  const confirmations = { ...data.confirmations }
-  for (const f of FIELDS[type]) if (f.confirmable && data.fields[f.key]?.trim()) confirmations[f.key] = true
-  return { ...data, confirmations }
-}
-
 /** One field in the editor grid: textarea or skill chips, with the inline Confirmed / Confirm chip for claims. */
 function FieldInput({
   f,
@@ -273,7 +267,7 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
     setError(undefined)
     setFieldErrors({})
     try {
-      const payload = advanced ? cleanData(type, data) : confirmTyped(type, cleanData(type, data))
+      const payload = advanced ? cleanData(type, data) : confirmFilledClaims(type, cleanData(type, data))
       const saved = await api<Profile>('/api/v1/profiles', {
         method: 'POST',
         body: JSON.stringify({ type, name: name.trim(), data: payload, confirmed: !advanced && isFullyConfirmed(type, payload) }),
