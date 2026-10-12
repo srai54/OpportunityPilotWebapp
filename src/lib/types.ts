@@ -53,6 +53,9 @@ export type SourceCapabilityKey =
   | 'workday'
   | 'remotive'
   | 'remoteok'
+  | 'arbeitnow'
+  | 'jobicy'
+  | 'weworkremotely'
 
 export interface Capabilities {
   environment: string
@@ -155,6 +158,9 @@ export type SourceKind =
   | 'JobSearch'
   | 'Remotive'
   | 'RemoteOk'
+  | 'Arbeitnow'
+  | 'Jobicy'
+  | 'WeWorkRemotely'
 export type SourceStatus = 'Pending' | 'Ok' | 'Failed' | 'Skipped'
 export type ResearchJobState = 'Queued' | 'Running' | 'Completed' | 'CompletedWithGaps' | 'Failed' | 'Cancelled'
 export type ResearchStage = 'Prepare' | 'Gather' | 'Extract' | 'Filter' | 'Score' | 'Complete'
@@ -187,6 +193,9 @@ export type JobPlatform =
   | 'Seek'
   | 'Remotive'
   | 'RemoteOk'
+  | 'Arbeitnow'
+  | 'Jobicy'
+  | 'WeWorkRemotely'
 export type EventLevel = 'Info' | 'Warning' | 'Error'
 export type WorkMode = 'Remote' | 'Hybrid' | 'Onsite'
 

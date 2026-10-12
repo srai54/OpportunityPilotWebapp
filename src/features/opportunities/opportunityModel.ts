@@ -52,6 +52,9 @@ export const PLATFORM_LABELS: Record<JobPlatform, string> = {
   Seek: 'SEEK',
   Remotive: 'Remotive',
   RemoteOk: 'Remote OK',
+  Arbeitnow: 'Arbeitnow',
+  Jobicy: 'Jobicy',
+  WeWorkRemotely: 'We Work Remotely',
   Other: 'Other',
 }
 

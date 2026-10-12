@@ -20,7 +20,7 @@ import {
 import { BoardForm, JobSearchForm } from './JobBoardSources'
 
 /** Sources the server reads afresh on every run; they have no items until a run has read them. */
-const FETCHED_EACH_RUN = new Set<Source['kind']>(['Url', 'Feed', 'Greenhouse', 'Lever', 'Adzuna', 'Ashby', 'SmartRecruiters', 'Recruitee', 'Workable', 'Workday', 'JobSearch', 'Remotive', 'RemoteOk'])
+const FETCHED_EACH_RUN = new Set<Source['kind']>(['Url', 'Feed', 'Greenhouse', 'Lever', 'Adzuna', 'Ashby', 'SmartRecruiters', 'Recruitee', 'Workable', 'Workday', 'JobSearch', 'Remotive', 'RemoteOk', 'Arbeitnow', 'Jobicy', 'WeWorkRemotely'])
 
 function sourceContent(s: Source): string {
   if (s.kind === 'Paste') return `${s.textLength.toLocaleString()} characters`
@@ -28,7 +28,7 @@ function sourceContent(s: Source): string {
   return `${s.itemCount} ${s.itemCount === 1 ? 'row' : 'rows'}`
 }
 
-type AddKind = 'Paste' | 'Url' | 'Feed' | 'Csv' | JobSourceKind
+type AddKind = 'Paste' | 'Url' | 'Feed' | 'Csv' | 'FreeFeeds' | JobSourceKind
 
 const ADD_OPTIONS: { kind: AddKind; label: string; description: string }[] = [
   { kind: 'Paste', label: 'Paste text', description: 'Postings or company notes you copied' },
@@ -36,6 +36,7 @@ const ADD_OPTIONS: { kind: AddKind; label: string; description: string }[] = [
   { kind: 'Csv', label: 'CSV file', description: 'A spreadsheet export, previewed first' },
   { kind: 'Greenhouse', label: 'Company careers board — Greenhouse', description: 'Every open job of one company on Greenhouse' },
   { kind: 'Lever', label: 'Company careers board — Lever', description: 'Every open job of one company on Lever' },
+  { kind: 'FreeFeeds', label: 'Free job feeds — remote and Europe', description: 'Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK: no key, no quota' },
   { kind: 'JobSearch', label: 'Job board search — Indeed, LinkedIn, SEEK', description: 'Live postings; in Sales, the companies that are hiring' },
 ]
 
@@ -66,7 +67,7 @@ export function SourcesStep({ campaign, preferBoard }: { campaign: Campaign; pre
     }
   }
 
-  const options = ADD_OPTIONS.filter((o) => sourceKindAllowed(o.kind, campaign.mode))
+  const options = ADD_OPTIONS.filter((o) => (o.kind === 'FreeFeeds' ? campaign.mode === 'Job' : sourceKindAllowed(o.kind, campaign.mode)))
   const list = sources.data ?? []
   const ok = list.filter((s) => s.status === 'Ok').length
   const failed = list.filter((s) => s.status === 'Failed').length
@@ -187,9 +188,47 @@ export function SourcesStep({ campaign, preferBoard }: { campaign: Campaign; pre
           {(adding === 'Greenhouse' || adding === 'Lever') && campaign.mode === 'Job' && (
             <BoardForm key={adding} campaign={campaign} kind={adding} onAdded={() => added(`${adding} board`)} />
           )}
+          {adding === 'FreeFeeds' && campaign.mode === 'Job' && <FreeFeedsForm campaign={campaign} existing={list.map((x) => x.kind)} onAdded={(n) => added(`${n} free feed${n === 1 ? '' : 's'}`)} />}
           {adding === 'JobSearch' && <JobSearchForm campaign={campaign} initialBoard={preferBoard} onAdded={(label) => added(label)} />}
         </div>
       </section>
+    </div>
+  )
+}
+
+const FREE_FEEDS: { kind: 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk'; label: string; hint: string }[] = [
+  { kind: 'Arbeitnow', label: 'Arbeitnow', hint: 'Germany, Europe and remote' },
+  { kind: 'Jobicy', label: 'Jobicy', hint: 'Remote jobs, pay shown when given' },
+  { kind: 'WeWorkRemotely', label: 'We Work Remotely', hint: 'Remote jobs in tech, sales, marketing and more' },
+  { kind: 'Remotive', label: 'Remotive', hint: 'Remote jobs' },
+  { kind: 'RemoteOk', label: 'Remote OK', hint: 'Remote jobs' },
+]
+
+/** The free public feeds, added in one go. Each is read on every run; none needs a key or uses a quota. */
+function FreeFeedsForm({ campaign, existing, onAdded }: { campaign: Campaign; existing: string[]; onAdded: (count: number) => void }) {
+  const [chosen, setChosen] = useState<string[]>(FREE_FEEDS.map((f) => f.kind).filter((k) => !existing.includes(k)))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<Error>()
+  async function add() {
+    setBusy(true); setError(undefined)
+    try {
+      for (const kind of chosen) await api<Source>(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify({ kind }) })
+      onAdded(chosen.length); setChosen([])
+    } catch (e) { setError(e as Error) } finally { setBusy(false) }
+  }
+  return (
+    <div className="stack-3">
+      <fieldset className="field">
+        <legend>Which feeds</legend>
+        {FREE_FEEDS.map((f) => (
+          <label key={f.kind} className="check-row">
+            <input type="checkbox" checked={chosen.includes(f.kind)} disabled={existing.includes(f.kind)} onChange={(e) => setChosen((c) => e.target.checked ? [...c, f.kind] : c.filter((x) => x !== f.kind))} />
+            <span><strong>{f.label}</strong> <span className="muted-small">— {f.hint}{existing.includes(f.kind) ? ' (already added)' : ''}</span></span>
+          </label>
+        ))}
+      </fieldset>
+      {error && <ErrorNotice error={error} />}
+      <div><button type="button" className="btn btn-primary" disabled={busy || chosen.length === 0} onClick={() => void add()}>{busy ? 'Adding…' : `Add ${chosen.length} ${chosen.length === 1 ? 'feed' : 'feeds'}`}</button></div>
     </div>
   )
 }
