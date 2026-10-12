@@ -16,7 +16,7 @@ export function JourneyBar({ workspace, overview, pathname }: Readonly<{ workspa
     <nav className="journey" aria-label="Your steps">
       <ol className="journey-list" data-coach="journey">
         {steps.map((s, i) => {
-          const waiting = s.id === 'review' ? overview?.awaitingApproval ?? 0 : 0
+          const waiting = s.id === 'review' ? (overview?.awaitingApproval ?? 0) || (overview?.qualifiedToReview ?? 0) : 0
           const isHere = s.id === here
           const isNext = s.id === next && !isHere
           return (
