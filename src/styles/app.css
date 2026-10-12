@@ -1662,3 +1662,24 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .ccard-signature .step-title { font-size: 18px; }
 @media (max-width: 640px) { .step-card { grid-template-columns: auto minmax(0, 1fr); } .step-action { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .lead-card { transition: none; } .lead-card:hover { transform: none; } }
+
+/* Outreach as cards */
+.outreach-cards { display: grid; gap: 20px; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); align-items: start; }
+@media (max-width: 960px) { .outreach-cards { grid-template-columns: minmax(0, 1fr); } }
+.message-card { padding: 0; transition: box-shadow 0.15s ease, border-color 0.15s ease; display: flex; align-items: stretch; }
+.message-card.is-open { border-color: var(--op-primary); box-shadow: 0 0 0 1px var(--op-primary), var(--op-shadow-card); }
+.message-card .lead-select { padding-left: 10px; }
+.message-open { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: var(--op-radius-card); }
+.message-open:hover { background: var(--op-panel-head); }
+.message-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.message-title { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-meta { color: var(--op-muted); font-size: var(--op-text-meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.message-sub { color: var(--op-muted); font-size: var(--op-text-meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.queue-dots i { width: 28px; height: 6px; border-radius: 999px; background: var(--op-primary-tint-border); }
+.queue-dots i.is-done { background: var(--op-primary); }
+.queue-dots i.is-now { background: var(--op-primary); box-shadow: 0 0 0 3px var(--op-primary-tint-border); }
+.btn-lg { min-height: 46px; padding: 0 22px; font-size: 15px; font-weight: 600; }
+.send-more { margin-top: 4px; }
+.send-more summary { cursor: pointer; color: var(--op-primary-hover); font-size: var(--op-text-meta); }
+.send-more > form { margin-top: 8px; }

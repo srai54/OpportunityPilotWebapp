@@ -147,3 +147,41 @@ export function StepCard({ n, title, text, done, current, action }: Readonly<Ste
     </li>
   )
 }
+
+export interface MessageCardProps {
+  company: string
+  title: string
+  channel: string
+  recipient: string | null
+  state: { text: string; tone: string }
+  open: boolean
+  onOpen: () => void
+  /** "2 of 5" when the message is part of a send queue. */
+  position?: string
+  checked?: boolean
+  onCheck?: (on: boolean) => void
+  checkLabel?: string
+}
+
+/** One message in the outreach inbox: who it is for, how it goes out, and where it stands. */
+export function MessageCard({ company, title, channel, recipient, state, open, onOpen, position, checked, onCheck, checkLabel }: Readonly<MessageCardProps>) {
+  return (
+    <li className={`ccard message-card${open ? ' is-open' : ''}`}>
+      {onCheck && (
+        <label className="lead-select">
+          <input type="checkbox" checked={checked} onChange={(e) => onCheck(e.target.checked)} />
+          <span className="sr-only">{checkLabel ?? `Select ${title}`}</span>
+        </label>
+      )}
+      <button type="button" className="message-open" onClick={onOpen} aria-current={open ? 'true' : undefined}>
+        <Avatar name={company || title} />
+        <span className="message-main">
+          <span className="message-title">{company || title}</span>
+          <span className="message-meta">{channel}{recipient ? ` · ${recipient}` : ' · no recipient yet'}{position ? ` · ${position}` : ''}</span>
+          <span className="message-sub">{title}</span>
+        </span>
+        <Badge tone={state.tone}>{state.text}</Badge>
+      </button>
+    </li>
+  )
+}
