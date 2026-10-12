@@ -11,7 +11,10 @@ describe('initialsOf / avatarSlot', () => {
   })
   it('gives the same tint for the same name, within six slots', () => {
     expect(avatarSlot('Stripe')).toBe(avatarSlot('stripe'))
-    for (const n of ['A', 'Stripe', 'IBM', 'Contoso Retail', 'Ünïcode']) expect(avatarSlot(n)).toBeGreaterThanOrEqual(0), expect(avatarSlot(n)).toBeLessThan(6)
+    for (const n of ['A', 'Stripe', 'IBM', 'Contoso Retail', 'Ünïcode']) {
+      expect(avatarSlot(n)).toBeGreaterThanOrEqual(0)
+      expect(avatarSlot(n)).toBeLessThan(6)
+    }
   })
 })
 

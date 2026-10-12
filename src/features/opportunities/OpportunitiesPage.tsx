@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { BulkBar } from '../../components/cards'
+import { BulkDraftCard, LeadCardList } from './LeadCards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { PageHeader } from '../../components/PageHeader'
@@ -219,7 +221,9 @@ function OpportunityTable({
   search: string
   onClearFilters: () => void
 }) {
-  const { advanced } = useShell()
+  const { advanced, workspace } = useShell()
+  const sales = workspace === 'sales'
+  const [drafting, setDrafting] = useState(false)
   const first = useApi<OpportunityPage>(opportunitiesPath(campaignId, filters, 0))
   const [more, setMore] = useState<OpportunitySummary[]>([])
   const [fetchedMore, setFetchedMore] = useState(0)
@@ -338,6 +342,26 @@ function OpportunityTable({
         {announcement}
       </span>
       {actionError && <ErrorNotice error={actionError} />}
+      {!advanced && (
+        <>
+          <p className="muted-small" aria-live="polite">
+            {total} {sales ? (total === 1 ? 'company' : 'companies') : (total === 1 ? 'job' : 'jobs')} · {counts.qualified} qualified{loaded.length < total ? ` · showing ${items.length}` : ''}
+            {search && ` · ${items.length} match “${search.trim()}”`}
+          </p>
+          {drafting && <BulkDraftCard ids={chosen.map((o) => o.id)} noun={sales ? 'leads' : 'jobs'} onCancel={() => setDrafting(false)} />}
+          <LeadCardList items={items} selected={selected} onToggle={toggle} busy={busy} onStatus={(o, to) => void setStatus(o, to)} label={sales ? 'Leads' : 'Jobs'} />
+          {loaded.length < total && (
+            <div className="row"><button type="button" className="btn btn-secondary" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>
+          )}
+          <BulkBar count={chosen.length} noun={sales ? { one: 'lead', many: 'leads' } : { one: 'job', many: 'jobs' }} onClear={() => { setSelected(new Set()); setDrafting(false) }}>
+            <button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => setDrafting(true)}>Draft messages</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Shortlisted')}>Approve</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Dismissed')}>Skip</button>
+          </BulkBar>
+        </>
+      )}
+      {advanced && (
+        <>
       {chosen.length > 0 && (
         <div className="selection-bar">
           <strong>{chosen.length} selected</strong>
@@ -487,6 +511,8 @@ function OpportunityTable({
           )}
         </footer>
       </section>
+        </>
+      )}
       {moreError && <ErrorNotice error={moreError} onRetry={() => void loadMore()} />}
     </div>
   )

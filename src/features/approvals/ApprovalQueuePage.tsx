@@ -8,7 +8,9 @@ import { EmptyState, LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
 import type { ApprovalItem, ApprovalPage, CampaignSummary, DecideRequest, DecideResult } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
-import { platformLabel } from '../opportunities/opportunityModel'
+import { BulkBar, CardList, LeadCard } from '../../components/cards'
+import { leadChips } from '../../components/cardModel'
+import { platformLabel, STATUS_LABELS } from '../opportunities/opportunityModel'
 import { useShell } from '../shell/ShellContext'
 import {
   addResults,
@@ -130,6 +132,7 @@ function Queue({
   const [selected, setSelected] = useState<Set<string>>(selectNone)
   const [busy, setBusy] = useState(false)
   const allRef = useRef<HTMLInputElement>(null)
+  const { advanced } = useShell()
 
   const items = first.data ? appendUniqueItems(first.data.items, more) : []
   const visibleSelection = pruneSelection(selected, items)
@@ -200,6 +203,53 @@ function Queue({
       <h3 id="approvals-heading" className="sr-only">
         Suggested jobs
       </h3>
+      {!advanced ? (
+        <>
+          <div className="row wrap">
+            <label className="check bulk-check">
+              <input ref={allRef} type="checkbox" checked={allState === 'all'} disabled={busy} onChange={(e) => setSelected(e.target.checked ? selectAll(items) : selectNone())} />
+              Select all {items.length} shown
+            </label>
+            <span className="grow" />
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={approveAll}>Approve all {total}</button>
+          </div>
+          {groupByCampaign(items).map((g) => (
+            <section key={g.campaignId} className="stack-3" aria-labelledby={`group-${g.campaignId}`}>
+              <h4 id={`group-${g.campaignId}`} className="eyebrow">{g.campaignName} · {g.items.length} suggested</h4>
+              <CardList label={`Suggested jobs from ${g.campaignName}`}>
+                {g.items.map((item, i) => (
+                  <LeadCard
+                    key={item.opportunityId}
+                    id={item.opportunityId}
+                    title={item.title}
+                    organization={item.organization}
+                    location={item.location}
+                    to={`/opportunities/${item.opportunityId}`}
+                    score={item.score}
+                    status={STATUS_LABELS.Suggested ?? { text: 'Suggested', tone: 'primary' }}
+                    chips={leadChips({ location: item.location, platformLabel: platformLabel(item.platform) })}
+                    note={item.outcomeReason}
+                    selected={visibleSelection.has(item.opportunityId)}
+                    onSelect={(on) => setSelected((cur) => toggleSelected(cur, item.opportunityId, on))}
+                    coach={i === 0 && g === groupByCampaign(items)[0] ? 'opps-action' : undefined}
+                    action={
+                      <span className="row">
+                        <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void decide(decidePayload([item.opportunityId], []))}>Approve<span className="sr-only"> {item.title}</span></button>
+                        <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void decide(decidePayload([], [item.opportunityId]))}>Skip<span className="sr-only"> {item.title}</span></button>
+                      </span>
+                    }
+                  />
+                ))}
+              </CardList>
+            </section>
+          ))}
+          <BulkBar count={count} noun={{ one: 'job', many: 'jobs' }} onClear={() => setSelected(selectNone())}>
+            <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void decide(decidePayload(visibleSelection, []))}>{busy ? 'Working…' : 'Approve'}</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void decide(decidePayload([], visibleSelection))}>Skip</button>
+          </BulkBar>
+        </>
+      ) : (
+        <>
       <div className="selection-bar bulk-bar">
         <label className="check bulk-check">
           <input
@@ -290,6 +340,9 @@ function Queue({
           </section>
         )
       })}
+
+        </>
+      )}
 
       {moreError && <ErrorNotice error={moreError} onRetry={() => void loadMore()} />}
       <div className="row wrap">

@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { AnalyticsOverview, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { CardList, StepCard } from '../../components/cards'
 import { journeySteps, nextStep, type StepId } from '../journey/journeyModel'
 import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
@@ -428,23 +429,24 @@ function GuidedStart({ overview, workspace }: { overview: Overview; workspace: W
   }
   if (!next || steps.slice(0, 4).every((x) => x.done)) return null
   return (
-    <section className="card stack-3" aria-label="Getting started" data-coach="start-card">
+    <section className="stack-3" aria-label="Getting started" data-coach="start-card">
       <h3 className="section-heading">Your next step</h3>
-      <ol className="guided-steps plain-list">
+      <CardList label="Your path">
         {steps.map((x, i) => {
           const isNext = x.id === next.step
           return (
-            <li key={x.id} className={`guided-step${x.done ? ' is-done' : ''}${isNext ? ' is-next' : ''}`} aria-current={isNext ? 'step' : undefined}>
-              <span className="step-num">{x.done ? '✓' : i + 1}</span>
-              <div className="stack-1 grow">
-                <strong>{copy[x.id].title}</strong>
-                <span className="muted-small">{isNext ? next.text : copy[x.id].text}</span>
-              </div>
-              {isNext && <Link className="btn btn-primary btn-sm" to={next.to}>{next.action}</Link>}
-            </li>
+            <StepCard
+              key={x.id}
+              n={i + 1}
+              done={x.done}
+              current={isNext}
+              title={copy[x.id].title}
+              text={isNext ? next.text : copy[x.id].text}
+              action={isNext ? <Link className="btn btn-primary" to={next.to}>{next.action}</Link> : undefined}
+            />
           )
         })}
-      </ol>
+      </CardList>
     </section>
   )
 }
