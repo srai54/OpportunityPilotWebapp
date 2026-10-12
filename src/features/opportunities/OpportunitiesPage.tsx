@@ -40,6 +40,7 @@ import {
  * Opportunities belong to a campaign in the API, so the list is always one campaign's.
  */
 function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
+  const sales = useShell().workspace === 'sales'
   const { advanced } = useShell()
   const { id: routeId } = useParams()
   const [params, setParams] = useSearchParams()
@@ -55,8 +56,10 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
   return (
     <div className="page page-wide stack-4">
       <PageHeader
-        title="Opportunities"
-        subtitle="Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success."
+        title={sales ? 'Leads' : 'Opportunities'}
+        subtitle={sales
+          ? 'Companies your searches found, best match first. Approve the ones worth contacting, then open one to reach out. The score is a ranking out of 100, not a chance of success.'
+          : 'Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success.'}
       />
       {tabs}
 
@@ -493,8 +496,10 @@ function OpportunityTable({
 export function OpportunitiesPage() {
   const [params, setParams] = useSearchParams()
   const awaiting = useShell().awaitingApproval ?? 0
+  const sales = useShell().workspace === 'sales'
   const view = params.get('view') === 'approvals' ? 'approvals' : 'all'
-  const tabs = (
+  // Sales has no suggestion queue (only Job campaigns suggest), so the tabs appear only when something is waiting.
+  const tabs = sales && awaiting === 0 && view === 'all' ? null : (
     <div className="segmented" role="group" aria-label="View" data-coach="opps-tabs">
       <button type="button" className={view === 'all' ? 'active' : ''} aria-pressed={view === 'all'} onClick={() => setParams({}, { replace: true })}>All</button>
       <button type="button" className={view === 'approvals' ? 'active' : ''} aria-pressed={view === 'approvals'} onClick={() => setParams({ view: 'approvals' }, { replace: true })}>
@@ -505,7 +510,7 @@ export function OpportunitiesPage() {
   if (view === 'approvals') {
     return (
       <div className="page page-wide stack-4">
-        <PageHeader title="Opportunities" subtitle="Approve the jobs worth your time in one click, or reject the rest." />
+        <PageHeader title={sales ? 'Leads' : 'Opportunities'} subtitle={sales ? 'Approve the companies worth contacting in one click, or reject the rest.' : 'Approve the jobs worth your time in one click, or reject the rest.'} />
         {tabs}
         <ApprovalQueuePage embedded />
       </div>
