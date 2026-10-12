@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { composerTarget, unresolvedPlaceholder } from './composer'
+import { composerTarget, unresolvedPlaceholder, webComposeUrl } from './composer'
 
 describe('composerTarget', () => {
   it('pre-fills an email in the mail app', () => {
@@ -19,6 +19,32 @@ describe('composerTarget', () => {
   })
   it('never opens a non-https recipient as a site', () => {
     expect(composerTarget('ContactForm', { recipient: 'javascript:alert(1)', subject: '', body: 'Hi' }).url).toBeNull()
+  })
+})
+
+describe('web mail apps (Outlook PWA, Gmail)', () => {
+  const d = { recipient: 'a@b.co', subject: 'Hello there', body: 'Hi A' }
+  it('keeps mailto for the default app', () => {
+    expect(webComposeUrl('default', d)).toBeNull()
+    expect(composerTarget('Email', d, 'default').kind).toBe('mailto')
+  })
+  it('opens a pre-filled Outlook compose window', () => {
+    const t = composerTarget('Email', d, 'outlook')
+    expect(t).toMatchObject({ kind: 'site', copy: false, label: 'Open a new message in Outlook (work or school)' })
+    expect(t.url).toBe('https://outlook.office.com/mail/deeplink/compose?to=a%40b.co&subject=Hello%20there&body=Hi%20A')
+  })
+  it('has personal Outlook and Gmail links', () => {
+    expect(webComposeUrl('outlookPersonal', d)?.url).toMatch(/^https:\/\/outlook\.live\.com\/mail\/0\/deeplink\/compose\?to=a%40b\.co/)
+    expect(webComposeUrl('gmail', d)?.url).toBe('https://mail.google.com/mail/?view=cm&fs=1&to=a%40b.co&su=Hello%20there&body=Hi%20A')
+  })
+  it('drops the body and copies the text when the link would be too long', () => {
+    const t = composerTarget('Email', { ...d, body: 'x'.repeat(3000) }, 'outlook')
+    expect(t.copy).toBe(true)
+    expect(t.url).not.toContain('body=')
+    expect(t.url).toContain('to=a%40b.co')
+  })
+  it('does not change LinkedIn', () => {
+    expect(composerTarget('LinkedInMessage', d, 'outlook').url).toBe('https://www.linkedin.com/messaging/')
   })
 })
 

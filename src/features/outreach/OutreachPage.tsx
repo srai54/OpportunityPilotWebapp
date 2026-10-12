@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { composerTarget, unresolvedPlaceholder } from './composer'
+import { composerTarget, MAIL_APPS, readMailApp, unresolvedPlaceholder, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -14,6 +14,8 @@ import { useApi } from '../../lib/useApi'
 export function OutreachPage() {
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const [selected, setSelected] = useState<OutreachDraft>()
+  const [mailApp, setMailAppState] = useState<MailApp>(readMailApp)
+  const setMailApp = (m: MailApp) => { setMailAppState(m); writeMailApp(m) }
   const [checked, setChecked] = useState<string[]>([])
   const [channel, setChannel] = useState<DraftChannel | ''>('')
   const [state, setState] = useState<DraftState | ''>('')
@@ -92,7 +94,7 @@ export function OutreachPage() {
     if (!selected) return
     const left = unresolvedPlaceholder(body, subject)
     if (left) { setError(undefined); setNotice(`Replace ${left} in the message first — a draft with a placeholder cannot be approved.`); return }
-    const target = composerTarget(selected.channel, { recipient, subject, body })
+    const target = composerTarget(selected.channel, { recipient, subject, body }, mailApp)
     // Open the tab inside the click so the browser does not block it; point it at the site once the server calls finish.
     const tab = target.kind === 'site' ? window.open('about:blank', '_blank') : null
     if (tab) tab.opener = null
@@ -161,6 +163,9 @@ export function OutreachPage() {
             {body.length}/300 characters — a LinkedIn connection note is short{body.length > 300 ? ' (LinkedIn will cut it)' : ''}. After they accept, <Link to={`/opportunities/${selected.opportunityId}`}>create the follow-up email</Link> and send it the same way.
           </p>}
           {selected.sendBlockers.length > 0 && <ul className="hint-list">{selected.sendBlockers.map((x) => <li key={x}>{x}</li>)}</ul>}
+          {selected.channel === 'Email' && selected.state !== 'Sent' && <label className="field" data-coach="out-mailapp"><span>Open email in</span>
+            <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
+            <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
           <div className="row wrap"><button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save new version</button>
             {selected.state === 'Sent' ? null : selected.state === 'Approved' ? <button className="btn btn-secondary" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-primary" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve version {selected.version}</button>}
             {selected.state === 'Draft' && <button className="btn btn-primary" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>Approve &amp; send →</button>}

@@ -66,8 +66,9 @@ export const COACH_FLOWS: CoachFlow[] = [
     id: 'outreach', label: 'Reach out',
     steps: [
       { target: 'out-editor', title: '1. Edit the message', body: 'Replace anything in [square brackets] with your own words — a draft with a placeholder cannot be approved.' },
-      { target: 'out-send', title: '2. Approve & send', body: 'Approves this exact version, then opens your mail app or LinkedIn. You press Send there.' },
-      { target: 'out-receipt', title: '3. Paste a receipt', body: 'After sending, paste the sent item\'s subject or time. It is then marked sent and a follow-up reminder is set for you automatically.' },
+      { target: 'out-mailapp', title: '2. Pick your mail app', body: 'Using Outlook in Edge or as an installed app? Choose it here and the message opens there, ready to send.' },
+      { target: 'out-send', title: '3. Approve & send', body: 'Approves this exact version, then opens your mail app or LinkedIn. You press Send there.' },
+      { target: 'out-receipt', title: '4. Paste a receipt', body: 'After sending, paste the sent item\'s subject or time. It is then marked sent and a follow-up reminder is set for you automatically.' },
     ],
   },
   {
