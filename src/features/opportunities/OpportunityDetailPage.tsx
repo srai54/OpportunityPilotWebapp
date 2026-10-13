@@ -181,7 +181,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           <div className="hero-row">
             <Avatar name={o.organization || o.title} />
             <div className="hero-main">
-              <h1 className="hero-title">{o.title}</h1>
+              <h2 className="hero-title">{o.title}</h2>
               <p className="hero-meta">{[o.organization, o.location, platform].filter(Boolean).join(' · ')}</p>
               <div className="hero-badges">
                 <Badge tone={status.tone}>{status.text}</Badge>
@@ -213,7 +213,6 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
         </Card>
         <Card
           tone="signature"
-          level={2}
           title="What to do now"
           subtitle={<span aria-live="polite">{nextPermittedAction(o)}</span>}
           footer={

@@ -14,7 +14,7 @@ export function EmptyState({ icon, title, children, actions }: { icon?: ReactNod
           {icon}
         </span>
       )}
-      <h3 className="state-title">{title}</h3>
+      <h2 className="state-title">{title}</h2>
       {children && <div className="state-text">{children}</div>}
       {actions && <div className="state-actions">{actions}</div>}
     </section>
@@ -25,7 +25,7 @@ export function EmptyState({ icon, title, children, actions }: { icon?: ReactNod
 export function FilteredEmpty({ title = 'No results for these filters', children, onClear }: { title?: string; children: ReactNode; onClear: () => void }) {
   return (
     <section className="state">
-      <h3 className="state-title">{title}</h3>
+      <h2 className="state-title">{title}</h2>
       <div className="state-text">{children}</div>
       <div className="state-actions">
         <button type="button" className="btn btn-primary btn-sm" onClick={onClear}>
@@ -72,7 +72,7 @@ export function WakingState() {
     <section className="state" role="status">
       <div className="row">
         <span className="spinner" aria-hidden="true" />
-        <h3 className="state-title">Starting the API service…</h3>
+        <h2 className="state-title">Starting the API service…</h2>
       </div>
       <p className="state-text">
         The server sleeps when idle on free hosting. The first request after a quiet spell takes up to a minute. This is a

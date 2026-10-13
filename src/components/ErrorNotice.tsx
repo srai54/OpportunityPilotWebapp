@@ -33,7 +33,7 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
           <span className="state-error-icon" aria-hidden="true">
             ⚠
           </span>
-          <h3 className="state-title">Could not load {what}</h3>
+          <h2 className="state-title">Could not load {what}</h2>
         </div>
         <p className="state-text">{text} Your data is untouched.</p>
         {correlationId && (
