@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { CommandBar } from '../command/CommandBar'
-import { GrowthStrip } from '../growth/GrowthStrip'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
-import type { AnalyticsOverview, Overview } from '../../lib/types'
+import type { AnalyticsOverview, AnalyticsTrend, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { CardList, StepCard } from '../../components/cards'
 import { journeySteps, nextStep, type StepId } from '../journey/journeyModel'
@@ -24,6 +23,7 @@ import {
   type SalesModeFilter,
 } from './analyticsModel'
 import { SampleRunCard } from './SampleRunCard'
+import { BestMatches, HomeHero, HomeKpis, HomeSide } from './HomeSections'
 
 /**
  * Design round 3: OverviewFirstRun (nothing set up), Main (Candidate) and OverviewSales.
@@ -34,6 +34,7 @@ export function OverviewPage() {
   const { workspace } = useShell()
   const [salesMode, setSalesMode] = useState<SalesModeFilter>('')
   const analytics = useApi<AnalyticsOverview>(overview.data && !isFirstRun(overview.data) ? analyticsPath(workspace, 30, salesMode) : null)
+  const trend = useApi<AnalyticsTrend>(overview.data && !isFirstRun(overview.data) ? `/api/v1/analytics/trend?workspace=${workspace === 'sales' ? 'Sales' : 'Candidate'}&days=14` : null)
 
   if (overview.error) return <div className="page"><ErrorNotice error={overview.error} onRetry={overview.reload} what="your overview" /></div>
   if (!overview.data) return <div className="page"><LoadingState label="Loading your overview…" waking={overview.waking} stats={5} rows={4} /></div>
@@ -76,42 +77,7 @@ export function OverviewPage() {
         </p>
       )}
       {a && !hasAnyActivity(a) && workspace === 'candidate' && <SampleRunCard />}
-      {a && hasAnyActivity(a) && <GrowthStrip />}
-      {a && (workspace === 'sales' ? <SalesOverview a={a} overview={overview.data} /> : <CandidateOverview a={a} overview={overview.data} />)}
-    </div>
-  )
-}
-
-/** The one big call to action on the Overview: go and find something. */
-function FindStrip({ workspace }: { workspace: 'candidate' | 'sales' }) {
-  return (
-    <section className="hero-strip">
-      <div className="hero-strip-text">
-        <h3 className="section-heading">{workspace === 'sales' ? 'Find companies that are hiring' : 'Find jobs that fit you'}</h3>
-        <p className="muted-small">
-          {workspace === 'sales'
-            ? 'Search LinkedIn, Indeed, SEEK and Wellfound, see the hiring trend, and turn the best into leads.'
-            : 'Search LinkedIn, Indeed, SEEK and Wellfound, see what is in demand, and track the best.'}
-        </p>
-      </div>
-      <div className="row wrap hero-strip-actions">
-        <Link className="btn btn-primary" to="/wellfound">
-          {workspace === 'sales' ? 'Find companies' : 'Find jobs'}
-        </Link>
-        <Link className="btn btn-ghost btn-sm" to="/campaigns/new">
-          New campaign
-        </Link>
-      </div>
-    </section>
-  )
-}
-
-function Kpi({ label, value, sub, tone }: { label: string; value: string | number; sub: string; tone?: 'warning' | 'muted' }) {
-  return (
-    <div className="kpi">
-      <div className="kpi-label">{label}</div>
-      <div className={`kpi-value op-numeric ${tone === 'warning' ? 'text-warning' : tone === 'muted' ? 'muted' : ''}`}>{value}</div>
-      <div className="muted-small">{sub}</div>
+      {a && (workspace === 'sales' ? <SalesOverview a={a} overview={overview.data} trend={trend.data} /> : <CandidateOverview a={a} overview={overview.data} trend={trend.data} />)}
     </div>
   )
 }
@@ -207,63 +173,26 @@ function RankedBars({ title, rows, total, tone, empty, footer }: { title: string
   )
 }
 
-function Sources({ a }: { a: AnalyticsOverview }) {
-  return (
-    <Panel title="Source performance">
-      {a.sources.length === 0 ? (
-        <p className="muted-small">No source has been read in this window.</p>
-      ) : (
-        <div className="table-scroll" tabIndex={0} role="region" aria-label="Source performance table">
-          <table className="mini-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th className="op-num">Read</th>
-                <th className="op-num">Qualified</th>
-                <th className="op-num">Rate</th>
-                <th>Last run</th>
-              </tr>
-            </thead>
-            <tbody>
-              {a.sources.map((s) => (
-                <tr key={s.sourceId}>
-                  <td className={s.failing ? 'text-warning' : ''}>{s.label}</td>
-                  <td className="op-num">{s.read}</td>
-                  <td className="op-num">{s.qualified}</td>
-                  <td className={`op-num ${s.failing ? 'text-warning' : ''}`}>{s.failing ? 'failing' : percent(s.rate)}</td>
-                  <td>{formatShortDate(s.lastFetchedAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </Panel>
-  )
-}
-
-function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Overview }) {
+function CandidateOverview({ a, overview, trend }: { a: AnalyticsOverview; overview: Overview; trend: AnalyticsTrend | undefined }) {
   const { advanced } = useShell()
   const guided = GuidedStart({ overview, workspace: 'candidate' })
-  const k = a.kpis
   const perDay = a.applicationsPerDay ?? []
   const dayMax = Math.max(1, ...perDay.map((d) => d.applied))
   const replies = perDay.reduce((n, d) => n + d.replies, 0)
   const appliedTotal = perDay.reduce((n, d) => n + d.applied, 0)
   return (
     <>
-      {guided ?? <FindStrip workspace="candidate" />}
-      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
-      <div className={advanced ? 'kpi-strip' : 'kpi-strip kpi-strip-4'}>
-        <Kpi label="Waiting on you" value={k.awaitingApproval} sub="jobs to approve" tone={k.awaitingApproval ? 'warning' : undefined} />
-        <Kpi label="Approved" value={k.shortlisted} sub={`${k.shortlistedNotApplied} not yet applied`} />
-        <Kpi label={`Applied · ${a.days} days`} value={k.applied ?? '—'} sub={advanced ? `${k.appliedByAgent ?? 0} agent · ${k.appliedByYou ?? 0} by you` : 'marked applied by you'} />
-        <Kpi label="Responded" value={k.responded ?? '—'} sub={k.respondedRate === null ? 'no applications yet' : `${percent(k.respondedRate)} of applications`} />
-        {advanced && <>
-        <Kpi label="Qualify rate" value={`${k.qualified} / ${k.found}`} sub={`${percent(k.qualifyRate)} of what was found`} />
-        <Kpi label="Agent needs you" value={k.agentNeedsYou || overview.needsManual} sub="captcha or an extra question" tone={k.agentNeedsYou ? 'warning' : undefined} />
-        </>}
+      <HomeHero a={a} workspace="candidate" trend={trend} />
+      <HomeKpis a={a} trend={trend} workspace="candidate" />
+      <div className="two">
+        <div className="stack-4">
+          {guided}
+          {advanced && <Funnel a={a} title="Pipeline — what happened to everything we read" tone="teal" />}
+        </div>
+        <HomeSide a={a} workspace="candidate" />
       </div>
+      <BestMatches workspace="candidate" />
+      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
 
       <div className="panel-grid-2">
         <Panel
@@ -314,8 +243,6 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
       </div>
 
       {advanced && <>
-      <Funnel a={a} title="Pipeline — what happened to everything we read" tone="teal" />
-
       <div className="panel-grid-3">
         <Histogram a={a} />
         <RankedBars
@@ -330,17 +257,15 @@ function CandidateOverview({ a, overview }: { a: AnalyticsOverview; overview: Ov
             </>
           }
         />
-        <Sources a={a} />
       </div>
       </>}
     </>
   )
 }
 
-function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overview }) {
+function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview: Overview; trend: AnalyticsTrend | undefined }) {
   const { advanced } = useShell()
   const guided = GuidedStart({ overview, workspace: 'sales' })
-  const k = a.kpis
   if (a.campaignCount === 0)
     return (
       <>
@@ -366,18 +291,19 @@ function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overvi
   const industryTotal = (a.qualifiedByIndustry ?? []).reduce((n, x) => n + x.count, 0)
   return (
     <>
-      {guided ?? <FindStrip workspace="sales" />}
-      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
-      <div className="kpi-strip kpi-strip-5">
-        <Kpi label="Companies found" value={k.found} sub={`across ${a.campaignCount} ${a.campaignCount === 1 ? 'campaign' : 'campaigns'}`} />
-        <Kpi label="Qualified" value={k.qualified} sub={`${percent(k.qualifyRate)} of what was found`} />
-        <Kpi label="Approved" value={k.shortlisted} sub="ready to contact" />
-        <Kpi label="Contacted" value={k.contacted ?? 0} sub="marked after you sent the approved message" />
-        <Kpi label="Responded" value={k.responded ?? 0} sub={k.respondedRate == null ? 'nothing contacted yet' : `${percent(k.respondedRate)} of contacted`} />
+      <HomeHero a={a} workspace="sales" trend={trend} />
+      <HomeKpis a={a} trend={trend} workspace="sales" />
+      <div className="two">
+        <div className="stack-4">
+          {guided}
+          {advanced && <Funnel a={a} title="Pipeline — Sales" tone="blue" />}
+        </div>
+        <HomeSide a={a} workspace="sales" />
       </div>
+      <BestMatches workspace="sales" />
+      {advanced && <p className="muted-small"><Link to="/insights">Open Insights</Link> for trend charts, progress and your weekly goal.</p>}
 
       <div className="panel-grid-2 panel-grid-wide-left">
-        {advanced && <Funnel a={a} title="Pipeline — Sales" tone="blue" />}
         <Panel title="Outreach">
           {a.outreach ? (
             <dl className="criteria-list criteria-row">
@@ -412,7 +338,6 @@ function SalesOverview({ a, overview }: { a: AnalyticsOverview; overview: Overvi
           rows={(a.signalsFound ?? []).map((x) => ({ label: x.signal, count: x.count }))}
           empty="No buying signal matched yet. Add signals (e.g. “hiring for the problem area”) to a campaign's criteria."
         />
-        <Sources a={a} />
       </div>
       )}
     </>
@@ -457,14 +382,10 @@ function GuidedStart({ overview, workspace }: { overview: Overview; workspace: W
 
 /** First visit: pick a side, follow three steps, or watch the sample run on real public job boards. */
 function FirstRun({ overview }: { overview: Overview }) {
-  const { workspace, setWorkspace } = useShell()
+  const { workspace } = useShell()
   return (
     <div className="page stack-4">
-      <PageHeader title="Welcome to OpportunityPilot" subtitle="What do you want to do?" />
-      <div className="segmented" role="group" aria-label="What do you want to do?">
-        <button type="button" className={workspace === 'candidate' ? 'active' : ''} aria-pressed={workspace === 'candidate'} onClick={() => setWorkspace('candidate')}>Find a job</button>
-        <button type="button" className={workspace === 'sales' ? 'active' : ''} aria-pressed={workspace === 'sales'} onClick={() => setWorkspace('sales')}>Find customers</button>
-      </div>
+      <PageHeader title="Welcome to OpportunityPilot" subtitle="Pick Candidate or Sales in the bar above, then say what to look for." />
       <CommandBar />
       <GuidedStart overview={overview} workspace={workspace} />
       {workspace === 'candidate' && <SampleRunCard />}
