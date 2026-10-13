@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { placeFor } from '../suggest/picks'
 import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
+import { QuickOptionsPanel } from './QuickOptionsPanel'
+import { applyOptions, NO_OPTIONS, optionsSummary, type QuickOptions } from './quickOptions'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
@@ -59,6 +61,8 @@ export function QuickCampaign() {
   const [token, setToken] = useState('')
   const [repeat, setRepeat] = useState(() => (CADENCES.some((c) => c.minutes === Number(params.get('repeat'))) ? Number(params.get('repeat')) : 0))
   const autoStarted = useRef(false)
+  const [more, setMore] = useState(false)
+  const [opts, setOpts] = useState<QuickOptions>(NO_OPTIONS)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
 
@@ -98,10 +102,11 @@ export function QuickCampaign() {
       const siteName = SITE_NAMES[source] ?? source
       draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${siteName}`
       draft.goal = keywords.length ? `Find ${keywords[0]}${place.trim() ? ` in ${place.trim()}` : ''}.` : ''
-      draft.criteria = { ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }
+      draft.criteria = applyOptions({ ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }, opts, mode)
       // Suggest anything reasonable for approval so the first run has something to approve.
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
-      const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode) }) })
+      const hands = mode === 'Job' && opts.autoApprove > 0 ? { autoApproveMinScore: opts.autoApprove } : {}
+      const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode), ...hands }) })
       const sourceBodies = quickSourceBodies(source, (board && 'token' in board ? board.token : undefined) ?? token.trim())
       try {
         await Promise.all(sourceBodies.map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
@@ -150,6 +155,11 @@ export function QuickCampaign() {
           <option value={0}>Run once</option>
           {CADENCES.map((c) => <option key={c.minutes} value={c.minutes}>{c.label}</option>)}
         </select></label>
+      <div className="stack-3">
+        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Hide options' : 'More options: tech stack, work mode, experience, approval'}</button>
+        {more && <QuickOptionsPanel value={opts} onChange={setOpts} jobs={mode === 'Job'} />}
+        {!more && optionsSummary(opts, mode) && <p className="muted-small">{optionsSummary(opts, mode)}</p>}
+      </div>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}
       {mode === 'Job' && skills.length > 0 && <p className="muted-small">Results are ranked by your skills: {skills.join(', ')}.</p>}
@@ -157,7 +167,7 @@ export function QuickCampaign() {
       <div className="row wrap">
         <button className="btn btn-primary" type="submit" data-coach="quick-run" disabled={busy || problems.length > 0}>{busy ? 'Starting…' : 'Create & run'}</button>
         <Link className="btn btn-ghost btn-sm" to={fullPath}>Advanced: weights, filters, more sources</Link>
-        <span className="muted-small grow">{problems[0] ?? 'Nothing is applied or sent: you approve what it suggests.'}</span>
+        <span className="muted-small grow">{problems[0] ?? (opts.autoApprove > 0 ? `Matches scoring ${opts.autoApprove}+ are approved for you. Nothing is submitted without your agent or your tap.` : 'Nothing is applied or sent: you approve what it suggests.')}</span>
       </div>
     </form>}
   </div>

@@ -1,4 +1,5 @@
 import { Card } from '../../components/cards'
+import { StopAllCard } from './StopAllCard'
 import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -48,6 +49,7 @@ export function CampaignsPage() {
         }
       />
 
+      <StopAllCard />
       {campaigns.data && campaigns.data.length > 0 && (
         <KpiBand label="Your campaigns">
           <KpiCard icon="campaigns" tone="blue" label="Campaigns" value={campaigns.data.length} sub={running > 0 ? `${running} running now` : 'none running'} />
