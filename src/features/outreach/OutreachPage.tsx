@@ -5,6 +5,7 @@ import { ContactFinder } from './ContactFinder'
 import { SendAllCard } from './SendAllCard'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { Card, CardList, MessageCard } from '../../components/cards'
 import { parseQueue, queuePath } from '../opportunities/bulkDraft'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -176,6 +177,14 @@ export function OutreachPage() {
 
   return <div className="page page-wide stack-4">
     <PageHeader title="Outreach" subtitle="Review a message, send it from your own mail, and we keep track. Nothing leaves without your OK." />
+    {drafts.data && drafts.data.items.length > 0 && (
+      <KpiBand label="Your messages">
+        <KpiCard icon="outreach" tone="amber" label="To review" value={items.filter((d) => d.state === 'Draft').length} sub="drafts waiting for you" />
+        <KpiCard icon="approvals" tone="green" label="Approved" value={items.filter((d) => d.state === 'Approved').length} sub="ready for you to send" />
+        <KpiCard icon="mail" tone="indigo" label="Sent by you" value={items.filter((d) => d.state === 'Sent').length} sub="recorded as sent" />
+        <KpiCard icon="trend" tone="teal" label="Reply rate" value="—" sub="Replies are not read for you yet" to="/follow-ups" />
+      </KpiBand>
+    )}
     {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
     {error && (loadError
       ? <ErrorNotice error={error} onRetry={() => { setError(undefined); setLoadError(false) }} what="the draft" />

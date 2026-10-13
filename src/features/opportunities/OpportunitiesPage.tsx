@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BulkBar } from '../../components/cards'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { ApplyQueue, BulkDraftCard, LeadCardList } from './LeadCards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
@@ -245,6 +246,7 @@ function OpportunityTable({
   const sales = workspace === 'sales'
   const [drafting, setDrafting] = useState(false)
   const [applying, setApplying] = useState(false)
+  const [nowMs] = useState(() => Date.now())
   const first = useApi<OpportunityPage>(opportunitiesPath(campaignId, filters, 0))
   const [more, setMore] = useState<OpportunitySummary[]>([])
   const [fetchedMore, setFetchedMore] = useState(0)
@@ -358,8 +360,19 @@ function OpportunityTable({
     )
   }
 
+  const scored = loaded.filter((o) => o.outcome !== 'Excluded')
+  const strong = scored.filter((o) => o.score >= 75).length
+  const todayStart = new Date(nowMs); todayStart.setHours(0, 0, 0, 0)
+  const newToday = loaded.filter((o) => o.foundAt && new Date(o.foundAt) >= todayStart).length
+  const average = scored.length > 0 ? Math.round(scored.reduce((n, o) => n + o.score, 0) / scored.length) : null
   return (
     <div className="stack-3">
+      <KpiBand label="What is on this list">
+        <KpiCard icon="approvals" tone="amber" label="Waiting for you" value={counts.suggested} sub="suggested, not yet decided" />
+        <KpiCard icon="check" tone="green" label="Strong, 75+" value={strong} sub={loaded.length < total ? 'of those loaded' : 'scoring 75 or more'} />
+        <KpiCard icon="search" tone="blue" label="New today" value={newToday} sub="found since midnight" />
+        <KpiCard icon="trend" tone="teal" label="Average match" value={average ?? '—'} sub={average === null ? 'Nothing scored yet' : 'of those shown'} />
+      </KpiBand>
       <span className="sr-only" role="status" aria-live="polite">
         {announcement}
       </span>

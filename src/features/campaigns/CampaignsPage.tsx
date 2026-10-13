@@ -1,4 +1,5 @@
 import { Card } from '../../components/cards'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -47,6 +48,14 @@ export function CampaignsPage() {
         }
       />
 
+      {campaigns.data && campaigns.data.length > 0 && (
+        <KpiBand label="Your campaigns">
+          <KpiCard icon="campaigns" tone="blue" label="Campaigns" value={campaigns.data.length} sub={running > 0 ? `${running} running now` : 'none running'} />
+          <KpiCard icon="search" tone="teal" label="Found" value={campaigns.data.reduce((n, c) => n + c.opportunityCount, 0)} sub="across all campaigns" />
+          <KpiCard icon="integrations" tone="indigo" label="Sources" value={campaigns.data.reduce((n, c) => n + c.sourceCount, 0)} sub="read on each run" />
+          <KpiCard icon="followUps" tone="green" label="Repeating" value={(schedules.data ?? []).filter((s) => !s.paused).length} sub="on a schedule" />
+        </KpiBand>
+      )}
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} what="your campaigns" />}
       {campaigns.loading && !campaigns.data && <LoadingState label="Loading campaigns…" waking={campaigns.waking} rows={3} />}
 

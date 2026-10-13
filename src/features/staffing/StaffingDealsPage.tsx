@@ -4,6 +4,7 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
+import { Card } from '../../components/cards'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { FORWARD, isClosed, money, percent, SOURCE_LABELS, STAGE_LABELS } from './staffingModel'
@@ -30,6 +31,23 @@ export function StaffingDealsPage() {
   return <div className="page page-wide stack-4">
     <PageHeader title="Staffing deals" subtitle="Client requirements from first contact to a signed placement. Stages move when you act or when a recorded step proves it."
       actions={<button className="btn btn-primary" type="button" onClick={() => setCreating((v) => !v)}>{creating ? 'Close' : '+ New deal'}</button>} />
+
+    {deals.data && deals.data.length > 0 && (
+      <Card title="By stage" subtitle={`${deals.data.length} ${deals.data.length === 1 ? 'deal' : 'deals'}, first contact to signed placement`}>
+        <div className="stagebar" role="img" aria-label={`Deals by stage: ${[...FORWARD, 'OnHold', 'Lost', 'Disqualified'].map((s) => `${STAGE_LABELS[s as DealStage]} ${deals.data!.filter((d) => d.stage === s).length}`).join(', ')}`}>
+          {[...FORWARD, 'OnHold', 'Lost', 'Disqualified'].map((s, i) => {
+            const n = deals.data!.filter((d) => d.stage === s).length
+            return n > 0 ? <i key={s} style={{ flex: n, background: `var(--op-seq-${(i % 5) + 1})` }} /> : null
+          })}
+        </div>
+        <ul className="plain-list row wrap" aria-label="Stage legend">
+          {[...FORWARD, 'OnHold', 'Lost', 'Disqualified'].map((s) => {
+            const n = deals.data!.filter((d) => d.stage === s).length
+            return n > 0 ? <li key={s} className="chip">{STAGE_LABELS[s as DealStage]} <strong>{n}</strong></li> : null
+          })}
+        </ul>
+      </Card>
+    )}
 
     {creating && <NewDealForm accounts={accounts.data ?? []} onCreated={() => { setCreating(false); reload() }} />}
 

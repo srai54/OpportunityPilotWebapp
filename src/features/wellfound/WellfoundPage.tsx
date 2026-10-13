@@ -3,6 +3,7 @@ import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
+import { Icon } from '../../components/icons'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, FilteredEmpty, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
@@ -122,14 +123,16 @@ export function WellfoundPage() {
     <button type="button" className={provider === 'all' ? 'active' : ''} aria-pressed={provider === 'all'} onClick={() => setProvider('all')}>All sites</button>
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
     {(['Indeed', 'LinkedIn', 'Seek'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
-    <button type="button" className={provider === 'trends' ? 'active' : ''} aria-pressed={provider === 'trends'} onClick={() => setProvider('trends')}>Trends</button>
   </div>
   const extraCount = [company, techStack, workMode, minSalary, fundingStage, industry, employmentType, postedWithinDays, jobState, equityOnly ? 'equity' : ''].filter(Boolean).length
 
   return <div className="page page-wide stack-4">
     <PageHeader title={workspace === 'sales' ? 'Find companies' : 'Find jobs'} subtitle={workspace === 'sales'
       ? 'See which companies are hiring right now. One search covers every site we can read, with live hiring signals.'
-      : 'One search over every site we can read, each job linked to its original posting.'} />
+      : 'One search over every site we can read, each job linked to its original posting.'}
+      actions={provider === 'trends'
+        ? <button type="button" className="btn btn-secondary btn-sm" onClick={() => setProvider('all')}>Back to search</button>
+        : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setProvider('trends')}><Icon name="trend" size={14} /> Market trends</button>} />
 
     {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
