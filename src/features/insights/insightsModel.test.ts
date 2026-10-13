@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrendPoint } from '../../lib/types'
 import {
+  activityPulse, agoLabel,
   activityLine, activityPath, activityVerb, hasMore, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
 } from './insightsModel'
 
@@ -142,5 +143,30 @@ describe('activity feed paths and lines', () => {
   it('says there is more only when the page was full', () => {
     expect(hasMore(20)).toBe(true)
     expect(hasMore(7)).toBe(false)
+  })
+})
+
+describe('activity pulse', () => {
+  const now = new Date(2026, 9, 13, 15, 0)
+  const at = (daysAgo: number, h = 10) => new Date(2026, 9, 13 - daysAgo, h).toISOString()
+  it('counts per day and per kind, finds the last action and the streak', () => {
+    const p = activityPulse([{ at: at(0), kind: 'Searched' }, { at: at(0, 12), kind: 'DraftApproved' }, { at: at(1), kind: 'Approved' }, { at: at(5), kind: 'Searched' }, { at: at(30), kind: 'Searched' }], now, 14)
+    expect(p.perDay.at(-1)).toBe(2)
+    expect(p.perDay.at(-2)).toBe(1)
+    expect(p.total).toBe(4)
+    expect(p.byGroup.find((g) => g.key === 'searches')?.count).toBe(2)
+    expect(p.streak).toBe(2)
+    expect(p.activeDays).toBe(3)
+    expect(p.lastAt).toBe(at(0, 12))
+  })
+  it('keeps a streak that ended yesterday and says nothing when there is no activity', () => {
+    expect(activityPulse([{ at: at(1), kind: 'Searched' }], now).streak).toBe(1)
+    const none = activityPulse([], now)
+    expect(none.total).toBe(0); expect(none.streak).toBe(0); expect(none.lastAt).toBeNull()
+  })
+  it('words how long ago', () => {
+    expect(agoLabel(new Date(2026, 9, 13, 14, 59, 40).toISOString(), now)).toBe('just now')
+    expect(agoLabel(new Date(2026, 9, 13, 14, 50).toISOString(), now)).toBe('10 min ago')
+    expect(agoLabel(new Date(2026, 9, 11, 15, 0).toISOString(), now)).toBe('2 days ago')
   })
 })

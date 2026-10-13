@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
-import type { NextAction, Suppression } from '../../lib/types'
+import type { DraftPage, NextAction, Suppression } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { dueLabel } from './followUpModel'
 import { Avatar, CardList } from '../../components/cards'
@@ -13,6 +13,9 @@ import { Avatar, CardList } from '../../components/cards'
 export function FollowUpsPage() {
   const actions = useApi<NextAction[]>('/api/v1/next-actions?state=Open')
   const suppressions = useApi<Suppression[]>('/api/v1/suppressions')
+  const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
+  const sent = (drafts.data?.items ?? []).filter((d) => d.state === 'Sent').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  const reminderFor = new Set((actions.data ?? []).map((a) => a.opportunityId))
   const [recipient, setRecipient] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState<Error>()
@@ -34,11 +37,25 @@ export function FollowUpsPage() {
   }
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Follow-ups" subtitle="Open reminders are shown here in the time zone you recorded. No notification is claimed as delivered." />
+    <PageHeader title="Follow-ups" subtitle="What you sent, and the nudges still to do. Replies are not read for you yet: when someone answers, open the lead and update it." />
     {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="follow-ups" />}
+    <section className="card stack-3" aria-labelledby="sent-heading">
+      <div className="row wrap"><h2 id="sent-heading" className="eyebrow">Sent — waiting for a reply</h2><span className="grow" /><span className="muted-small">{sent.length} sent</span></div>
+      {drafts.loading && !drafts.data ? <LoadingState label="Loading what you sent…" rows={2} />
+        : sent.length === 0 ? <p className="muted-small">Nothing sent yet. Messages you send from Outreach are listed here, with a nudge reminder 5 days later.</p>
+        : <CardList label="Messages sent">{sent.slice(0, 20).map((d) => <li key={d.id} className="ccard followup-card">
+          <Avatar name={d.organization || d.opportunityTitle} />
+          <div className="followup-main">
+            <span className="followup-title">{d.organization || d.opportunityTitle} <Badge tone="neutral">{d.channel}</Badge></span>
+            <span className="followup-meta">Sent {new Date(d.updatedAt).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}{d.recipient ? ` · to ${d.recipient}` : ''}</span>
+            <span className="followup-note">{reminderFor.has(d.opportunityId) ? 'A nudge reminder is set (below).' : 'No reminder is set for this one.'}</span>
+          </div>
+          <div className="followup-actions"><Link className="btn btn-secondary btn-sm" to={`/opportunities/${d.opportunityId}`}>Open lead</Link></div>
+        </li>)}</CardList>}
+    </section>
     <div className="panel-grid-2">
-      <section className="panel" data-coach="follow-list"><header className="panel-head"><h2 className="eyebrow">Open next actions</h2></header>
-        {actions.loading && !actions.data ? <div className="panel-body"><LoadingState label="Loading follow-ups…" waking={actions.waking} rows={3} /></div> : actions.data?.length === 0 ? <div className="panel-body"><EmptyState title="Nothing to follow up yet" actions={<><Link className="btn btn-primary btn-sm" to="/outreach">Go to your messages</Link><Link className="btn btn-secondary btn-sm" to="/opportunities">Review jobs</Link></>}><p>When you record a message as sent, a reminder to follow up appears here automatically.</p></EmptyState></div> :
+      <section className="panel" data-coach="follow-list"><header className="panel-head"><h2 className="eyebrow">Nudges to do</h2></header>
+        {actions.loading && !actions.data ? <div className="panel-body"><LoadingState label="Loading follow-ups…" waking={actions.waking} rows={3} /></div> : actions.data?.length === 0 ? <div className="panel-body"><EmptyState title="No nudges to do" actions={<><Link className="btn btn-primary btn-sm" to="/outreach">Go to your messages</Link><Link className="btn btn-secondary btn-sm" to="/opportunities">Review jobs</Link></>}><p>A reminder is added here 5 days after you record a message as sent.</p></EmptyState></div> :
           <div className="panel-body"><CardList label="Follow-ups">{actions.data?.map((row) => <li key={row.id} className="ccard followup-card">
             <Avatar name={row.organization || row.opportunityTitle} />
             <div className="followup-main">

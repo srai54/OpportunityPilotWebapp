@@ -1893,3 +1893,33 @@ html { -webkit-text-size-adjust: 100%; }
 .contact-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .contact-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--op-line); border-radius: 12px; background: var(--op-surface); }
 .contact-row .break { overflow-wrap: anywhere; }
+
+/* FB6: the guide ring stays inside table headers and cells, and the match ring scales its drawing with its box */
+th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radius: 8px; }
+.match-ring svg { width: calc(100% - 4px); height: calc(100% - 4px); }
+
+/* FB7: at 100% zoom on a laptop the app felt oversized next to 80%: tighter type, spacing and a header that scrolls away on short windows */
+@media (min-width: 900px) and (max-width: 1600px) {
+  :root { --op-text-page: 22px; --op-text-body: 13.5px; --op-text-meta: 12px; --op-space-4: 14px; --op-space-5: 16px; --op-space-6: 20px; }
+  .content { padding: 14px 20px; }
+  .lead-card { padding: 14px 18px; gap: 14px; }
+  .next-bar { padding: 7px 20px; }
+  .topbar-wrap .topbar { height: 52px; }
+}
+@media (min-width: 900px) and (max-height: 820px) {
+  .topbar-wrap { position: static; }
+  .page-head, .page-header { margin-bottom: 0; }
+}
+
+/* FB9: live pulse above My activity */
+.pulse { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--op-line); border-radius: 12px; background: var(--op-surface); }
+.pulse-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.pulse-live { display: inline-flex; align-items: center; gap: 6px; font-size: var(--op-text-meta); font-weight: 700; color: var(--op-c3); }
+.pulse-dot { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--op-c3); }
+.pulse-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--op-c3); opacity: 0; }
+@media (prefers-reduced-motion: no-preference) { .pulse-dot::after { animation: pulse-ring 1.8s ease-out infinite; } @keyframes pulse-ring { 0% { transform: scale(0.5); opacity: 0.7; } 100% { transform: scale(1.6); opacity: 0; } } }
+.pulse-bars { display: flex; align-items: flex-end; gap: 4px; height: 44px; }
+.pulse-bars i { flex: 1 1 0; min-width: 4px; border-radius: 3px 3px 1px 1px; background: var(--op-c1); }
+.pulse-bars i.is-today { background: var(--op-c3); }
+.pulse-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.activity-list { margin-top: 10px; }

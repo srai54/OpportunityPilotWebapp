@@ -210,3 +210,51 @@ export function activityPath(sales: boolean, group: ActivityGroup, days: number,
 export function hasMore(pageSize: number, take = 20): boolean {
   return pageSize >= take
 }
+
+export interface ActivityPulse {
+  /** Actions per day, oldest day first, ending today. */
+  perDay: number[]
+  total: number
+  byGroup: { key: ActivityGroup; label: string; count: number }[]
+  lastAt: string | null
+  /** Days with at least one action, and how many days in a row up to today (or yesterday) had one. */
+  activeDays: number
+  streak: number
+}
+
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+
+/** A quick read of the last `days` days of the person's own actions: per-day counts, counts per kind of action, last action and streak. */
+export function activityPulse(items: readonly Pick<ActivityFeedItem, 'at' | 'kind'>[], now: Date, days = 14): ActivityPulse {
+  const slots = Array.from({ length: days }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - (days - 1 - i)); return dayKey(d) })
+  const perDay = slots.map(() => 0)
+  const byGroup = ACTIVITY_GROUPS.filter((g) => g.key !== 'all').map((g) => ({ key: g.key, label: g.label, count: 0 }))
+  let total = 0
+  let lastAt: string | null = null
+  for (const it of items) {
+    const at = new Date(it.at)
+    const slot = slots.indexOf(dayKey(at))
+    if (slot < 0) continue
+    perDay[slot] += 1
+    total += 1
+    if (!lastAt || it.at > lastAt) lastAt = it.at
+    const g = ACTIVITY_GROUPS.find((x) => x.key !== 'all' && x.kinds.includes(it.kind))
+    const row = byGroup.find((x) => x.key === g?.key)
+    if (row) row.count += 1
+  }
+  let i = days - 1
+  if (perDay[i] === 0) i -= 1
+  let streak = 0
+  while (i >= 0 && perDay[i] > 0) { streak += 1; i -= 1 }
+  return { perDay, total, byGroup, lastAt, activeDays: perDay.filter((n) => n > 0).length, streak }
+}
+
+/** "just now", "3 min ago", "2 h ago", "4 days ago" — for the live line. */
+export function agoLabel(iso: string, now: Date): string {
+  const s = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 1000))
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.round(s / 60)} min ago`
+  if (s < 86_400) return `${Math.round(s / 3600)} h ago`
+  const d = Math.round(s / 86_400)
+  return `${d} ${d === 1 ? 'day' : 'days'} ago`
+}

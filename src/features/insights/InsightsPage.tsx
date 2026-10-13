@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { Card } from '../../components/cards'
@@ -13,7 +13,7 @@ import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
 import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
 import {
-  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPulse, agoLabel, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
@@ -34,6 +34,35 @@ function ActivityPanel({ sales }: Readonly<{ sales: boolean }>) {
   const [days, setDays] = useState<number>(30)
   // Keyed so changing a filter starts again from the newest page.
   return <ActivityList key={`${group}|${days}`} sales={sales} group={group} days={days} onGroup={setGroup} onDays={setDays} />
+}
+
+/** The live line above "My activity": a pulsing dot while the page is open, the last 14 days as bars, a count per kind, and the streak. Refreshes itself every 30 seconds. */
+function ActivityPulseBar({ sales }: Readonly<{ sales: boolean }>) {
+  const [start] = useState(() => new Date())
+  const [now, setNow] = useState(start)
+  const feed = useApi<ActivityFeedItem[]>(activityPath(sales, 'all', 14, null, start, 100))
+  const { reload } = feed
+  useEffect(() => {
+    const t = setInterval(() => { if (document.visibilityState === 'visible') { reload(); setNow(new Date()) } }, 30_000)
+    return () => clearInterval(t)
+  }, [reload])
+  if (!feed.data) return null
+  const pulse = activityPulse(feed.data, now)
+  const max = Math.max(1, ...pulse.perDay)
+  return (
+    <section className="pulse" aria-label="Your activity at a glance">
+      <div className="pulse-head">
+        <span className="pulse-live"><span className="pulse-dot" aria-hidden="true" />Live</span>
+        <span className="muted-small">{pulse.lastAt ? `Last action ${agoLabel(pulse.lastAt, now)}` : 'No action in the last 14 days'}</span>
+        <span className="grow" />
+        <span className="muted-small">{pulse.total >= 100 ? '100+' : pulse.total} in 14 days · {pulse.activeDays} active {pulse.activeDays === 1 ? 'day' : 'days'}{pulse.streak > 1 ? ` · ${pulse.streak}-day streak` : ''}</span>
+      </div>
+      <div className="pulse-bars" role="img" aria-label={`Actions per day, last 14 days: ${pulse.perDay.join(', ')}`}>
+        {pulse.perDay.map((n, i) => <i key={i} className={i === pulse.perDay.length - 1 ? 'is-today' : ''} style={{ height: `${Math.max(6, (n / max) * 100)}%`, opacity: n === 0 ? 0.25 : 1 }} title={`${n}`} />)}
+      </div>
+      <ul className="pulse-chips">{pulse.byGroup.filter((g) => g.count > 0).map((g) => <li key={g.key} className="chip"><strong>{g.count}</strong> {g.label.toLowerCase()}</li>)}</ul>
+    </section>
+  )
 }
 
 function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales: boolean; group: ActivityGroup; days: number; onGroup: (g: ActivityGroup) => void; onDays: (d: number) => void }>) {
@@ -61,6 +90,7 @@ function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales:
   return (
     <Card title="My activity" actions={<span className="muted-small">newest first</span>}>
 <div className="stack-3">
+        <ActivityPulseBar sales={sales} />
         <div className="toolbar">
           <div className="segmented" role="group" aria-label="Kind of activity">
             {ACTIVITY_GROUPS.map((g) => (
