@@ -1772,3 +1772,55 @@ option:disabled { color: var(--op-muted); }
 /* K4: mailbox rows in Settings */
 .mailbox-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .mailbox-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--op-line); border-radius: 12px; background: var(--op-surface); }
+
+/* P4: phones and tablets. 16px fields (iOS Safari zooms in on anything smaller), 44px touch targets, safe areas, no sideways scroll. */
+@supports (padding: max(0px)) {
+  body { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  .bulk-bar { bottom: max(12px, env(safe-area-inset-bottom)); }
+  .auth-main { padding-bottom: max(48px, env(safe-area-inset-bottom)); }
+}
+html { -webkit-text-size-adjust: 100%; }
+@media (max-width: 860px) {
+  input:not([type='checkbox']):not([type='radio']), select, textarea { font-size: 16px; }
+  .btn, .btn-sm, .btn-link, .pill-select, .toolbar-search { min-height: 44px; }
+  .btn-sm { padding-inline: 14px; }
+  .pill-select select { min-height: 40px; }
+  .lead-card { grid-template-columns: auto auto minmax(0, 1fr); }
+  .lead-card:not(:has(.lead-order)) { grid-template-columns: auto minmax(0, 1fr); }
+  .lead-card .avatar-tile { display: none; }
+  .lead-card .lead-side { grid-column: 1 / -1; flex-wrap: wrap; justify-content: space-between; }
+  .lead-card .lead-meta { white-space: normal; }
+  .lead-action { justify-content: flex-start; }
+  .bulk-bar { flex-direction: column; align-items: stretch; }
+  .bulk-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+@media (max-width: 400px) {
+  .panel-head, .ccard-head { flex-wrap: wrap; }
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (hover: none) { .lead-card:hover { transform: none; box-shadow: var(--op-shadow-card); } }
+
+/* P2: simpler account screens. Tabs, two one-tap providers, then email. */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 18px; border-radius: 12px; background: var(--op-panel-head); }
+.auth-tabs a { display: grid; place-items: center; min-height: 44px; border-radius: 9px; font-weight: 600; color: var(--op-muted); text-decoration: none; transition: background-color 150ms var(--op-ease-out), color 150ms var(--op-ease-out); }
+.auth-tabs a[aria-current='page'] { background: var(--op-surface); color: var(--op-ink); box-shadow: var(--op-shadow-card); }
+.auth-providers { display: grid; gap: 10px; }
+.auth-providers .btn { min-height: 48px; }
+.auth-provider-mark { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 10px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+.auth-provider-ms { background: var(--op-panel-head); color: var(--op-ink); border: 1px solid var(--op-line); }
+.totp-qr { background: #fff; padding: 8px; border-radius: 12px; border: 1px solid var(--op-line); }
+@media (max-width: 860px) {
+  .auth { display: block; }
+  .auth-story { display: none; }
+  .auth-brand-compact { display: inline-flex; }
+  .auth-main { min-height: 100vh; justify-content: flex-start; padding: max(24px, env(safe-area-inset-top)) 16px 32px; }
+  .auth-card { width: 100%; }
+}
+
+/* P4: header controls reach 44px on touch screens */
+@media (max-width: 860px) {
+  .ws-seg-btn, .help-btn, .theme-toggle, .brand { min-height: 44px; }
+  .help-btn, .theme-toggle { min-width: 44px; }
+  .journey-link, .segmented button { min-height: 44px; }
+}
