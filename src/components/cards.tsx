@@ -22,17 +22,20 @@ interface CardProps {
   tone?: 'default' | 'signature' | 'muted'
   className?: string
   coach?: string
+  /** Heading level of the title: 3 by default (cards sit under a page section); 2 when the card is the first block under the page title. */
+  level?: 2 | 3
   children?: ReactNode
 }
 
 /** A plain card: optional title and subtitle, a body, and footer actions. */
-export function Card({ title, subtitle, actions, footer, tone = 'default', className = '', coach, children }: Readonly<CardProps>) {
+export function Card({ title, subtitle, actions, footer, tone = 'default', className = '', coach, level = 3, children }: Readonly<CardProps>) {
+  const Heading = level === 2 ? 'h2' : 'h3'
   return (
     <section className={`ccard ccard-${tone} ${className}`.trim()} data-coach={coach}>
       {(title || actions) && (
         <header className="ccard-head">
           <div className="ccard-titles">
-            {title && <h3 className="ccard-title">{title}</h3>}
+            {title && <Heading className="ccard-title">{title}</Heading>}
             {subtitle && <p className="ccard-sub">{subtitle}</p>}
           </div>
           {actions && <div className="ccard-actions">{actions}</div>}

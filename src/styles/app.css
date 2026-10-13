@@ -1824,3 +1824,57 @@ html { -webkit-text-size-adjust: 100%; }
   .help-btn, .theme-toggle { min-width: 44px; }
   .journey-link, .segmented button { min-height: 44px; }
 }
+
+/* Q2: opportunity detail as cards: one hero card, one "what to do now" card */
+.detail-hero .hero-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: center; }
+.detail-hero .avatar-tile { width: 56px; height: 56px; font-size: 18px; }
+.hero-title { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: -0.02em; font-weight: 650; }
+.hero-meta { margin: 6px 0 0; color: var(--op-muted); }
+.hero-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.hero-links { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 12px 0 0; }
+.hero-score { display: grid; justify-items: center; gap: 4px; }
+.hero-score .match-ring { width: 72px; height: 72px; }
+.ccard-signature .ccard-foot { border-top-color: var(--op-primary-tint-border); }
+.ccard-signature .ccard-foot .btn { min-height: 40px; }
+@media (max-width: 640px) {
+  .detail-hero .hero-row { grid-template-columns: auto minmax(0, 1fr); }
+  .detail-hero .hero-score { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; align-items: center; gap: 10px; }
+  .detail-hero .avatar-tile { width: 44px; height: 44px; font-size: 15px; }
+  .hero-title { font-size: 20px; }
+}
+
+/* Q3: Profiles as cards: a list card beside one floating editor card, with a rounded save bar */
+.profiles2 { margin: 0; gap: 20px; min-height: 0; align-items: start; grid-template-columns: 260px minmax(0, 1fr); }
+.profiles2-list-hidden { grid-template-columns: minmax(0, 1fr); }
+.profiles2-list { border: 1px solid var(--op-line); border-radius: var(--op-radius-card); box-shadow: var(--op-shadow-card); overflow: hidden; }
+.profiles2-form { background: var(--op-surface); border: 1px solid var(--op-line); border-radius: var(--op-radius-card); box-shadow: var(--op-shadow-card); }
+.profiles2-head { border-bottom: 1px solid var(--op-hair); border-radius: var(--op-radius-card) var(--op-radius-card) 0 0; padding: 26px 28px 0; }
+.profiles2-head > p { margin-top: 8px; }
+.profiles2-pad { padding: 24px 28px 28px; }
+.profiles2-form .save-bar { bottom: 12px; margin: 0 16px 16px; padding: 12px 16px; border: 1px solid var(--op-line); border-radius: 12px; }
+.profile-card { border-radius: 12px; }
+.claim-row { border-radius: 12px; padding: 16px 18px; }
+@media (max-width: 860px) {
+  .profiles2 { grid-template-columns: minmax(0, 1fr); margin: 0; }
+  .profiles2-list { border-bottom: 1px solid var(--op-line); }
+  .profiles2-head { padding: 20px 16px 0; }
+  .profiles2-pad { padding: 18px 16px 22px; }
+  .profiles2-form .save-bar { margin: 0 8px 8px; bottom: max(8px, env(safe-area-inset-bottom)); }
+  .tab { min-height: 44px; }
+}
+
+/* Q4/Q5: campaign builder, run page and remaining panels share the card look */
+.stepper { gap: 12px; }
+.builder .stepper-item { padding: 12px 16px; border-radius: 14px; background: var(--op-surface); border: 1px solid var(--op-line); box-shadow: var(--op-shadow-card); min-height: 56px; }
+.builder .stepper-current { border-color: var(--op-primary); box-shadow: 0 0 0 1px var(--op-primary), var(--op-shadow-card); }
+.builder .stepper-kicker { display: block; }
+.builder-stage { margin-top: 4px; }
+.builder-stage .panel, .builder-stage .card { border-radius: var(--op-radius-card); }
+.builder-footer.save-bar { border-radius: 14px; padding: 12px 18px; bottom: max(12px, env(safe-area-inset-bottom)); box-shadow: var(--op-shadow-popover); }
+.card { padding: 22px 24px; border-radius: var(--op-radius-card); }
+.page .card.stack-3 .section-heading { font-size: 18px; letter-spacing: -0.01em; }
+@media (max-width: 860px) {
+  .builder .stepper-item { padding: 10px 12px; min-height: 48px; }
+  .builder .stepper-kicker { display: none; }
+  .card { padding: 18px 16px; }
+}

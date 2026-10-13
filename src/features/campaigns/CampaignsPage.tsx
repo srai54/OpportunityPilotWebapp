@@ -93,7 +93,7 @@ export function CampaignsPage() {
               + New campaign
             </Link>
           </header>
-          <div className="table-scroll" role="region" aria-labelledby="campaigns-heading" tabIndex={0}>
+          <div className="table-scroll" role="region" aria-label="Campaigns table" tabIndex={0}>
             <table className="table">
               <caption className="sr-only">Your campaigns, newest first.</caption>
               <thead>
