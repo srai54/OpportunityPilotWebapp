@@ -9,10 +9,14 @@ import type { DraftPage, NextAction, Suppression } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { dueLabel } from './followUpModel'
 import { Avatar, CardList } from '../../components/cards'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 
 export function FollowUpsPage() {
   const actions = useApi<NextAction[]>('/api/v1/next-actions?state=Open')
   const suppressions = useApi<Suppression[]>('/api/v1/suppressions')
+  // One fixed "now" for the counts, so a render never changes them by itself.
+  const [now] = useState(() => Date.now())
+  const today = new Date(now).toDateString()
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const sent = (drafts.data?.items ?? []).filter((d) => d.state === 'Sent').sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   const reminderFor = new Set((actions.data ?? []).map((a) => a.opportunityId))
@@ -39,6 +43,14 @@ export function FollowUpsPage() {
   return <div className="page page-wide stack-4">
     <PageHeader title="Follow-ups" subtitle="What you sent, and the nudges still to do. Replies are not read for you yet: when someone answers, open the lead and update it." />
     {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="follow-ups" />}
+    {actions.data && (
+      <KpiBand label="Your follow-ups">
+        <KpiCard icon="followUps" tone="danger" label="Overdue" value={actions.data.filter((a) => a.overdue).length} sub="past their date" />
+        <KpiCard icon="calendar" tone="amber" label="Due today" value={actions.data.filter((a) => !a.overdue && new Date(a.dueAt).toDateString() === today).length} sub="to do today" />
+        <KpiCard icon="refresh" tone="blue" label="This week" value={actions.data.filter((a) => !a.overdue && new Date(a.dueAt).getTime() - now < 7 * 86_400_000).length} sub="coming up" />
+        <KpiCard icon="mail" tone="indigo" label="Sent, waiting" value={sent.length} sub="no reply recorded" />
+      </KpiBand>
+    )}
     <section className="card stack-3" aria-labelledby="sent-heading">
       <div className="row wrap"><h2 id="sent-heading" className="eyebrow">Sent — waiting for a reply</h2><span className="grow" /><span className="muted-small">{sent.length} sent</span></div>
       {drafts.loading && !drafts.data ? <LoadingState label="Loading what you sent…" rows={2} />

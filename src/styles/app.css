@@ -2228,3 +2228,4 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
 @media (max-width: 1080px) { .two { grid-template-columns: minmax(0, 1fr); } }
 .stagebar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; margin: 6px 0 10px; }
 .stagebar i { display: block; height: 100%; }
+html { scroll-padding-bottom: 96px; }

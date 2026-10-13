@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { Card } from '../../components/cards'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -11,12 +12,14 @@ import { formatWhen } from '../applications/applicationStatus'
 import { journeySteps } from '../journey/journeyModel'
 import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
-import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
+import { HBars, ProgressBar, TrendChart } from './Charts'
 import {
-  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPulse, agoLabel, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPulse, agoLabel, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
+const KPI_ICONS = ['search', 'check', 'approvals', 'outreach', 'mail', 'trend'] as const
+const KPI_TONES = ['blue', 'teal', 'green', 'indigo', 'amber', 'neutral'] as const
 
 /**
  * Advanced → Insights: KPIs with change, a trend chart, progress (path and weekly goal), the funnel, fit, sources and, for Sales,
@@ -181,19 +184,12 @@ function InsightsView() {
 
       {t && !empty && (
         <>
-          <section className="kpi-strip kpi-strip-6" aria-label="Key figures">
-            {kpisFor(workspace).map((k) => {
-              const d = delta(t.current[k.key], t.previous[k.key])
-              return (
-                <div className="kpi" key={k.key}>
-                  <div className="kpi-label">{k.label}</div>
-                  <div className="kpi-value op-numeric">{t.current[k.key]}</div>
-                  <div className={`kpi-delta kpi-delta-${d.tone}`}>{d.text} <span className="muted-small">vs the {days} days before</span></div>
-                  <Spark values={t.points.map((p) => p[k.key])} label={`${k.label} per day, last ${days} days`} />
-                </div>
-              )
-            })}
-          </section>
+          <KpiBand six label="Key figures">
+            {kpisFor(workspace).map((k, i) => (
+              <KpiCard key={k.key} icon={KPI_ICONS[i % KPI_ICONS.length]} tone={KPI_TONES[i % KPI_TONES.length]} label={k.label} value={t.current[k.key]}
+                change={{ current: t.current[k.key], previous: t.previous[k.key] }} sub={`vs the ${days} days before`} series={t.points.map((p) => p[k.key])} />
+            ))}
+          </KpiBand>
 
           <Card title="Activity over time" actions={<span className="muted-small">last {days} days · per day</span>} coach="insights-trend">
 <div className="stack-3">

@@ -41,6 +41,7 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | Production build | `npm run build` | `tsc -b && vite build` → `dist/`; currently warns that the bundle is > 500 kB (tracked) |
 | Preview build | `npm run preview` | Serves `dist/` |
 | Device and accessibility check | `npm run check:devices` (`-- --quick` for 3 devices, `-- --shots out/` to save screenshots) | Seeds a guest Sales workspace through the API, then opens 13 screens on iPhone 13/14 Pro Max, iPad Mini (WebKit), Pixel 7, Galaxy S9+ and a 1280 px laptop, light and dark; fails on sideways scroll or axe violations. Needs the API in demo mode and the dev server (see the header of `scripts/check-devices.mjs`); WebKit once: `npx playwright install webkit`. Part of "done" for any UI change |
+| Shell check | `npm run check:shell` | Every route × 1280 / 1024 / 375 × light / dark × Simple / Advanced: app bar exactly one 52px line, hamburger present, no sideways scroll, axe 0, no console errors; plus hamburger drawer/collapse, Escape, theme label and phone account-menu interactions. Same setup as `check:devices` (API in demo mode, dev server on :5198). Part of "done" for any shell or layout change |
 | Full gate before "done" | typecheck → lint → test → build, then delete `dist/` | All must pass; lint warnings must not increase |
 
 ## 3. Folder blueprint

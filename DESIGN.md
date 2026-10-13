@@ -1,4 +1,4 @@
-# DESIGN.md — OpportunityPilot design rules (v3: card-first)
+# DESIGN.md — OpportunityPilot design rules (v4: card-first, one-line app bar, KPI band)
 
 **Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/UI_REVAMP_PLAN.md` and `docs/WORKFLOW_GUIDE_PLAN.md`.
 
@@ -67,12 +67,16 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 - Spacing scale 4/8 (`--op-space-1…6`). No other spacing values.
 - Radius: cards 16 (`--op-radius-card`), panels/popovers 12 (`--op-radius`), controls 8, chips 6, pills 999.
 - Simple mode: one centred column, max 1040px, no sidebar. Advanced: sidebar (236px; collapses to 60px; drawer under 860px) and wide pages (≤ 1320px).
+- **App bar (v4):** 52px, one line, full width; the rail sits under it and sticks below the app bar plus journey bar (`--chrome-h`, measured). Never let the bar wrap: it hides things by priority (see §6).
 - Breakpoints: 1080 (grids collapse), 860 (drawer / one column), 640 (compact top bar, bottom-sheet tips), 375 must have no horizontal scroll.
 - Touch target ≥ 44px on phones; row height 36px in tables.
 
 ## 6. Shell and navigation
 
-- **Top bar:** brand · Candidate | Sales toggle · title (Advanced only) · Guide switch · Advanced switch · `?` · theme · account. On phones the switches move into the account menu.
+- **App bar (v4, 52px, one line):** hamburger first · brand · Candidate | Sales toggle · breadcrumb `Section / Page` (Advanced only; the `<h1>` stays, visually hidden, in Simple) · status · Guide switch · Advanced switch · `?` · theme · account. The hamburger opens a drawer in Simple (any width) and on phones; in Advanced on wide screens it collapses the rail to 60px. Its label says what it will do ("Open the menu", "Collapse the menu", "Expand the menu").
+- **Priority hiding** so the bar never wraps: ≤ 1240px the status text goes; ≤ 1100px the brand wordmark is visually hidden (the logo stays); ≤ 860px Guide and Advanced move into the account menu as `menuitemcheckbox` rows and the breadcrumb goes; ≤ 640px the workspace labels are visually hidden (the icons stay). Hidden labels use the visually-hidden pattern, never `display: none`, and their parent is `position: relative`.
+- **Theme button label** states what is rendered: "Theme: System (dark). Switch to Light".
+- **Demo notice:** slim, in the page (not in the sticky area), dismissible; the dismissal persists for the session.
 - **Journey bar** under it, always: ① Profile ② Find ③ Review ④ Reach out ⑤ Follow up. Done = tick, here = highlighted, recommended = "Next" tag, badge = count waiting. On phones only the current step shows its label (others stay as visually-hidden text, never `display:none`).
 - **Next bar** (Guide on): one sentence + one button from real counts; hidden on Home (the Getting-started card does the job), Settings, How it works, and the opportunity page.
 - Advanced adds the sidebar; the journey bar stays.
@@ -90,6 +94,8 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 | Tips | Coachmarks via `data-coach` + `coachFlows.ts` (≤ 4 steps per screen, ≤ 260 characters per body, Sales wording via `sales`) |
 | Buttons | One `btn-primary` per view; `btn-secondary` beside it; `btn-ghost` for the rest; disabled buttons explain why nearby |
 | Readiness | "Before you send" chip list: ✓ done, ○ to do (clickable → focuses the field) |
+| Key figures (v4) | `KpiCard` (icon chip, label, value, `DeltaBadge`, sentence, optional line of the last days; a link when it opens the list behind it) inside a `KpiBand` (explicit 4 or 6 columns → 3 → 2, never auto-fit) |
+| Goals and health (v4) | `GoalRing` (n of N), `SourcesCard` (health dot + word + last run), `ActivityCard` (timeline; hidden when empty), `ProgressBar` (the one bar: queues, sends, runs, completeness) |
 
 ## 8. Forms
 
@@ -104,6 +110,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 - Bars for counts and comparisons, lines for change over time, funnel = horizontal bars with conversion %, progress = a bar with "n of m". Zero data → an empty state with the action that creates data, never an empty axis.
 - Label what the data is and how much of it: "sample of 25 postings", "last 14 days", "from your own records". Market data from a third party is labelled with its source.
 - Numbers: tabular figures, thousands separators, percentages rounded to whole numbers unless < 10%.
+- **Deltas (v4):** a change badge is shown only when there is a previous equal period; otherwise it is hidden, never `0%` or a guess. It carries an arrow and words for screen readers, not colour alone.
 
 ## 10. Guidance and copy
 
@@ -149,6 +156,8 @@ Selection and bulk: any card list that can be acted on in bulk shows a select bo
 
 Interaction: an interactive card lifts 1px and deepens its shadow on hover; the whole card is clickable only when it has a single destination (a link inside the card, stretched); otherwise its buttons are the click targets. Focus ring on the card or its link. Never nest a link inside a clickable card.
 
+Done steps use the muted tokens (`--op-panel-head`, `--op-muted`), never `opacity` (it fails contrast).
+
 Tokens: `--op-radius-card` 16px, `--op-shadow-card`, `--op-shadow-card-hover`, `--op-canvas` (warm page). Dark theme re-declares them (no theme branching in components).
 
 Accessibility: a card list is a `<ul>`; each card an `<li>` with a heading (`h3`) or an `aria-label`; the match ring has the number as text; status is a word plus colour; bulk bar is a `role="region"` with a live count.
@@ -186,3 +195,19 @@ Accessibility: a card list is a `<ul>`; each card an `<li>` with a heading (`h3`
 ## 16. Break test (from emilkowalski/skills break-ui) — before any UI change is done
 
 Open the screen with: a very long name and long unbroken email; a one-letter name; missing optional fields and a failed avatar; a name that makes wrong initials (emoji first); **0, 1, and 1,000+ items**; counts of exactly 1 (plurals) and 1,284 (separators); null or zero numbers; 320 px width and 200 % zoom; dark mode. Nothing may overflow, clip, mis-pluralise or show "undefined". Also check slow network (the host sleeps up to a minute).
+
+## 17. Traps found by self-test (v4) — do not reintroduce
+
+| # | Trap | Rule |
+|---|---|---|
+| T1 | Guide and Advanced vanished on phones with no other way in | They move into the account menu at 860px or narrower |
+| T2 | `overflow: hidden` on the app bar clipped the account menu | Overflow goes on the left cluster only |
+| T3 | `display: none` on control labels removed their accessible names | Use the visually-hidden pattern |
+| T4 | A visually-hidden label with `position: absolute` escaped its scroll container and caused sideways scroll | Give the owning control `position: relative` |
+| T5 | `--op-faint` used for body-size text failed contrast | Only axis ticks and eyebrow labels; text uses `--op-muted` |
+| T6 | Faded done-steps (`opacity`) failed contrast | Muted tokens instead |
+| T7 | Sideways-scrolling tables could not be reached by keyboard | `tabindex="0"`, `role="region"`, `aria-label` |
+| T8 | The 6th KPI sat alone on a row | Explicit column counts, never auto-fit |
+| T9 | Green/amber used as text on white failed axe contrast | Text uses `--op-on-green-tint` / `--op-on-amber-tint`, never `--op-c3` / `--op-c2` |
+| T10 | A page fetched a paged API as a list and crashed at run time (type check did not catch it) | Open every new screen in a browser with real data before calling it done |
+
