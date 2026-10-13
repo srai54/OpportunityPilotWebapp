@@ -63,6 +63,8 @@ Both share one pipeline: **Find → Review → Reach out / Apply → Follow up**
 | FR-O6 | Edit a sent message and send again as a new send | Built |
 | FR-O7 | Apply: open the posting ("Apply on LinkedIn") then "I applied"; the local agent can fill forms (dry run by default) | Built; agent not run live |
 | FR-O8 | Detect replies automatically and stop follow-ups | **Planned (A6)** |
+| FR-O9 | Find a contact: suggest published addresses from the saved posting and up to three public pages of the company's own site, with the source; the person picks one | Built (unit + integration tested, UI checked); never guesses an address; live company sites not read |
+| FR-O10 | Send all approved emails from the connected mailbox in one action, stopping at the first failure | Built (fake-provider tested; not run against a real mailbox) |
 
 ### 2.6 Follow up and track
 | ID | Requirement | Status |

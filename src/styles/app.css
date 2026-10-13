@@ -1888,3 +1888,8 @@ html { -webkit-text-size-adjust: 100%; }
 .ccard-body > *, .ccard-head, .ccard-titles { min-width: 0; }
 .ccard-actions { max-width: 100%; }
 .ccard-head { flex-wrap: wrap; }
+
+/* A7: suggested contacts */
+.contact-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.contact-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--op-line); border-radius: 12px; background: var(--op-surface); }
+.contact-row .break { overflow-wrap: anywhere; }
