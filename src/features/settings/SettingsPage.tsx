@@ -19,7 +19,7 @@ const AUTH_LABEL = { supabase: 'Email & password / Google', dev: 'Development si
 /** Rules that are product guarantees, not preferences — shown so nobody looks for a switch. */
 const FIXED_RULES = [
   ['Nothing is sent or applied without your approval', 'Approval binds one version. Editing anything clears it.'],
-  ['No bulk send, no auto-apply', 'Approve-all affects a loaded batch; each job is still applied to individually.'],
+  ['You approve a batch once, not every click', 'Approve or apply to many at once: each posting is opened for you to submit, and each is recorded separately.'],
   ['Unknown never counts as a pass', 'A fact no source supplies stays Unknown and scores zero.'],
   ['Generated text is labelled', 'AI or template text never shares styling with source evidence.'],
   ['Secrets are never shown', 'Agent keys appear once at creation. API keys live in server configuration.'],

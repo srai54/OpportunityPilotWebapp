@@ -472,7 +472,7 @@ p { margin: 0; }
   content: '→'; position: absolute; right: calc(-1 * var(--op-space-6) + 4px); top: 50%;
   transform: translateY(-50%); color: var(--op-muted); font-weight: 600; font-size: 18px;
 }
-.flow-num {
+.hiw-num {
   width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
   background: var(--op-surface); border: 1px solid var(--op-field-border); font-size: var(--op-text-micro); font-weight: 600;
 }
@@ -1923,3 +1923,11 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
 .pulse-bars i.is-today { background: var(--op-c3); }
 .pulse-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .activity-list { margin-top: 10px; }
+
+/* FB13: How it works as five cards */
+.hwf-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.hwf-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 18px; }
+.hwf-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--op-primary-tint); color: var(--op-primary); font-size: 20px; }
+.hwf-num { font-size: var(--op-text-micro); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--op-muted); }
+.hwf-title { font-size: var(--op-text-screen); margin: 0; }
+.hwf-card .btn { margin-top: auto; }
