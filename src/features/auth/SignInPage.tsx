@@ -157,8 +157,9 @@ export function SignInPage() {
       ) : (
         <p className="notice notice-neutral">
           <strong>Accounts are not switched on for this deployment yet.</strong> Sign in, Create account, Microsoft, Google and
-          two-step sign-in appear here once the site owner sets <code>VITE_SUPABASE_URL</code> and{' '}
-          <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> on Vercel and redeploys. Until then, continue as a guest.
+          two-step sign-in appear here once the site owner sets these two variables on Vercel and redeploys:
+          <br /><code>VITE_SUPABASE_URL</code><br /><code>VITE_SUPABASE_PUBLISHABLE_KEY</code><br />
+          Until then, continue as a guest.
         </p>
       )}
 
