@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { dedupeKey, feedsPath, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -69,5 +69,19 @@ describe('siteLines', () => {
     )
     expect(lines.map((l) => `${l.name}: ${l.text}`)).toEqual(['We Work Remotely: 4 of 89', 'Jobicy: down', 'Indeed: 1 found', 'LinkedIn: not set up on this server', 'SEEK: did not answer'])
     expect(lines.map((l) => l.ok)).toEqual([true, false, true, false, false])
+  })
+})
+
+describe('site choice', () => {
+  it('lists six free and three paid sites and searches all unless some are off', () => {
+    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas'])
+    expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek'])
+    expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek'] })
+    expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek'] })
+    expect(chosenSites(new Set(), false).paid).toEqual([])
+  })
+  it('only names the free sites in the request when some are off', () => {
+    expect(feedsPath({ query: 'react', location: '', remoteOnly: false, sites: FREE_SITES.map((s) => s.id) })).not.toContain('sites=')
+    expect(feedsPath({ query: 'react', location: '', remoteOnly: false, sites: ['Himalayas', 'Jobicy'] })).toContain('sites=Himalayas%2CJobicy')
   })
 })

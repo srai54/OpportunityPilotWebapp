@@ -8,12 +8,13 @@ import { useApi } from '../../lib/useApi'
 import { safeHref } from '../opportunities/opportunityModel'
 import { RoleList, ROLE_LIST_ID } from '../suggest/RoleList'
 import { placeFor } from '../suggest/picks'
-import { QuickPicks } from '../suggest/QuickPicks'
+import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
+import { SitePicker } from './SitePicker'
 import type { Workspace } from '../shell/shellModel'
-import { feedsPath, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, feedsPath, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
 import { boardJobsPath, campaignFromSearchPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
-const PAID: JobBoard[] = ['LinkedIn', 'Indeed', 'Seek']
+const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
 
 type Found = { query: string; location: string; feed: FeedSearchResult | Error; boards: { board: JobBoard; result: BoardSearchResult | Error }[] }
 
@@ -27,7 +28,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const [query, setQuery] = useState('')
   const [location, setLocation] = useState('')
   const [remoteOnly, setRemoteOnly] = useState(false)
-  const [includePaid, setIncludePaid] = useState(true)
+  const [off, setOff] = useState<Set<string>>(new Set())
   const [visaOnly, setVisaOnly] = useState(false)
   const [busy, setBusy] = useState(false)
   const [found, setFound] = useState<Found>()
@@ -35,18 +36,21 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    const path = feedsPath({ query, location, remoteOnly })
-    if (!path || busy) return
+    const pick = placeFor(location)
+    const place = pick.location
+    const remote = remoteOnly || pick.remote
+    const { free, paid } = chosenSites(off, paidReady)
+    const path = feedsPath({ query, location: place, remoteOnly: remote, sites: free })
+    if (!path || busy || free.length + paid.length === 0) return
     setBusy(true)
-    const paid = includePaid && paidReady
     const [feed, ...boards] = await Promise.all([
-      api<FeedSearchResult>(path).catch((err: Error) => err),
-      ...(paid ? PAID.map(async (board) => {
-        const p = boardJobsPath(board, { query, location, workMode: remoteOnly ? 'remote' : '', postedWithinDays: '', country: '' })
+      free.length > 0 ? api<FeedSearchResult>(path).catch((err: Error) => err) : Promise.resolve(NO_FEED),
+      ...paid.map(async (board) => {
+        const p = boardJobsPath(board, { query, location: place, workMode: remote ? 'remote' : '', postedWithinDays: '', country: '' })
         return { board, result: p ? await api<BoardSearchResult>(p).catch((err: Error) => err) : new Error('empty') }
-      }) : []),
+      }),
     ]) as [FeedSearchResult | Error, ...{ board: JobBoard; result: BoardSearchResult | Error }[]]
-    setFound({ query: query.trim(), location: location.trim(), feed, boards })
+    setFound({ query: query.trim(), location: place.trim(), feed, boards })
     setBusy(false)
   }
 
@@ -57,25 +61,21 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
 
   return <>
     <RoleList />
+    <PlaceList />
     <form className="search-hero" onSubmit={submit} aria-label="Search all sites">
       {tabs}
       <div className="search-bar" data-coach="find-search">
         <label className="search-field search-field-main"><span className="sr-only">{sales ? 'Role companies are hiring' : 'Role or keywords'}</span>
           <input list={ROLE_LIST_ID} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={sales ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. backend developer'} /></label>
-        <label className="search-field"><span className="sr-only">Location</span>
-          <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Place (optional), e.g. Berlin" /></label>
-        <button className="btn btn-primary" type="submit" disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Search all sites'}</button>
+        <label className="search-field"><span className="sr-only">Place</span>
+          <input list={PLACE_LIST_ID} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Place (optional)" /></label>
+        <SitePicker off={off} onChange={setOff} paidReady={paidReady} />
+        <button className="btn btn-primary" type="submit" disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Search'}</button>
       </div>
-      <QuickPicks onRole={setQuery} onPlace={(pick) => { const { location: l, remote } = placeFor(pick); setLocation(l); if (remote) setRemoteOnly(true) }} />
       <div className="search-tools row wrap" data-coach="find-filters">
         <label className="chip-check"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} /> Remote only</label>
         <label className="chip-check" title="Reads each posting's own text; it is a hint, not a promise"><input type="checkbox" checked={visaOnly} onChange={(e) => setVisaOnly(e.target.checked)} /> Mentions visa or relocation</label>
-        <label className="chip-check" title={paidReady ? 'Uses 3 of your free monthly searches (one each)' : 'Not set up on this server'}>
-          <input type="checkbox" checked={includePaid && paidReady} disabled={!paidReady} onChange={(e) => setIncludePaid(e.target.checked)} /> Also LinkedIn, Indeed and SEEK
-        </label>
-        <span className="muted-small">{paidReady ? 'LinkedIn, Indeed and SEEK use 3 free monthly searches.' : 'LinkedIn, Indeed and SEEK are off here.'} Free sites cost nothing.</span>
       </div>
-      <p className="muted-small" data-testid="sites-read">Reads: Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas{paidReady ? ', LinkedIn, Indeed, SEEK' : ''} — and any regional board the server owner has connected. Wellfound and Trends have their own tabs.</p>
     </form>
 
     {busy && <LoadingState label="Searching every site…" rows={3} />}

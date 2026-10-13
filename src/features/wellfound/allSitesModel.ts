@@ -8,10 +8,35 @@ export type FeedSearchResult = { sites: FeedSiteStatus[]; jobs: FeedJob[]; obser
 /** One row of the merged list: the posting, and the site it came from. */
 export type AllJob = { site: string; siteName: string; job: BoardJob }
 
-export function feedsPath(s: { query: string; location: string; remoteOnly: boolean }): string | null {
+/** Every site "All sites" can read. Free ones need no key; the paid ones go through JSearch and use the monthly allowance. */
+export const FREE_SITES = [
+  { id: 'Arbeitnow', label: 'Arbeitnow', note: 'Europe and remote' },
+  { id: 'Jobicy', label: 'Jobicy', note: 'Remote' },
+  { id: 'WeWorkRemotely', label: 'We Work Remotely', note: 'Remote' },
+  { id: 'Remotive', label: 'Remotive', note: 'Remote' },
+  { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
+  { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
+] as const
+export const PAID_SITES = [
+  { id: 'LinkedIn', label: 'LinkedIn' },
+  { id: 'Indeed', label: 'Indeed' },
+  { id: 'Seek', label: 'SEEK' },
+] as const
+
+/** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */
+export function chosenSites(off: ReadonlySet<string>, paidReady: boolean): { free: string[]; paid: JobBoard[] } {
+  return {
+    free: FREE_SITES.map((s) => s.id).filter((id) => !off.has(id)),
+    paid: paidReady ? PAID_SITES.map((s) => s.id).filter((id) => !off.has(id)) : [],
+  }
+}
+
+export function feedsPath(s: { query: string; location: string; remoteOnly: boolean; sites?: readonly string[] }): string | null {
   const q = s.query.trim()
   if (!q) return null
   const p = new URLSearchParams({ query: q.slice(0, 200), take: '80' })
+  // Leaving the list out means "every free site", so it is only sent when some are switched off.
+  if (s.sites && s.sites.length > 0 && s.sites.length < FREE_SITES.length) p.set('sites', s.sites.join(','))
   if (s.location.trim()) p.set('location', s.location.trim().slice(0, 100))
   if (s.remoteOnly) p.set('remoteOnly', 'true')
   return `/api/v1/jobboards/feeds?${p}`
