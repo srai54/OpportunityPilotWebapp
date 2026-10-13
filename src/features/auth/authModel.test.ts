@@ -5,8 +5,7 @@ import {
   formatCountdown,
   isAuthOnlyPath,
   passwordStrength,
-  resendSecondsLeft,
-} from './authModel'
+  resendSecondsLeft, factorName, needsMfa, normalizeTotp, validTotp } from './authModel'
 
 describe('account screens', () => {
   it('maps URLs to screens; anything else is sign-in so deep links survive', () => {
@@ -46,5 +45,25 @@ describe('account screens', () => {
     expect(activeGuestToken({ token: 'expired', expiresAt: '2026-10-06T09:59:00Z' }, now)).toBeNull()
     expect(activeGuestToken({ token: 'bad-date', expiresAt: 'not-a-date' }, now)).toBeNull()
     expect(activeGuestToken(null, now)).toBeNull()
+  })
+})
+
+describe('two-factor helpers', () => {
+  it('asks for the code only when a factor exists and this session has not used it', () => {
+    expect(needsMfa({ currentLevel: 'aal1', nextLevel: 'aal2' })).toBe(true)
+    expect(needsMfa({ currentLevel: 'aal2', nextLevel: 'aal2' })).toBe(false)
+    expect(needsMfa({ currentLevel: 'aal1', nextLevel: 'aal1' })).toBe(false)
+    expect(needsMfa(null)).toBe(false)
+  })
+  it('accepts six digits with or without spaces and nothing else', () => {
+    expect(validTotp('123456')).toBe(true)
+    expect(validTotp(' 123 456 ')).toBe(true)
+    expect(normalizeTotp('123 456')).toBe('123456')
+    expect(validTotp('12345')).toBe(false)
+    expect(validTotp('12345a')).toBe(false)
+    expect(validTotp('1234567')).toBe(false)
+  })
+  it('gives each setup attempt its own name', () => {
+    expect(factorName(new Date('2026-10-13T09:05:00Z'))).toBe('Authenticator 2026-10-13 09:05')
   })
 })

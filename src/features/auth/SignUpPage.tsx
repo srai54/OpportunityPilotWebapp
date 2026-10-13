@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthCardHeader, AuthLayout, Divider, GoogleButton, PasswordField } from './AuthLayout'
+import { AuthCardHeader, AuthLayout, AuthTabs, Divider, PasswordField, ProviderButtons } from './AuthLayout'
 import { AUTH_PATHS, MIN_PASSWORD } from './authModel'
 import { useAuth } from './AuthContext'
 
 /** Design AuthSignUp: name, work email, password with strength, and consent stating what is stored. */
 export function SignUpPage() {
-  const { mode, signUp, googleSignIn } = useAuth()
+  const { mode, signUp, googleSignIn, microsoftSignIn } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -66,14 +66,16 @@ export function SignUpPage() {
       asideTitle="What you get"
       asideItems={['Unlimited campaigns and sources', 'Your data, exportable at any time']}
     >
+      <AuthTabs active="signup" />
       <AuthCardHeader title="Create an account" subtitle="Free while the project is in demo. No card." />
       <form onSubmit={submit} className="stack-3">
-        <GoogleButton
-          label="Sign up with Google"
-          onClick={() => void googleSignIn().catch((err: Error) => setError(err.message))}
+        <ProviderButtons
+          verb="Sign up"
+          onGoogle={() => void googleSignIn().catch((err: Error) => setError(err.message))}
+          onMicrosoft={() => void microsoftSignIn().catch((err: Error) => setError(err.message))}
           disabled={busy}
         />
-        <Divider label="or" />
+        <Divider label="or use your email" />
         <div className="field">
           <label htmlFor="name">Full name</label>
           <input id="name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
@@ -106,9 +108,6 @@ export function SignUpPage() {
           {busy ? 'Creating…' : 'Create account'}
         </button>
       </form>
-      <footer className="auth-card-foot">
-        Already have one? <Link to={AUTH_PATHS.signin}>Sign in</Link>
-      </footer>
     </AuthLayout>
   )
 }

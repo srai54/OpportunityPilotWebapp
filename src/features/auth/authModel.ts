@@ -87,3 +87,28 @@ export function writeFlag(key: string, value: boolean): void {
     // Storage blocked: the choice lasts for this page view only.
   }
 }
+
+/** Supabase's assurance levels: aal1 = password or provider sign-in, aal2 = a second factor was also checked. */
+export interface AssuranceLevels {
+  currentLevel: string | null
+  nextLevel: string | null
+}
+
+/** True when the account has an authenticator app set up but this session has not entered its code yet. */
+export function needsMfa(levels: AssuranceLevels | null | undefined): boolean {
+  return levels?.nextLevel === 'aal2' && levels.currentLevel !== 'aal2'
+}
+
+/** People paste codes as "123 456"; the check is on the six digits only. */
+export function normalizeTotp(input: string): string {
+  return input.replace(/\s+/g, '')
+}
+
+export function validTotp(input: string): boolean {
+  return /^\d{6}$/.test(normalizeTotp(input))
+}
+
+/** A name that never collides with a half-finished earlier setup (Supabase rejects duplicate friendly names). */
+export function factorName(now: Date): string {
+  return `Authenticator ${now.toISOString().slice(0, 16).replace('T', ' ')}`
+}
