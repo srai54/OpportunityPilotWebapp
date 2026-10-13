@@ -176,6 +176,9 @@ function InsightsView() {
         </EmptyState>
       )}
 
+      {/* A search is recorded as soon as it is run, so the person's own actions show even before anything is tracked. */}
+      {empty && <ActivityPanel sales={sales} />}
+
       {t && !empty && (
         <>
           <section className="kpi-strip kpi-strip-6" aria-label="Key figures">

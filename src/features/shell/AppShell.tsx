@@ -357,76 +357,83 @@ export function AppShell() {
         <div className="main-col" inert={drawerOpen}>
           <div className="topbar-wrap">
           <header className="topbar">
-            {advanced && (
-              <button
-                ref={menuButtonRef}
-                type="button"
-                className="menu-toggle"
-                aria-label="Open navigation"
-                aria-controls="primary-nav"
-                aria-expanded={drawerOpen}
-                onClick={() => setDrawerPath(location.pathname)}
-              >
-                <Icon name="menu" size={20} />
-              </button>
-            )}
-            <Link to="/" className="brand" aria-label="OpportunityPilot home">
-              <span className="brand-mark" aria-hidden="true">OP</span>
-              <span className="brand-name">OpportunityPilot</span>
-            </Link>
-            <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
-              {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
-                <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
-                  <Icon name={WORKSPACES[key].icon} size={14} />
-                  <span>{WORKSPACES[key].label}</span>
+            <div className="topbar-primary">
+              {advanced && (
+                <button
+                  ref={menuButtonRef}
+                  type="button"
+                  className="menu-toggle"
+                  aria-label="Open navigation"
+                  aria-controls="primary-nav"
+                  aria-expanded={drawerOpen}
+                  onClick={() => setDrawerPath(location.pathname)}
+                >
+                  <Icon name="menu" size={20} />
                 </button>
-              ))}
-            </div>
-            <div className={advanced ? 'topbar-heading' : 'sr-only'}>
-              <h1 className="topbar-title">{title}</h1>
-              {advanced && hint && <span className="topbar-hint">{hint}</span>}
-            </div>
-            <div className="grow" />
-            {advanced && aiMode && (
-              <span className="pill pill-neutral topbar-ai">
-                <span className="dot" aria-hidden="true" />
-                {aiMode.text}
-              </span>
-            )}
-            <div className="top-switches">
-              <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" />
-              <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" />
-            </div>
-            <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>?</button>
-            <ThemeToggle />
-            <div className="account" ref={menuRef}>
-              <button
-                ref={avatarRef}
-                type="button"
-                className="avatar"
-                aria-label="Account menu"
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                onClick={() => setMenuPath((p) => (p === location.pathname ? null : location.pathname))}
-              >
-                <span className="avatar-initials" aria-hidden="true">
-                  {user ? initials(user.email) : '?'}
-                </span>
-              </button>
-              {menuOpen && (
-                <div className="menu" role="menu">
-                  <div className="menu-meta">{user?.email}</div>
-                  <div className="menu-switches">
-                    <TopSwitch label="Guide" on={guide} onChange={setGuide} />
-                    <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} />
-                  </div>
-                  <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>
-                  <Link to="/" role="menuitem" className="menu-item" onClick={closeMenu}>Home</Link>
-                  <button type="button" role="menuitem" className="menu-item" onClick={() => void signOut()}>
-                    Sign out
-                  </button>
-                </div>
               )}
+              <Link to="/" className="brand" aria-label="OpportunityPilot home">
+                <span className="brand-mark" aria-hidden="true">OP</span>
+                <span className="brand-name">OpportunityPilot</span>
+              </Link>
+              <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
+                {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
+                  <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
+                    <Icon name={WORKSPACES[key].icon} size={14} />
+                    <span>{WORKSPACES[key].label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="topbar-heading">
+                <h1 className="topbar-title">{title}</h1>
+                {hint && <span className="topbar-hint">{hint}</span>}
+              </div>
+            </div>
+            <div className="topbar-actions">
+              {advanced && aiMode && (
+                <span className="pill pill-neutral topbar-ai">
+                  <Icon name="sparkles" size={13} />
+                  {aiMode.text}
+                </span>
+              )}
+              <div className="top-switches" aria-label="View preferences">
+                <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" />
+                <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" />
+              </div>
+              <div className="topbar-utilities">
+                <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
+                  <Icon name="help" size={17} />
+                </button>
+                <ThemeToggle />
+                <div className="account" ref={menuRef}>
+                  <button
+                    ref={avatarRef}
+                    type="button"
+                    className="avatar"
+                    aria-label="Account menu"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuPath((p) => (p === location.pathname ? null : location.pathname))}
+                  >
+                    <span className="avatar-initials" aria-hidden="true">
+                      {user ? initials(user.email) : '?'}
+                    </span>
+                  </button>
+                  {menuOpen && (
+                    <div className="menu" role="menu">
+                      <div className="menu-meta">{user?.email}</div>
+                      <div className="menu-switches">
+                        <TopSwitch label="Guide" on={guide} onChange={setGuide} />
+                        <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} />
+                      </div>
+                      <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>
+                      <Link to="/" role="menuitem" className="menu-item" onClick={closeMenu}>Home</Link>
+                      <button type="button" role="menuitem" className="menu-item" onClick={() => void signOut()}>
+                        Sign out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </header>
           <JourneyBar workspace={workspace} overview={overview.data} pathname={location.pathname} />
