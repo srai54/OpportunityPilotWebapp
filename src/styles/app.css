@@ -2002,3 +2002,11 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
   .rail-tile { width: 28px; height: 28px; }
   .rail-section { padding: 10px 18px 4px; }
 }
+
+/* FB23: site picker */
+.site-picker { position: relative; }
+.site-picker-btn { height: 100%; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.site-picker-panel { position: absolute; z-index: 20; top: calc(100% + 6px); right: 0; width: 280px; display: grid; gap: 8px; padding: 14px; border: 1px solid var(--op-line); border-radius: 14px; background: var(--op-surface); box-shadow: var(--op-shadow-popover); }
+.site-picker-head { font-size: var(--op-text-meta); text-transform: uppercase; letter-spacing: 0.06em; color: var(--op-muted); }
+.site-picker-panel .check { display: flex; align-items: center; gap: 8px; }
+@media (max-width: 760px) { .site-picker-panel { left: 0; right: auto; width: min(320px, 100%); } }
