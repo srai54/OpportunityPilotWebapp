@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { LoadingState } from '../../components/States'
@@ -436,6 +438,8 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
           Version {existing.version} · saved {dateFmt.format(new Date(existing.updatedAt))}
           {dirty && <span className="text-warning"> · unsaved changes</span>}
         </p>
+        <ProgressBar pct={percentOf(ready.requiredFilled + ready.claimsConfirmed, ready.requiredTotal + ready.claimsConfirmed + ready.claimsAwaiting.length)} label="Profile completeness"
+          text={`${ready.requiredFilled} of ${ready.requiredTotal} required`} tone={ready.ready ? 'success' : 'primary'} size="sm" />
         <p className={`small ${ready.ready ? '' : 'text-warning'}`} aria-live="polite">
           {ready.ready
             ? 'Ready: every required field is filled and every claim is confirmed. Drafts cite this exact version.'
@@ -500,30 +504,29 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
               unconfirmed claim never raises a score. This version will be saved as{' '}
               <strong>{confirmed ? 'confirmed' : 'not confirmed'}</strong>.
             </p>
-            <ul className="plain-list stack-2">
-              {fields
-                .filter((f) => f.confirmable)
-                .map((f) => {
-                  const v = data.fields[f.key]?.trim()
-                  const ok = data.confirmations[f.key] === true
-                  return (
-                    <li key={f.key} className="card claim-row">
-                      <div className="row">
-                        <strong>{f.label}</strong>
-                        <div className="grow" />
-                        {v ? (
+            {(() => {
+              const filled = fields.filter((f) => f.confirmable && data.fields[f.key]?.trim())
+              if (filled.length === 0) return <p className="muted-small">Nothing to confirm yet. Anything you add in Details shows up here.</p>
+              return (
+                <ul className="plain-list stack-2">
+                  {filled.map((f) => {
+                    const ok = data.confirmations[f.key] === true
+                    return (
+                      <li key={f.key} className="card claim-row">
+                        <div className="row">
+                          <strong>{f.label}</strong>
+                          <div className="grow" />
                           <button type="button" className={`confirm-chip ${ok ? 'confirm-chip-on' : ''}`} aria-pressed={ok} onClick={() => setConfirmed(f.key, !ok)}>
                             {ok ? '✓ Confirmed' : '⚠ Confirm'}
                           </button>
-                        ) : (
-                          <span className="muted-small">Not provided — stays missing, never filled in</span>
-                        )}
-                      </div>
-                      {v && <p className="claim-text">{v}</p>}
-                    </li>
-                  )
-                })}
-            </ul>
+                        </div>
+                        <p className="claim-text">{data.fields[f.key]?.trim()}</p>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )
+            })()}
           </section>
         )}
 

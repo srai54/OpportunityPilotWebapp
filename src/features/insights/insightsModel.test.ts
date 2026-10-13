@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { TrendPoint } from '../../lib/types'
 import {
-  activityLine, activityVerb, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
+  activityPulse, agoLabel,
+  activityLine, activityPath, activityVerb, hasMore, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
 } from './insightsModel'
 
 const pt = (date: string, o: Partial<TrendPoint> = {}): TrendPoint => ({ date, found: 0, qualified: 0, approved: 0, reached: 0, replied: 0, sent: 0, ...o })
@@ -105,7 +106,7 @@ describe('trendSummary', () => {
   })
   it('states the numbers and the change in words', () => {
     const s = trendSummary('sales', 14, { ...zero, found: 6, approved: 2, reached: 1 }, { ...zero, found: 2 })
-    expect(s).toBe('Last 14 days: 6 companies found (up 4), 2 leads approved, 1 contacted, 0 replies.')
+    expect(s).toBe('Last 14 days: Companies found 6 (up 4) · Leads approved 2 · Contacted 1 · Replies 0.')
   })
 })
 
@@ -118,5 +119,54 @@ describe('activity lines', () => {
   })
   it('shows an unknown kind as written', () => {
     expect(activityVerb('Mystery')).toBe('Mystery')
+  })
+})
+
+describe('activity feed paths and lines', () => {
+  const now = new Date('2026-10-13T10:00:00Z')
+  it('asks for one workspace, the chosen kinds, a start date and the paging cursor', () => {
+    const path = activityPath(true, 'messages', 7, '2026-10-12T09:00:00.000Z', now)
+    const q = new URLSearchParams(path.split('?')[1])
+    expect(q.get('workspace')).toBe('Sales')
+    expect(q.get('kinds')).toBe('DraftCreated,DraftEdited,DraftApproved')
+    expect(q.get('from')).toBe('2026-10-06T10:00:00.000Z')
+    expect(q.get('before')).toBe('2026-10-12T09:00:00.000Z')
+    const all = new URLSearchParams(activityPath(false, 'all', 0, null, now).split('?')[1])
+    expect(all.get('workspace')).toBe('Candidate')
+    expect(all.has('kinds')).toBe(false)
+    expect(all.has('from')).toBe(false)
+  })
+  it('shows the stored sentence for what the person did themselves, with the lead when there is one', () => {
+    expect(activityLine({ kind: 'Searched', title: '', organization: '', detail: 'Searched all free sites for "react": 12 results', opportunityId: null }, false)).toBe('Searched all free sites for "react": 12 results')
+    expect(activityLine({ kind: 'DraftApproved', title: 'Backend Engineer', organization: 'Stripe', detail: 'Approved the email draft (version 2)', opportunityId: 'o1' }, true)).toBe('Approved the email draft (version 2): Stripe')
+  })
+  it('says there is more only when the page was full', () => {
+    expect(hasMore(20)).toBe(true)
+    expect(hasMore(7)).toBe(false)
+  })
+})
+
+describe('activity pulse', () => {
+  const now = new Date(2026, 9, 13, 15, 0)
+  const at = (daysAgo: number, h = 10) => new Date(2026, 9, 13 - daysAgo, h).toISOString()
+  it('counts per day and per kind, finds the last action and the streak', () => {
+    const p = activityPulse([{ at: at(0), kind: 'Searched' }, { at: at(0, 12), kind: 'DraftApproved' }, { at: at(1), kind: 'Approved' }, { at: at(5), kind: 'Searched' }, { at: at(30), kind: 'Searched' }], now, 14)
+    expect(p.perDay.at(-1)).toBe(2)
+    expect(p.perDay.at(-2)).toBe(1)
+    expect(p.total).toBe(4)
+    expect(p.byGroup.find((g) => g.key === 'searches')?.count).toBe(2)
+    expect(p.streak).toBe(2)
+    expect(p.activeDays).toBe(3)
+    expect(p.lastAt).toBe(at(0, 12))
+  })
+  it('keeps a streak that ended yesterday and says nothing when there is no activity', () => {
+    expect(activityPulse([{ at: at(1), kind: 'Searched' }], now).streak).toBe(1)
+    const none = activityPulse([], now)
+    expect(none.total).toBe(0); expect(none.streak).toBe(0); expect(none.lastAt).toBeNull()
+  })
+  it('words how long ago', () => {
+    expect(agoLabel(new Date(2026, 9, 13, 14, 59, 40).toISOString(), now)).toBe('just now')
+    expect(agoLabel(new Date(2026, 9, 13, 14, 50).toISOString(), now)).toBe('10 min ago')
+    expect(agoLabel(new Date(2026, 9, 11, 15, 0).toISOString(), now)).toBe('2 days ago')
   })
 })

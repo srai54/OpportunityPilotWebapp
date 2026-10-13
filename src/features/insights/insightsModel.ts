@@ -145,11 +145,12 @@ export function goalProgress(done: number, goal: number): { pct: number; text: s
 /** Plain-language one-line takeaway for the trend chart, so the picture is also said in words. */
 export function trendSummary(workspace: Workspace, days: number, current: TrendTotals, previous: TrendTotals): string {
   const s = seriesFor(workspace)
-  const label = (k: SeriesKey) => s.find((x) => x.key === k)!.label.toLowerCase()
+  const label = (k: SeriesKey) => s.find((x) => x.key === k)!.label
   if (current.found + current.approved + current.reached + current.replied + current.sent === 0)
     return `Nothing recorded in the last ${days} days yet.`
   const d = delta(current.found, previous.found)
-  return `Last ${days} days: ${current.found} ${label('found')} (${d.text}), ${current.approved} ${label('approved')}, ${current.reached} ${label('reached')}, ${current.replied} replies.`
+  // Label first, then the number: it reads right for 1 and for 6 ("Leads approved: 1"), with no plural to get wrong.
+  return `Last ${days} days: ${label('found')} ${current.found} (${d.text}) · ${label('approved')} ${current.approved} · ${label('reached')} ${current.reached} · Replies ${current.replied}.`
 }
 
 const ACTIVITY_VERBS: Record<string, string> = {
@@ -161,14 +162,99 @@ const ACTIVITY_VERBS: Record<string, string> = {
   StatusChanged: 'Updated',
 }
 
+/** Kinds the person's own actions are recorded as. Their stored detail is already a full sentence. */
+const OWN_KINDS = new Set(['Searched', 'RunStarted', 'ProfileSaved', 'DraftCreated', 'DraftEdited', 'DraftApproved', 'FollowUpUpdated', 'MailboxConnected'])
+
 /** "You approved" / "Found" for a stored activity kind; an unknown kind is shown as written, never guessed. */
 export function activityVerb(kind: string): string {
   return ACTIVITY_VERBS[kind] ?? kind
 }
 
 /** One readable line per recorded action: the verb, the job or lead, and the stored detail when it adds something. */
-export function activityLine(item: Pick<ActivityFeedItem, 'kind' | 'title' | 'organization' | 'detail'>, sales: boolean): string {
+export function activityLine(item: Pick<ActivityFeedItem, 'kind' | 'title' | 'organization' | 'detail'> & { opportunityId?: string | null }, sales: boolean): string {
+  if (OWN_KINDS.has(item.kind)) {
+    const what = item.opportunityId ? (sales ? item.organization || item.title : item.title) : ''
+    return what ? `${item.detail}: ${what}` : item.detail
+  }
   const what = sales ? item.organization || item.title : [item.title, item.organization].filter(Boolean).join(' · ')
   const detail = item.detail && item.kind === 'StatusChanged' ? ` — ${item.detail}` : ''
   return `${activityVerb(item.kind)} ${what}${detail}`
+}
+
+export type ActivityGroup = 'all' | 'searches' | 'messages' | 'decisions' | 'applications' | 'followups' | 'setup'
+
+/** The filter chips and the stored kinds each one stands for (the API filters on kinds, not on groups). */
+export const ACTIVITY_GROUPS: { key: ActivityGroup; label: string; kinds: string[] }[] = [
+  { key: 'all', label: 'Everything', kinds: [] },
+  { key: 'searches', label: 'Searches', kinds: ['Searched', 'RunStarted', 'Researched'] },
+  { key: 'decisions', label: 'Decisions', kinds: ['Suggested', 'Approved', 'Rejected'] },
+  { key: 'messages', label: 'Messages', kinds: ['DraftCreated', 'DraftEdited', 'DraftApproved'] },
+  { key: 'applications', label: 'Applications', kinds: ['Applied', 'StatusChanged'] },
+  { key: 'followups', label: 'Follow-ups', kinds: ['FollowUpUpdated'] },
+  { key: 'setup', label: 'Profile and mailbox', kinds: ['ProfileSaved', 'MailboxConnected'] },
+]
+
+export const ACTIVITY_RANGES = [{ days: 7, label: '7 days' }, { days: 30, label: '30 days' }, { days: 90, label: '90 days' }, { days: 0, label: 'All time' }] as const
+
+/** The API path for one page of the feed. `before` is the oldest time already shown; `days` 0 means no start date. */
+export function activityPath(sales: boolean, group: ActivityGroup, days: number, before: string | null, now: Date = new Date(), take = 20): string {
+  const q = new URLSearchParams({ workspace: sales ? 'Sales' : 'Candidate', take: String(take) })
+  const kinds = ACTIVITY_GROUPS.find((g) => g.key === group)?.kinds ?? []
+  if (kinds.length) q.set('kinds', kinds.join(','))
+  if (days > 0) q.set('from', new Date(now.getTime() - days * 86_400_000).toISOString())
+  if (before) q.set('before', before)
+  return `/api/v1/analytics/activity?${q}`
+}
+
+/** Pages are full (take) until the last one; a short page means there is nothing older. */
+export function hasMore(pageSize: number, take = 20): boolean {
+  return pageSize >= take
+}
+
+export interface ActivityPulse {
+  /** Actions per day, oldest day first, ending today. */
+  perDay: number[]
+  total: number
+  byGroup: { key: ActivityGroup; label: string; count: number }[]
+  lastAt: string | null
+  /** Days with at least one action, and how many days in a row up to today (or yesterday) had one. */
+  activeDays: number
+  streak: number
+}
+
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+
+/** A quick read of the last `days` days of the person's own actions: per-day counts, counts per kind of action, last action and streak. */
+export function activityPulse(items: readonly Pick<ActivityFeedItem, 'at' | 'kind'>[], now: Date, days = 14): ActivityPulse {
+  const slots = Array.from({ length: days }, (_, i) => { const d = new Date(now); d.setDate(d.getDate() - (days - 1 - i)); return dayKey(d) })
+  const perDay = slots.map(() => 0)
+  const byGroup = ACTIVITY_GROUPS.filter((g) => g.key !== 'all').map((g) => ({ key: g.key, label: g.label, count: 0 }))
+  let total = 0
+  let lastAt: string | null = null
+  for (const it of items) {
+    const at = new Date(it.at)
+    const slot = slots.indexOf(dayKey(at))
+    if (slot < 0) continue
+    perDay[slot] += 1
+    total += 1
+    if (!lastAt || it.at > lastAt) lastAt = it.at
+    const g = ACTIVITY_GROUPS.find((x) => x.key !== 'all' && x.kinds.includes(it.kind))
+    const row = byGroup.find((x) => x.key === g?.key)
+    if (row) row.count += 1
+  }
+  let i = days - 1
+  if (perDay[i] === 0) i -= 1
+  let streak = 0
+  while (i >= 0 && perDay[i] > 0) { streak += 1; i -= 1 }
+  return { perDay, total, byGroup, lastAt, activeDays: perDay.filter((n) => n > 0).length, streak }
+}
+
+/** "just now", "3 min ago", "2 h ago", "4 days ago" — for the live line. */
+export function agoLabel(iso: string, now: Date): string {
+  const s = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 1000))
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.round(s / 60)} min ago`
+  if (s < 86_400) return `${Math.round(s / 3600)} h ago`
+  const d = Math.round(s / 86_400)
+  return `${d} ${d === 1 ? 'day' : 'days'} ago`
 }

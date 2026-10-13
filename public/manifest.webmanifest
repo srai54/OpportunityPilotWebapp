@@ -1,0 +1,10 @@
+{
+  "name": "OpportunityPilot",
+  "short_name": "OpportunityPilot",
+  "description": "Find opportunities, approve what matters, and follow up.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#191919",
+  "theme_color": "#fbfaf9",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

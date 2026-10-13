@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BulkBar } from '../../components/cards'
-import { BulkDraftCard, LeadCardList } from './LeadCards'
+import { ApplyQueue, BulkDraftCard, LeadCardList } from './LeadCards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { PageHeader } from '../../components/PageHeader'
@@ -46,6 +46,21 @@ import {
  * /opportunities (campaign chosen with ?campaign=, defaulting to the newest) and /campaigns/:id/opportunities.
  * Opportunities belong to a campaign in the API, so the list is always one campaign's.
  */
+/** Shown once after a command-bar run: what you asked for, and the steps that get you there. Dismissing it forgets it. */
+function NextHint({ sales }: Readonly<{ sales: boolean }>) {
+  const [wanted, setWanted] = useState<string | null>(() => { try { return sessionStorage.getItem('op.then') } catch { return null } })
+  if (wanted !== 'apply' && wanted !== 'send') return null
+  const apply = wanted === 'apply' && !sales
+  function dismiss() { try { sessionStorage.removeItem('op.then') } catch { /* nothing to clear */ } setWanted(null) }
+  return (
+    <div className="notice notice-neutral stack-2" role="status">
+      <p><strong>{apply ? 'You asked to apply.' : 'You asked to send outreach.'}</strong> Approve the ones you want (tick them, then Approve).{' '}
+        {apply ? 'Then tick the approved ones and press “Apply to N”: each posting opens for you to submit.' : 'Then press “Draft messages” and open Outreach, where “Send all” sends the ones you approved.'}</p>
+      <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={dismiss}>Got it</button></div>
+    </div>
+  )
+}
+
 function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
   const sales = useShell().workspace === 'sales'
   const { advanced } = useShell()
@@ -69,6 +84,7 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
           : 'Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success.'}
       />
       {tabs}
+      <NextHint sales={sales} />
 
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} />}
       {campaigns.loading && !campaigns.data && <LoadingState label="Loading campaigns…" waking={campaigns.waking} rows={3} />}
@@ -228,6 +244,7 @@ function OpportunityTable({
   const { advanced, workspace } = useShell()
   const sales = workspace === 'sales'
   const [drafting, setDrafting] = useState(false)
+  const [applying, setApplying] = useState(false)
   const first = useApi<OpportunityPage>(opportunitiesPath(campaignId, filters, 0))
   const [more, setMore] = useState<OpportunitySummary[]>([])
   const [fetchedMore, setFetchedMore] = useState(0)
@@ -307,6 +324,7 @@ function OpportunityTable({
     setAnnouncement(`${moved} moved to ${STATUS_LABELS[to]?.text ?? to}${skipped ? `; ${skipped} skipped because their status does not allow it` : ''}.`)
   }
 
+  const applicable = chosen.filter((o) => o.status === 'Shortlisted' && o.mode === 'Job' && (o.applyUrl ?? o.url))
   function exportSelection() {
     saveBlob(new Blob([selectionCsv(chosen)], { type: 'text/csv' }), `${campaignName.replace(/[^\w-]+/g, '-')}-selection.csv`)
   }
@@ -352,13 +370,15 @@ function OpportunityTable({
             {total} {sales ? (total === 1 ? 'company' : 'companies') : (total === 1 ? 'job' : 'jobs')} · {counts.qualified} qualified{loaded.length < total ? ` · showing ${items.length}` : ''}
             {search && ` · ${items.length} match “${search.trim()}”`}
           </p>
+          {applying && <ApplyQueue items={applicable} onApplied={(o) => setStatus(o, 'Applied')} onClose={() => setApplying(false)} />}
           {drafting && <BulkDraftCard ids={chosen.map((o) => o.id)} noun={sales ? 'leads' : 'jobs'} onCancel={() => setDrafting(false)} />}
           <LeadCardList items={items} selected={selected} onToggle={toggle} busy={busy} onStatus={(o, to) => void setStatus(o, to)} label={sales ? 'Leads' : 'Jobs'} />
           {loaded.length < total && (
             <div className="row"><button type="button" className="btn btn-secondary" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>
           )}
-          <BulkBar count={chosen.length} noun={sales ? { one: 'lead', many: 'leads' } : { one: 'job', many: 'jobs' }} onClear={() => { setSelected(new Set()); setDrafting(false) }}>
-            <button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => setDrafting(true)}>Draft messages</button>
+          <BulkBar count={chosen.length} noun={sales ? { one: 'lead', many: 'leads' } : { one: 'job', many: 'jobs' }} onClear={() => { setSelected(new Set()); setDrafting(false); setApplying(false) }}>
+            {!sales && <button type="button" className="btn btn-primary btn-sm" disabled={busy !== null || applicable.length === 0} title={applicable.length === 0 ? 'Select approved jobs that have a posting link' : undefined} onClick={() => setApplying(true)}>Apply to {applicable.length || 'approved'}</button>}
+            <button type="button" className={`btn btn-sm ${sales ? 'btn-primary' : 'btn-secondary'}`} disabled={busy !== null} onClick={() => setDrafting(true)}>Draft messages</button>
             <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Shortlisted')}>Approve</button>
             <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Dismissed')}>Skip</button>
           </BulkBar>
@@ -366,6 +386,7 @@ function OpportunityTable({
       )}
       {advanced && (
         <>
+      {applying && <ApplyQueue items={applicable} onApplied={(o) => setStatus(o, 'Applied')} onClose={() => setApplying(false)} />}
       {chosen.length > 0 && (
         <div className="selection-bar">
           <strong>{chosen.length} selected</strong>
@@ -378,8 +399,9 @@ function OpportunityTable({
           <button type="button" className="btn btn-secondary btn-sm" onClick={exportSelection}>
             Export selection
           </button>
+          {!sales && <button type="button" className="btn btn-primary btn-sm" disabled={applicable.length === 0} onClick={() => setApplying(true)}>Apply to {applicable.length || 'approved'}</button>}
           <div className="grow" />
-          <span className="muted-small">There is no bulk send or bulk apply. Approval happens in Approvals, one batch, with the reasons visible.</span>
+          <span className="muted-small">Approve a batch once. Applying opens each posting for you to submit, and each one is recorded separately.</span>
         </div>
       )}
       <section className="panel">
@@ -543,6 +565,7 @@ export function OpportunitiesPage() {
       <div className="page page-wide stack-4">
         <PageHeader title={sales ? 'Leads' : 'Opportunities'} subtitle={sales ? 'Approve the companies worth contacting in one click, or reject the rest.' : 'Approve the jobs worth your time in one click, or reject the rest.'} />
         {tabs}
+        <NextHint sales={sales} />
         <ApprovalQueuePage embedded />
       </div>
     )

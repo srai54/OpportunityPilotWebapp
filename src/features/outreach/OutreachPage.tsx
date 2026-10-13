@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
+import { ContactFinder } from './ContactFinder'
+import { SendAllCard } from './SendAllCard'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Card, CardList, MessageCard } from '../../components/cards'
@@ -200,6 +202,8 @@ export function OutreachPage() {
           actions={<Link className="btn btn-primary" to={queuePath(readyToSend.map((d) => d.id))}>Start send queue</Link>} />
       )}
 
+      <SendAllCard items={items} onDone={drafts.reload} />
+
       <div className="outreach-cards">
         <section className="stack-3" aria-label="Messages">
           <div className="row wrap">
@@ -246,6 +250,7 @@ export function OutreachPage() {
               subtitle={<><Badge tone={selected.state === 'Sent' ? 'success' : selected.state === 'Approved' ? 'primary' : 'warning'}>{selected.state === 'Draft' ? 'To send' : selected.state} · v{selected.version}</Badge> <Link to={`/opportunities/${selected.opportunityId}`}>Open {sales ? 'lead' : 'job'}</Link></>}
             >
               <label className="field"><span>To</span><input id="out-recipient" readOnly={selected.state === 'Sent'} value={recipient} aria-invalid={tried && checks.some((c) => c.field === 'recipient' && !c.ok) ? true : undefined} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={selected.channel === 'Email' ? 'name@company.com' : undefined} /><small>{selected.recipientVerified ? `Verified from stored evidence${selected.recipientEvidenceId ? ` · ${selected.recipientEvidenceId}` : ''}.` : 'Typed by you · not verified.'}</small></label>
+              {selected.channel === 'Email' && selected.state !== 'Sent' && <ContactFinder opportunityId={selected.opportunityId} onUse={setRecipient} />}
               {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" readOnly={selected.state === 'Sent'} value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
               <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={12} readOnly={selected.state === 'Sent'} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
               {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">

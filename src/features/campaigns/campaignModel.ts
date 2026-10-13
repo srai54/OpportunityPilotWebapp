@@ -365,6 +365,16 @@ export function sourceKindAllowed(kind: SourceKind, mode: OpportunityMode): bool
   return true
 }
 
+export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk']
+
+/** The sources the quick campaign adds for one choice: all free feeds, one feed, one company board, or a job search site. */
+export function quickSourceBodies(choice: string, boardToken: string): { kind: string; url?: string }[] {
+  if (choice === 'Greenhouse' || choice === 'Lever') return [{ kind: choice, url: boardToken }]
+  if (choice === 'FreeFeeds') return FREE_FEED_KINDS.map((kind) => ({ kind }))
+  if ((FREE_FEED_KINDS as string[]).includes(choice)) return [{ kind: choice }]
+  return [{ kind: 'JobSearch', url: choice }]
+}
+
 export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek'
 export const SEARCH_BOARDS: { value: SearchBoard; label: string }[] = [
   { value: 'Indeed', label: 'Indeed' },
@@ -644,6 +654,17 @@ export const CADENCES = [
 
 export function cadenceLabel(minutes: number): string {
   return CADENCES.find((c) => c.minutes === minutes)?.label ?? `Every ${minutes} minutes`
+}
+
+/** When a schedule should first fire: one interval from now (the run being started covers "now"). Event handlers only. */
+export function firstRepeatAt(minutes: number): string { return new Date(Date.now() + minutes * 60_000).toISOString() }
+
+/** What the Repeats column and the schedule line say: "Daily · next Oct 14, 9:00 AM", "Paused", or "Not scheduled". */
+export function repeatLabel(s: { cadenceMinutes: number; nextRunAt: string; paused: boolean } | undefined): string {
+  if (!s) return 'Not scheduled'
+  if (s.paused) return 'Paused'
+  const next = new Date(s.nextRunAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return `${cadenceLabel(s.cadenceMinutes)} · next ${next}`
 }
 
 type ModeCopy = {

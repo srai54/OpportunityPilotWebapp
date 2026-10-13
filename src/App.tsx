@@ -4,6 +4,7 @@ import { AuthProvider } from './features/auth/AuthProvider'
 import { useAuth } from './features/auth/AuthContext'
 import { authScreenFor, isAuthOnlyPath, ONBOARDED_KEY, readFlag } from './features/auth/authModel'
 import { OnboardingPage } from './features/auth/OnboardingPage'
+import { MfaChallengePage } from './features/auth/MfaChallengePage'
 import { NewPasswordPage, ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { SignInPage } from './features/auth/SignInPage'
 import { SignUpPage } from './features/auth/SignUpPage'
@@ -26,6 +27,7 @@ const StaffingDealsPage = lazy(() => import('./features/staffing/StaffingDealsPa
 const StaffingDealPage = lazy(() => import('./features/staffing/StaffingDealPage').then((m) => ({ default: m.StaffingDealPage })))
 const StaffingCandidatesPage = lazy(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
 const AppShell = lazy(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
+const ProgressPage = lazy(() => import('./features/progress/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const HowItWorksPage = lazy(() => import('./features/guide/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
 const WellfoundPage = lazy(() => import('./features/wellfound/WellfoundPage').then((m) => ({ default: m.WellfoundPage })))
 
@@ -42,16 +44,20 @@ const SIGNED_OUT_SCREENS = {
  * A password-reset link opens "Choose a new password" first. New browsers see onboarding once.
  */
 function AuthGate() {
-  const { ready, user, recovering } = useAuth()
+  const { ready, user, recovering, mfaRequired } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [onboarded, setOnboarded] = useState(() => readFlag(ONBOARDED_KEY, false))
+  // A candidate's private progress link works without an account.
+  const progressToken = /^\/progress\/([^/]+)$/.exec(location.pathname)?.[1]
+  if (progressToken) return <Suspense fallback={<div className="boot" role="status">Loading…</div>}><ProgressPage token={decodeURIComponent(progressToken)} /></Suspense>
   if (!ready) return <div className="boot" role="status">Checking your session…</div>
   if (recovering) return <NewPasswordPage />
   if (!user) {
     const Screen = SIGNED_OUT_SCREENS[authScreenFor(location.pathname)]
     return <Screen />
   }
+  if (mfaRequired) return <MfaChallengePage />
   if (isAuthOnlyPath(location.pathname)) return <Navigate to="/" replace />
   if (!onboarded)
     return (

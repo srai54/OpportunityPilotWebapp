@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
-import { PageHeader } from '../../components/PageHeader'
+import { Avatar, Card, MatchRing } from '../../components/cards'
 import { api } from '../../lib/api'
 import type { Evidence, OpportunityDetail, OpportunityStatus } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
@@ -16,6 +16,7 @@ import {
   displayUrl,
   factLabel,
   formatPoints,
+  foundLabel,
   isUserApplyBoard,
   OUTCOME_LABELS,
   platformLabel,
@@ -172,53 +173,57 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
 
   return (
     <div className="page page-wide stack-4">
-      <div className="stack-2">
+      <div className="stack-3">
         <Link to={`/campaigns/${o.campaignId}/opportunities`} className="small">
-          ← Back to opportunities
+          ← Back to {o.mode === 'Job' ? 'jobs' : 'leads'}
         </Link>
-        <PageHeader
-          title={o.title}
-          badges={
-            <>
-              <Badge tone={o.mode === 'Job' ? 'success' : 'primary'}>{MODE_LABELS[o.mode] ?? o.mode}</Badge>
-              <Badge tone={outcome.tone}>{outcome.text}</Badge>
-              <Badge tone={status.tone}>{status.text}</Badge>
-            </>
-          }
-          subtitle={
-            <>
-              {[o.organization, o.location, platform].filter(Boolean).join(' · ')}
-              {showPosting && postingHref && (
-                <>
-                  {' · '}
+        <Card className="detail-hero">
+          <div className="hero-row">
+            <Avatar name={o.organization || o.title} />
+            <div className="hero-main">
+              <h2 className="hero-title">{o.title}</h2>
+              <p className="hero-meta">{[o.organization, o.location, platform].filter(Boolean).join(' · ')}</p>
+              <div className="hero-badges">
+                <Badge tone={status.tone}>{status.text}</Badge>
+                {advanced && <Badge tone={o.mode === 'Job' ? 'success' : 'primary'}>{MODE_LABELS[o.mode] ?? o.mode}</Badge>}
+                {advanced && <Badge tone={outcome.tone}>{outcome.text}</Badge>}
+                {foundLabel(o.foundAt) && <span className="muted-small"><time dateTime={o.foundAt}>{foundLabel(o.foundAt)}</time></span>}
+                <span className="muted-small">Updated <time dateTime={o.updatedAt}>{formatWhen(o.updatedAt)}</time></span>
+              </div>
+              <p className="hero-links small">
+                {showPosting && postingHref && (
                   <a href={postingHref} target="_blank" rel="noopener noreferrer">
                     {o.mode === 'Job' ? 'Open posting ↗' : 'Open website ↗'}
                     <span className="sr-only"> (opens in a new tab)</span>
                   </a>
-                </>
-              )}
-              {o.organization && (
-                <>
-                  {' · '}
+                )}
+                {o.organization && (
                   <a href={recruiterSearchUrl(o.organization)} target="_blank" rel="noopener noreferrer">
                     Find recruiters at {o.organization} ↗
                     <span className="sr-only"> (opens LinkedIn in a new tab)</span>
                   </a>
-                </>
+                )}
+              </p>
+            </div>
+            <div className="hero-score">
+              <MatchRing score={o.outcome === 'Excluded' ? null : o.score} />
+              <span className="muted-small">match</span>
+            </div>
+          </div>
+        </Card>
+        <Card
+          tone="signature"
+          title="What to do now"
+          subtitle={<span aria-live="polite">{nextPermittedAction(o)}</span>}
+          footer={
+            <>
+              {decisions}
+              {o.mode !== 'Job' && (o.status === 'Shortlisted' || o.status === 'Contacted' || o.status === 'Responded' || o.status === 'Interested') && (
+                <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void makeStaffingLead()}>Make a staffing lead</button>
               )}
             </>
           }
-          meta={
-            <>
-              Updated <time dateTime={o.updatedAt}>{formatWhen(o.updatedAt)}</time>
-            </>
-          }
-          actions={decisions}
         />
-          <p className="notice notice-neutral small" aria-live="polite"><strong>Next:</strong> {nextPermittedAction(o)}
-            {o.mode !== 'Job' && (o.status === 'Shortlisted' || o.status === 'Contacted' || o.status === 'Responded' || o.status === 'Interested') && (
-              <> <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void makeStaffingLead()}>Make a staffing lead</button></>
-            )}</p>
       </div>
 
       <span className="sr-only" role="status" aria-live="polite">
@@ -252,13 +257,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           </section>
 
           {details && <>
-          <section className="panel" aria-labelledby="unknown-heading">
-            <header className="panel-head">
-              <h3 id="unknown-heading" className="eyebrow">
-                What is still unknown
-              </h3>
-            </header>
-            <div className="panel-body">
+          <Card title="What is still unknown">
+<div className="stack-3">
               {unknown.length === 0 && o.gaps.length === 0 ? (
                 <p className="muted-small">Every scored criterion had evidence.</p>
               ) : (
@@ -281,7 +281,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 Add a source that covers these
               </Link>
             </div>
-          </section>
+</Card>
 
           {o.scoredBy && (
             <p className="muted-small">
@@ -290,15 +290,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             </p>
           )}
 
-          <section className="panel" aria-labelledby="facts-heading">
-            <header className="panel-head">
-              <h3 id="facts-heading" className="eyebrow">
-                Facts
-              </h3>
-              <div className="grow" />
-              <span className="muted-small">Extracted by rules</span>
-            </header>
-            <div className="panel-body">
+          <Card title="Facts" actions={<span className="muted-small">Extracted by rules</span>}>
+<div className="stack-3">
               {o.facts.length === 0 && <p className="muted-small">No facts were extracted.</p>}
               <ul className="plain-list fact-list">
                 {o.facts.map((f) => {
@@ -321,7 +314,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 })}
               </ul>
             </div>
-          </section>
+</Card>
           </>}
         </div>
 
@@ -394,13 +387,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           </div>
 
           {details && <>
-          <section className="panel" aria-labelledby="evidence-heading">
-            <header className="panel-head">
-              <h3 id="evidence-heading" className="eyebrow">
-                Evidence — {o.evidence.length} {o.evidence.length === 1 ? 'source' : 'sources'}
-              </h3>
-            </header>
-            <div className="panel-body evidence-panel">
+          <Card title={`Evidence — ${o.evidence.length} ${o.evidence.length === 1 ? 'source' : 'sources'}`}>
+<div className="evidence-panel">
               {o.evidence.length === 0 ? (
                 <p className="muted-small">No evidence was stored for this opportunity, so nothing here is verified.</p>
               ) : (
@@ -411,15 +399,10 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 </ol>
               )}
             </div>
-          </section>
+</Card>
 
-          <section className="panel" aria-labelledby="activity-heading">
-            <header className="panel-head">
-              <h3 id="activity-heading" className="eyebrow">
-                Activity
-              </h3>
-            </header>
-            <div className="panel-body">
+          <Card title="Activity">
+<div className="stack-3">
               {o.activities.length === 0 ? (
                 <p className="muted-small">No activity yet.</p>
               ) : (
@@ -463,7 +446,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
               </form>
               <p className="hint">Status changes are yours alone. Research never resets a status you set.</p>
             </div>
-          </section>
+</Card>
           </>}
         </div>
       </div>

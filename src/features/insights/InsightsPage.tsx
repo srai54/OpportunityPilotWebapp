@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../../lib/api'
+import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -11,7 +13,7 @@ import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
 import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
 import {
-  activityLine, clampGoal, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPulse, agoLabel, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
@@ -26,27 +28,99 @@ export function InsightsPage() {
   return <InsightsView key={useShell().workspace} />
 }
 
-/** "My activity": the person's own recorded actions, newest first, each linking to the job or lead. */
+/** "My activity": the person's own recorded actions, newest first, filtered by kind and date, with "Load more". Lines about a job or lead link to it. */
 function ActivityPanel({ sales }: Readonly<{ sales: boolean }>) {
-  const feed = useApi<ActivityFeedItem[]>(`/api/v1/analytics/activity?workspace=${sales ? 'Sales' : 'Candidate'}&take=20`)
+  const [group, setGroup] = useState<ActivityGroup>('all')
+  const [days, setDays] = useState<number>(30)
+  // Keyed so changing a filter starts again from the newest page.
+  return <ActivityList key={`${group}|${days}`} sales={sales} group={group} days={days} onGroup={setGroup} onDays={setDays} />
+}
+
+/** The live line above "My activity": a pulsing dot while the page is open, the last 14 days as bars, a count per kind, and the streak. Refreshes itself every 30 seconds. */
+function ActivityPulseBar({ sales }: Readonly<{ sales: boolean }>) {
+  const [start] = useState(() => new Date())
+  const [now, setNow] = useState(start)
+  const feed = useApi<ActivityFeedItem[]>(activityPath(sales, 'all', 14, null, start, 100))
+  const { reload } = feed
+  useEffect(() => {
+    const t = setInterval(() => { if (document.visibilityState === 'visible') { reload(); setNow(new Date()) } }, 30_000)
+    return () => clearInterval(t)
+  }, [reload])
+  if (!feed.data) return null
+  const pulse = activityPulse(feed.data, now)
+  const max = Math.max(1, ...pulse.perDay)
   return (
-    <section className="panel" aria-labelledby="my-activity">
-      <header className="panel-head"><h3 className="eyebrow" id="my-activity">My activity</h3><div className="grow" /><span className="muted-small">latest 20 · newest first</span></header>
-      <div className="panel-body">
-        {feed.error && <ErrorNotice error={feed.error} onRetry={feed.reload} what="your activity" />}
-        {feed.data?.length === 0 && <p className="muted-small">Nothing recorded yet. Approvals, applications and sends show up here with their date.</p>}
-        {feed.data && feed.data.length > 0 && (
+    <section className="pulse" aria-label="Your activity at a glance">
+      <div className="pulse-head">
+        <span className="pulse-live"><span className="pulse-dot" aria-hidden="true" />Live</span>
+        <span className="muted-small">{pulse.lastAt ? `Last action ${agoLabel(pulse.lastAt, now)}` : 'No action in the last 14 days'}</span>
+        <span className="grow" />
+        <span className="muted-small">{pulse.total >= 100 ? '100+' : pulse.total} in 14 days · {pulse.activeDays} active {pulse.activeDays === 1 ? 'day' : 'days'}{pulse.streak > 1 ? ` · ${pulse.streak}-day streak` : ''}</span>
+      </div>
+      <div className="pulse-bars" role="img" aria-label={`Actions per day, last 14 days: ${pulse.perDay.join(', ')}`}>
+        {pulse.perDay.map((n, i) => <i key={i} className={i === pulse.perDay.length - 1 ? 'is-today' : ''} style={{ height: `${Math.max(6, (n / max) * 100)}%`, opacity: n === 0 ? 0.25 : 1 }} title={`${n}`} />)}
+      </div>
+      <ul className="pulse-chips">{pulse.byGroup.filter((g) => g.count > 0).map((g) => <li key={g.key} className="chip"><strong>{g.count}</strong> {g.label.toLowerCase()}</li>)}</ul>
+    </section>
+  )
+}
+
+function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales: boolean; group: ActivityGroup; days: number; onGroup: (g: ActivityGroup) => void; onDays: (d: number) => void }>) {
+  // One fixed "now" per filter: a path that includes the current time would change on every render and refetch forever.
+  const [now] = useState(() => new Date())
+  const first = useApi<ActivityFeedItem[]>(activityPath(sales, group, days, null, now))
+  const [more, setMore] = useState<ActivityFeedItem[]>([])
+  const [lastPage, setLastPage] = useState<number | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [moreError, setMoreError] = useState<Error>()
+  const items = [...(first.data ?? []), ...more]
+  const canLoadMore = first.data !== undefined && hasMore(lastPage ?? first.data.length)
+
+  async function loadMore() {
+    const oldest = items[items.length - 1]
+    if (!oldest) return
+    setLoadingMore(true); setMoreError(undefined)
+    try {
+      const page = await api<ActivityFeedItem[]>(activityPath(sales, group, days, oldest.at, now))
+      setMore((m) => [...m, ...page])
+      setLastPage(page.length)
+    } catch (e) { setMoreError(e as Error) } finally { setLoadingMore(false) }
+  }
+
+  return (
+    <Card title="My activity" actions={<span className="muted-small">newest first</span>}>
+<div className="stack-3">
+        <ActivityPulseBar sales={sales} />
+        <div className="toolbar">
+          <div className="segmented" role="group" aria-label="Kind of activity">
+            {ACTIVITY_GROUPS.map((g) => (
+              <button key={g.key} type="button" className={group === g.key ? 'active' : ''} aria-pressed={group === g.key} onClick={() => onGroup(g.key)}>{g.label}</button>
+            ))}
+          </div>
+          <label className="pill-select">
+            <span>Period</span>
+            <select value={days} onChange={(e) => onDays(Number(e.target.value))}>
+              {ACTIVITY_RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
+            </select>
+          </label>
+        </div>
+        {first.error && <ErrorNotice error={first.error} onRetry={first.reload} what="your activity" />}
+        {first.loading && !first.data && <LoadingState label="Loading your activity…" waking={first.waking} rows={3} />}
+        {first.data?.length === 0 && <p className="muted-small">Nothing recorded for this filter. Searches, approvals, drafts, applications and follow-ups show up here with their date.</p>}
+        {items.length > 0 && (
           <ol className="activity-list">
-            {feed.data.map((x, i) => (
-              <li key={`${x.opportunityId}-${x.at}-${i}`}>
+            {items.map((x, i) => (
+              <li key={`${x.at}-${x.kind}-${i}`}>
                 <time className="muted-small" dateTime={x.at}>{formatWhen(x.at)}</time>
-                <Link to={`/opportunities/${x.opportunityId}`}>{activityLine(x, sales)}</Link>
+                {x.opportunityId ? <Link to={`/opportunities/${x.opportunityId}`}>{activityLine(x, sales)}</Link> : <span>{activityLine(x, sales)}</span>}
               </li>
             ))}
           </ol>
         )}
+        {moreError && <ErrorNotice error={moreError} />}
+        {canLoadMore && <div className="row"><button type="button" className="btn btn-secondary btn-sm" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>}
       </div>
-    </section>
+</Card>
   )
 }
 
@@ -118,18 +192,16 @@ function InsightsView() {
             })}
           </section>
 
-          <section className="panel" data-coach="insights-trend">
-            <header className="panel-head"><h3 className="eyebrow">Activity over time</h3><div className="grow" /><span className="muted-small">last {days} days · per day</span></header>
-            <div className="panel-body stack-3">
+          <Card title="Activity over time" actions={<span className="muted-small">last {days} days · per day</span>} coach="insights-trend">
+<div className="stack-3">
               <p>{trendSummary(workspace, days, t.current, t.previous)}</p>
               <TrendChart points={t.points} series={series} summary={trendSummary(workspace, days, t.current, t.previous)} />
             </div>
-          </section>
+</Card>
 
           <div className="panel-grid-2">
-            <section className="panel" data-coach="insights-progress">
-              <header className="panel-head"><h3 className="eyebrow">Progress</h3></header>
-              <div className="panel-body stack-4">
+            <Card title="Progress" coach="insights-progress">
+<div className="stack-4">
                 <div className="stack-2">
                   <strong>Your path: {stepsDone} of {steps.length} steps done</strong>
                   <ProgressBar pct={Math.round((stepsDone / steps.length) * 100)} label="Steps of the path done" text={`${stepsDone} of ${steps.length}`} />
@@ -148,69 +220,63 @@ function InsightsView() {
                   <p className="muted-small">Last 7 days. The goal is yours to set and is kept in this browser.</p>
                 </div>
               </div>
-            </section>
+</Card>
 
-            <section className="panel">
-              <header className="panel-head"><h3 className="eyebrow">Funnel</h3><div className="grow" /><span className="muted-small">last {days} days</span></header>
-              <div className="panel-body stack-3">
+            <Card title="Funnel" actions={<span className="muted-small">last {days} days</span>}>
+<div className="stack-3">
                 <HBars
                   rows={funnelRows(workspace, t.current).map((r) => ({ label: r.label, value: r.count, note: r.fromPrevious === null ? undefined : `${r.fromPrevious}% of previous` }))}
                   empty="Nothing found yet."
                 />
                 <p className="muted-small">Each step is counted once per {sales ? 'company' : 'job'}, the first time it got there.</p>
               </div>
-            </section>
+</Card>
           </div>
 
           <ActivityPanel sales={sales} />
 
           {a && (
             <div className="panel-grid-3">
-              <section className="panel">
-                <header className="panel-head"><h3 className="eyebrow">How well they fit</h3></header>
-                <div className="panel-body stack-2">
+              <Card title="How well they fit">
+<div className="stack-2">
                   <HBars rows={trimBands(a.fitHistogram.bands).map((b) => ({ label: `${b.from}–${b.to}`, value: b.count }))} empty="No scores yet." />
                   <p className="muted-small">Match score of everything found, in bands of ten. A ranking against your criteria, not a chance of success.</p>
                 </div>
-              </section>
-              <section className="panel">
-                <header className="panel-head"><h3 className="eyebrow">Where results come from</h3></header>
-                <div className="panel-body stack-2">
+</Card>
+              <Card title="Where results come from">
+<div className="stack-2">
                   <HBars
                     rows={a.sources.slice(0, 6).map((s) => ({ label: s.label, value: s.qualified, note: `of ${s.read} read${s.failing ? ' · failing' : ''}` }))}
                     empty="No source has run yet."
                   />
                   <p className="muted-small">Qualified results per source, out of what it read.</p>
                 </div>
-              </section>
+</Card>
               {sales ? (
-                <section className="panel">
-                  <header className="panel-head"><h3 className="eyebrow">Industries and signals</h3></header>
-                  <div className="panel-body stack-3">
+                <Card title="Industries and signals">
+<div className="stack-3">
                     <HBars rows={(a.qualifiedByIndustry ?? []).map((x) => ({ label: x.industry, value: x.count }))} empty="No industry matched yet." />
                     <HBars rows={(a.signalsFound ?? []).slice(0, 5).map((x) => ({ label: x.signal, value: x.count }))} empty="No buying signal matched yet." />
                   </div>
-                </section>
+</Card>
               ) : (
-                <section className="panel">
-                  <header className="panel-head"><h3 className="eyebrow">Needs your attention</h3></header>
-                  <div className="panel-body">
+                <Card title="Needs your attention">
+<div className="stack-3">
                     {a.attention.length === 0
                       ? <p className="muted-small">Nothing is waiting on you.</p>
                       : <ul className="plain-list stack-2">{a.attention.map((x) => <li key={x.kind}>{x.detail}</li>)}</ul>}
                   </div>
-                </section>
+</Card>
               )}
             </div>
           )}
 
-          <section className="panel">
-            <header className="panel-head"><h3 className="eyebrow">Market view</h3></header>
-            <div className="panel-body row wrap">
+          <Card title="Market view">
+<div className="row wrap">
               <p className="grow">Which skills and companies are in demand right now comes from live job boards, not from your records, so it lives under Find ({sales ? 'Find companies' : 'Find jobs'} → Trends) with its source and sample size shown.</p>
               <Link className="btn btn-secondary btn-sm" to="/wellfound?tab=trends">Open hiring trends</Link>
             </div>
-          </section>
+</Card>
         </>
       )}
     </div>

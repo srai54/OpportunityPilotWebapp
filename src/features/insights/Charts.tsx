@@ -122,12 +122,4 @@ export function HBars({ rows, unit = '', empty }: Readonly<{ rows: { label: stri
   )
 }
 
-/** A progress bar with its words: "6 of 10". */
-export function ProgressBar({ pct, label, text }: Readonly<{ pct: number; label: string; text: string }>) {
-  return (
-    <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label} aria-valuetext={text}>
-      <div className="progress-track"><i style={{ width: `${pct}%` }} /></div>
-      <span className="progress-text op-numeric">{text}</span>
-    </div>
-  )
-}
+export { ProgressBar } from '../../components/ProgressBar'

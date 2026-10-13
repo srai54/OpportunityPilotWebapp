@@ -28,7 +28,7 @@ export const COACH_FLOWS: CoachFlow[] = [
     steps: [
       { target: 'find-search', title: '1. Type a role and a place', body: 'A role is enough. Press Search — real postings appear below, each linked to the original.', sales: { body: 'A role is enough. Press Search — companies that are hiring appear below, each linked to the original posting.' } },
       { target: 'find-filters', title: '2. Narrow it down', body: 'More filters has date, job type, experience, distance, country, pay shown only and more. Optional.' },
-      { target: 'find-tabs', title: '3. Try another site', body: 'Switch between Wellfound, Indeed, LinkedIn and SEEK. The Trends tab shows which skills are asked for most.' },
+      { target: 'find-tabs', title: '3. Try another site', body: 'All sites reads Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK and Himalayas for free, plus LinkedIn, Indeed and SEEK. Or pick one site. Trends shows which skills are asked for most.' },
       { target: 'find-campaign', title: '4. Keep what you find', body: 'Start a campaign from this search: every job is scored against your profile and the best are suggested for you to approve.', sales: { body: 'Start a campaign from this search: every company is scored against your profile and the best become leads for you to approve.' } },
     ],
   },
@@ -36,8 +36,15 @@ export const COACH_FLOWS: CoachFlow[] = [
     id: 'campaign', label: 'New campaign',
     steps: [
       { target: 'quick-role', title: '1. What and where', body: 'Say what to look for. Add a place if it matters.' },
-      { target: 'quick-source', title: '2. Where to look', body: 'Pick a job site, or one company\'s board.' },
+      { target: 'quick-source', title: '2. Where to look', body: 'All free sites at once, one site, or one company\'s board. LinkedIn, Indeed and SEEK use your monthly search allowance.', sales: { body: 'Pick LinkedIn, Indeed or SEEK. Each hiring company found becomes a lead.' } },
       { target: 'quick-run', title: '3. Run it', body: 'It reads the jobs, scores them, and takes you straight to the ones to review. Nothing is applied for you.', sales: { body: 'It reads who is hiring, scores them, and takes you straight to the leads to review. Nothing is sent for you.' } },
+    ],
+  },
+  {
+    id: 'campaigns', label: 'Campaigns',
+    steps: [
+      { target: 'campaigns-new', title: 'Start another search', body: 'A campaign is one saved search. Pick a role, a place and the sites to read — free sites need no key.' },
+      { target: 'campaigns-table', title: 'Open one to see what it found', body: 'Each row shows how many it found and when it last ran. Open the Next step link to review the results.', sales: { body: 'Each row shows how many companies it found and when it last ran. Open the Next step link to review the leads.' } },
     ],
   },
   {

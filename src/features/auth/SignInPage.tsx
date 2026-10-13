@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { ApiError, ApiStillUnreachableError, ApiUnreachableError } from '../../lib/api'
 import { isWakingError, wakeRetryDelay } from '../../lib/wakeRetry'
-import { AuthCardHeader, AuthLayout, Divider, GoogleButton, PasswordField } from './AuthLayout'
+import { AuthCardHeader, AuthLayout, AuthTabs, Divider, PasswordField, ProviderButtons } from './AuthLayout'
 import { AUTH_PATHS, KEEP_SIGNED_IN_KEY, readFlag } from './authModel'
 import { useAuth } from './AuthContext'
 
@@ -12,7 +12,7 @@ const WAKE_NOTE =
 
 /** Design AuthSignIn: email + password, Google, keep signed in, forgot link, and "Continue as guest". */
 export function SignInPage() {
-  const { mode, sessionExpired, devSignIn, guestSignIn, passwordSignIn, googleSignIn } = useAuth()
+  const { mode, sessionExpired, devSignIn, guestSignIn, passwordSignIn, googleSignIn, microsoftSignIn } = useAuth()
   const accounts = mode === 'supabase'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -69,10 +69,10 @@ export function SignInPage() {
     }
   }
 
-  async function google() {
+  async function provider(go: () => Promise<void>) {
     setError(null)
     try {
-      await googleSignIn()
+      await go()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -91,6 +91,7 @@ export function SignInPage() {
       asideItems={['Candidates looking for roles', 'Sales teams looking for customers']}
       footnote={WAKE_NOTE}
     >
+      {accounts && <AuthTabs active="signin" />}
       <AuthCardHeader title="Sign in" subtitle="Welcome back." />
 
       {sessionExpired && (
@@ -114,8 +115,8 @@ export function SignInPage() {
         </form>
       ) : accounts ? (
         <form onSubmit={submit} className="stack-3">
-          <GoogleButton label="Continue with Google" onClick={() => void google()} disabled={busy} />
-          <Divider label="or" />
+          <ProviderButtons verb="Continue" onGoogle={() => void provider(googleSignIn)} onMicrosoft={() => void provider(microsoftSignIn)} disabled={busy} />
+          <Divider label="or use your email" />
           <div className="field">
             <label htmlFor="email">Email</label>
             <input
@@ -155,8 +156,10 @@ export function SignInPage() {
         </form>
       ) : (
         <p className="notice notice-neutral">
-          <strong>Accounts are not switched on for this deployment yet.</strong> Email and Google sign-in appear here
-          once the Supabase sign-in keys are set. Until then, continue as a guest.
+          <strong>Accounts are not switched on for this deployment yet.</strong> Sign in, Create account, Microsoft, Google and
+          two-step sign-in appear here once the site owner sets these two variables on Vercel and redeploys:
+          <br /><code>VITE_SUPABASE_URL</code><br /><code>VITE_SUPABASE_PUBLISHABLE_KEY</code><br />
+          Until then, continue as a guest.
         </p>
       )}
 
@@ -178,11 +181,6 @@ export function SignInPage() {
         </div>
       )}
 
-      {accounts && (
-        <footer className="auth-card-foot">
-          New here? <Link to={AUTH_PATHS.signup}>Create an account</Link>
-        </footer>
-      )}
     </AuthLayout>
   )
 }

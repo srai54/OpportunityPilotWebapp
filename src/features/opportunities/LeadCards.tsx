@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardList, LeadCard } from '../../components/cards'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
 import { leadChips } from '../../components/cardModel'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { api, ApiError } from '../../lib/api'
@@ -137,3 +139,45 @@ export function BulkDraftCard({ ids, noun, onCancel }: Readonly<{ ids: string[];
   )
 }
 
+
+/**
+ * "Apply to all approved": one approval for the batch, then each posting is opened for you to submit yourself. Press "I applied" to
+ * record it (it moves to Applied and a follow-up starts), or "Skip". Nothing is submitted by the app.
+ */
+export function ApplyQueue({ items, onApplied, onClose }: Readonly<{ items: OpportunitySummary[]; onApplied: (o: OpportunitySummary) => Promise<boolean>; onClose: () => void }>) {
+  const [list] = useState(items)
+  const [index, setIndex] = useState(0)
+  const [applied, setApplied] = useState(0)
+  const [busy, setBusy] = useState(false)
+  const current = list[index]
+  const link = current ? current.applyUrl ?? current.url : null
+
+  async function done(didApply: boolean) {
+    if (didApply && current) {
+      setBusy(true)
+      const ok = await onApplied(current)
+      setBusy(false)
+      if (!ok) return
+      setApplied((n) => n + 1)
+    }
+    setIndex((i) => i + 1)
+  }
+
+  if (list.length === 0) return <Card tone="muted" title="Nothing to apply to"><p>Select approved jobs that have a posting link, then choose Apply.</p><button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Close</button></Card>
+  if (!current) return <Card title="Queue finished"><ProgressBar pct={percentOf(applied, list.length)} label="Marked as applied" text={`${applied} of ${list.length}`} tone="success" /><p>{applied} marked as applied out of {list.length}.</p><button type="button" className="btn btn-primary btn-sm" onClick={onClose}>Close</button></Card>
+  return (
+    <Card title={`Apply — ${index + 1} of ${list.length}`} subtitle="Open the posting, apply there, then come back and press “I applied”.">
+      <div className="stack-3">
+        <ProgressBar pct={percentOf(index, list.length)} label="Postings handled" text={`${index} of ${list.length} · ${applied} applied`} size="sm" />
+        <p><strong>{current.title}</strong>{current.organization ? ` · ${current.organization}` : ''}</p>
+        <div className="row wrap">
+          {link && <a className="btn btn-primary btn-sm" href={link} target="_blank" rel="noopener noreferrer">{applyLabel(current.platform)} ↗<span className="sr-only"> (opens in a new tab)</span></a>}
+          <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={() => void done(true)}>I applied</button>
+          <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => void done(false)}>Skip</button>
+          <span className="grow" />
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Stop</button>
+        </div>
+      </div>
+    </Card>
+  )
+}

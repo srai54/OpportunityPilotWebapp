@@ -98,10 +98,10 @@ export function jobSignature(job: ResearchJob): string {
 /** Plain-language explanation of each state, so a sleeping host is never read as an AI failure. */
 export const STATE_EXPLANATIONS: Record<ResearchJobState, string> = {
   Queued:
-    'Waiting for the research worker to pick this up. On free hosting the API sleeps when idle, so the first run after a quiet spell can take a minute to start.',
-  Running: 'The worker is processing your sources. You can leave this page — the job keeps running on the server.',
-  Completed: 'Every source was processed.',
-  CompletedWithGaps: 'Finished, but at least one source failed. Results from the other sources are kept.',
+    'Waiting to start. The free server sleeps when idle, so the first search after a quiet spell can take a minute.',
+  Running: 'Reading the sites you chose. You can leave this page — the search keeps running.',
+  Completed: 'Done. Everything you chose was read.',
+  CompletedWithGaps: 'Finished, but at least one site did not answer. Results from the others are kept.',
   Failed: 'The run stopped on an unexpected error. Results written before it stopped are kept.',
   Cancelled: 'Cancelled at your request. Results found before the cancel are kept.',
 }

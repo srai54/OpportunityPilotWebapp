@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { Icon } from '../../components/icons'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
+import { journeySteps } from '../journey/journeyModel'
 import { api, ApiUnreachableError, isDegraded } from '../../lib/api'
 import type { Capabilities, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
@@ -239,6 +242,8 @@ export function AppShell() {
   const apiLabel = API_STATUS_LABELS[apiStatus]
   const gmailStatus = gmail && gmailLabel(gmail)
   const aiMode = gemini && aiModeLabel(gemini)
+  const pathSteps = journeySteps(workspace, overview.data)
+  const pathDone = pathSteps.filter((s) => s.done).length
   const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : [])]
 
   const railClass = ['rail', collapsed && 'rail-collapsed', drawerOpen && 'rail-open'].filter(Boolean).join(' ')
@@ -303,7 +308,7 @@ export function AppShell() {
                           data-tip={collapsed ? name : undefined}
                           onClick={drawerOpen ? closeDrawer : undefined}
                         >
-                          <Icon name={n.icon} size={collapsed ? 18 : 16} className="rail-icon" />
+                          <span className="rail-tile"><Icon name={n.icon} size={collapsed ? 18 : 16} className="rail-icon" /></span>
                           {collapsed ? (
                             n.count?.tone === 'attention' && count !== null && <span className="nav-dot" aria-hidden="true" />
                           ) : (
@@ -332,6 +337,12 @@ export function AppShell() {
           </div>
 
           <div className="rail-footer">
+            {!collapsed && (
+              <div className="rail-path">
+                <span className="rail-path-title">Your path</span>
+                <ProgressBar pct={percentOf(pathDone, pathSteps.length)} label="Steps of your path done" text={`${pathDone} of ${pathSteps.length}`} size="sm" tone={pathDone === pathSteps.length ? 'success' : 'primary'} />
+              </div>
+            )}
             {statuses.map((s) => (
               <div key={s.text} className="rail-status" title={collapsed ? s.text : undefined}>
                 <span className={`dot dot-${s.tone}`} aria-hidden="true" />

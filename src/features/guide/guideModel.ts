@@ -1,109 +1,27 @@
-/** Text for /how-it-works. It describes what this build does; keep it in step with the API and agent. */
+import type { IconName } from '../../components/icons'
 
-export interface GuideStep {
+/** How it works: five short steps, the same ones as the bar at the top of the app. */
+export interface FlowStep {
   title: string
-  what: string
-  where: string
-  link?: { to: string; label: string }
+  /** One short line, in the words of each workspace. */
+  candidate: string
+  sales: string
+  to: string
+  action: string
+  icon: IconName
 }
 
-export const PIPELINE_STEPS: GuideStep[] = [
-  {
-    title: 'Profile',
-    what: 'You describe what you offer in your own words and confirm each claim. Fit is judged against it; nothing is invented for you.',
-    where: 'Profiles',
-    link: { to: '/profiles', label: 'Profiles' },
-  },
-  {
-    title: 'Campaign',
-    what: 'One search: a mode (Jobs or Customers), your criteria — keywords, skills, places, years, exclusions — and the sources to read.',
-    where: 'Campaigns → builder',
-    link: { to: '/campaigns', label: 'Campaigns' },
-  },
-  {
-    title: 'Gather',
-    what: 'The server reads each source. Greenhouse lists the whole board and keeps titles that match your keywords; Lever reads postings. A per-run budget is shared fairly across sources.',
-    where: 'Research run → event log',
-  },
-  {
-    title: 'Dedupe and extract',
-    what: 'The same posting seen twice becomes one opportunity. Rules (no AI) pull out skills, years asked, location and work mode. Missing facts stay Unknown.',
-    where: 'Opportunity → Facts',
-  },
-  {
-    title: 'Filter',
-    what: 'Hard rules run first: a clear miss is Excluded with its reason; unknown on a hard rule is Needs verification, never a pass.',
-    where: 'Opportunities → Outcome',
-    link: { to: '/opportunities', label: 'Opportunities' },
-  },
-  {
-    title: 'Score',
-    what: 'Each criterion is Met, Partly, Not met or Unknown (zero). Fit is out of 100 — a ranking, not a chance. Coverage says how much rests on evidence.',
-    where: 'Opportunity → How the score was built',
-  },
-  {
-    title: 'Suggest and approve',
-    what: 'Jobs at or above your threshold wait in Approvals. You approve a batch in one pass; approved jobs become Shortlisted. Nothing is applied yet.',
-    where: 'Approvals',
-    link: { to: '/approvals', label: 'Approvals' },
-  },
-  {
-    title: 'Apply',
-    what: 'Open the application page of a shortlisted job, apply on the company or job-board site yourself, then mark it applied.',
-    where: 'Opportunities',
-    link: { to: '/opportunities', label: 'Opportunities' },
-  },
-  {
-    title: 'Track',
-    what: 'Applied status, agent results and the funnel from read to responded — every number from stored data.',
-    where: 'Overview',
-    link: { to: '/', label: 'Overview' },
-  },
+export const FLOW_STEPS: FlowStep[] = [
+  { title: 'Profile', icon: 'profiles', candidate: 'Tell it what you offer and your skills.', sales: 'Tell it what you sell and who it is for.', to: '/profiles/new', action: 'Open profiles' },
+  { title: 'Find', icon: 'search', candidate: 'Search every job site at once.', sales: 'Find companies that are hiring right now.', to: '/wellfound', action: 'Start a search' },
+  { title: 'Review', icon: 'approvals', candidate: 'Each job gets a score and a reason. Approve the good ones.', sales: 'Each company gets a score and a reason. Approve the good ones.', to: '/opportunities', action: 'See matches' },
+  { title: 'Reach out', icon: 'mail', candidate: 'Apply, or send a short message you have approved.', sales: 'Send a short message you have approved.', to: '/outreach', action: 'Open messages' },
+  { title: 'Follow up', icon: 'refresh', candidate: 'See what you sent and nudge in a few days.', sales: 'See what you sent and nudge in a few days.', to: '/follow-ups', action: 'See follow-ups' },
 ]
 
-export const SOURCE_CHECKS: { source: string; add: string; log: string; needs: string }[] = [
-  {
-    source: 'Greenhouse board',
-    add: 'The company board slug, e.g. stripe (from boards.greenhouse.io/stripe)',
-    log: 'Greenhouse board stripe: 718 jobs listed, 145 matched your keywords, 24 read.',
-    needs: 'Nothing',
-  },
-  {
-    source: 'Lever board',
-    add: 'The company slug, e.g. leverdemo (from jobs.lever.co/leverdemo)',
-    log: 'Lever company leverdemo: 11 postings listed, 11 read.',
-    needs: 'Nothing',
-  },
-  {
-    source: 'Adzuna (India)',
-    add: 'Keywords and location come from the campaign',
-    log: 'Adzuna job search: searched 2 keywords in India, 40 jobs found, 20 read.',
-    needs: 'Server keys',
-  },
-  {
-    source: 'Pasted text / CSV',
-    add: 'Postings or company notes you copied; CSV is previewed before it commits',
-    log: 'Pasted text: read 3 pasted items. · CSV upload: read 40 of 42 rows.',
-    needs: 'Nothing',
-  },
-  {
-    source: 'Public URL / RSS feed',
-    add: 'A careers page or a feed you are allowed to read',
-    log: 'Public URL: fetched 1 page (12,480 characters of text). · Feed: read 12 feed entries.',
-    needs: 'Nothing',
-  },
-  {
-    source: 'Local agent — LinkedIn / Naukri',
-    add: 'Run npm run agent -- collect linkedin --campaign <id> on your computer',
-    log: 'Local agent · LinkedIn: read 30 of 30 rows.',
-    needs: 'Agent key',
-  },
-]
-
-export const GUIDE_LIMITS = [
-  'It never applies, sends or bids without your approval, and never in bulk.',
-  'It does not guess: a fact no source supplies stays Unknown and scores zero.',
-  'Greenhouse, Lever and Adzuna applications are submitted by you — their apply APIs need the employer’s key.',
-  'Emails, LinkedIn messages, contact forms, proposals and bids are drafted and approved here, then sent by you; you record the receipt. Gmail, Freelancer.com and Upwork connections need their keys first.',
-  'On free hosting the API sleeps when idle; the first request can take up to a minute.',
+/** What stays true everywhere. Three short lines. */
+export const ALWAYS_TRUE = [
+  'You approve before anything is sent or applied.',
+  'Unknown facts stay unknown and score zero.',
+  'Every job links to its original posting.',
 ]

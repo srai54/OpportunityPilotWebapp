@@ -37,7 +37,7 @@ export function SchedulePanel({ campaignId }: { campaignId: string }) {
   const firstUtc = first ? zonedToUtc(first, tz) : null
   if (!all.data) return null
   return <section className="panel">
-    <header className="panel-head"><h3 className="eyebrow">Run on a schedule</h3>
+    <header className="panel-head"><h3 className="eyebrow">Repeat this search</h3>
       {current && <Badge tone={current.paused ? 'neutral' : 'success'}>{current.paused ? 'Paused' : cadenceLabel(current.cadenceMinutes)}</Badge>}</header>
     <div className="panel-body stack-2">
       {current && <p className="small">

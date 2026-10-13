@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  quickSourceBodies, repeatLabel,
   cadenceLabel,
   modeCopy,
   campaignFilterCounts,
@@ -316,5 +317,22 @@ describe('searchSourceBlocker', () => {
   it('lets a run through with keywords or other sources', () => {
     expect(searchSourceBlocker(['JobSearch'], { ...empty, keywords: ['react'] }, 'Job')).toBeNull()
     expect(searchSourceBlocker(['Greenhouse'], empty, 'Job')).toBeNull()
+  })
+})
+
+describe('quickSourceBodies', () => {
+  it('adds every free feed for "all free sites", one feed, one company board or one search site', () => {
+    expect(quickSourceBodies('FreeFeeds', '').map((b) => b.kind)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk'])
+    expect(quickSourceBodies('Remotive', '')).toEqual([{ kind: 'Remotive' }])
+    expect(quickSourceBodies('Greenhouse', 'stripe')).toEqual([{ kind: 'Greenhouse', url: 'stripe' }])
+    expect(quickSourceBodies('Seek', '')).toEqual([{ kind: 'JobSearch', url: 'Seek' }])
+  })
+})
+
+describe('repeatLabel', () => {
+  it('says not scheduled, paused, or the cadence with the next run', () => {
+    expect(repeatLabel(undefined)).toBe('Not scheduled')
+    expect(repeatLabel({ cadenceMinutes: 1440, nextRunAt: '2026-10-14T09:00:00Z', paused: true })).toBe('Paused')
+    expect(repeatLabel({ cadenceMinutes: 1440, nextRunAt: '2026-10-14T09:00:00Z', paused: false })).toMatch(/^Daily · next /)
   })
 })

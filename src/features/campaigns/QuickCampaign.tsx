@@ -1,5 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
+import { placeFor } from '../suggest/picks'
+import { QuickPicks } from '../suggest/QuickPicks'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
@@ -10,18 +12,34 @@ import { useApi } from '../../lib/useApi'
 import { splitTags } from '../profiles/profileFields'
 import { useShell } from '../shell/ShellContext'
 import {
-  campaignPayload, newDraft, parseBoardInput, SEARCH_BOARDS, suggestedMode,
+  CADENCES, campaignPayload, firstRepeatAt, newDraft, parseBoardInput, quickSourceBodies, SEARCH_BOARDS, suggestedMode,
   type BoardKind, type SupportedMode,
 } from './campaignModel'
 
-type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Greenhouse' | 'Lever'
+type FeedChoice = 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk'
+type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Greenhouse' | 'Lever' | 'FreeFeeds' | FeedChoice
 
 const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` }))
-/** Candidates can also read one company's own board; Sales cannot (a board lists jobs, and a Sales campaign needs the hiring company). */
+/** The free public feeds: no key, no quota. Candidates only (a feed lists jobs, and a Sales campaign needs the hiring company). */
+const FEEDS: { value: FeedChoice; label: string }[] = [
+  { value: 'Arbeitnow', label: 'Arbeitnow (Germany, Europe, remote)' },
+  { value: 'Jobicy', label: 'Jobicy (remote)' },
+  { value: 'WeWorkRemotely', label: 'We Work Remotely' },
+  { value: 'Remotive', label: 'Remotive (remote)' },
+  { value: 'RemoteOk', label: 'Remote OK' },
+]
+const ALL_FREE: { value: SourceChoice; label: string }[] = [{ value: 'FreeFeeds', label: 'All free sites at once (no key needed)' }]
+const SITE_NAMES: Record<string, string> = { Seek: 'SEEK', FreeFeeds: 'free sites', WeWorkRemotely: 'We Work Remotely', RemoteOk: 'Remote OK' }
+/** Candidates can also read one company's own board; Sales cannot. */
 const BOARDS: { value: SourceChoice; label: string }[] = [
   { value: 'Greenhouse', label: 'One company\'s Greenhouse board' },
   { value: 'Lever', label: 'One company\'s Lever board' },
 ]
+
+/** What you said you want after the search ("apply" or "send"); the Review screen shows it once as a hint, then forgets it. */
+function rememberNext(next: string | null) {
+  try { if (next === 'apply' || next === 'send') sessionStorage.setItem('op.then', next); else sessionStorage.removeItem('op.then') } catch { /* the hint is optional */ }
+}
 
 /**
  * The simple way to start: what to find, where, and one source — then Create & run. Everything else (weights, hard filters,
@@ -35,10 +53,12 @@ export function QuickCampaign() {
   const [profileId, setProfileId] = useState(params.get('profile') ?? '')
   const [query, setQuery] = useState(params.get('keywords') ?? '')
   const [place, setPlace] = useState(params.get('location') ?? '')
-  const choices = workspace === 'sales' ? SEARCHES : [...SEARCHES, ...BOARDS]
+  const choices = workspace === 'sales' ? SEARCHES : [...ALL_FREE, ...SEARCHES, ...FEEDS, ...BOARDS]
   const preferred = choices.find((c) => c.value === params.get('board'))?.value
-  const [source, setSource] = useState<SourceChoice>(preferred ?? 'LinkedIn')
+  const [source, setSource] = useState<SourceChoice>(preferred ?? (workspace === 'sales' ? 'LinkedIn' : 'FreeFeeds'))
   const [token, setToken] = useState('')
+  const [repeat, setRepeat] = useState(() => (CADENCES.some((c) => c.minutes === Number(params.get('repeat'))) ? Number(params.get('repeat')) : 0))
+  const autoStarted = useRef(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
 
@@ -58,30 +78,44 @@ export function QuickCampaign() {
   ].filter(Boolean) as string[]
   const fullPath = `/campaigns/new?full=1${query ? `&keywords=${encodeURIComponent(query)}` : ''}${place ? `&location=${encodeURIComponent(place)}` : ''}`
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
+  // Started from the command bar: everything is filled in and was confirmed there, so run once the profile is known.
+  const wantsAuto = params.get('auto') === '1'
+  useEffect(() => {
+    if (!wantsAuto || autoStarted.current || !chosen || problems.length > 0 || busy) return
+    autoStarted.current = true
+    void submit()
+    // One-shot start; submit reads the current form state.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsAuto, chosen, problems.length, busy])
+
+  async function submit(event?: FormEvent) {
+    event?.preventDefault()
     if (problems.length || !chosen || busy) return
     setBusy(true); setError(undefined)
     try {
       const draft = newDraft()
       const keywords = query.trim() ? [query.trim().slice(0, 200)] : []
-      draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${source === 'Seek' ? 'SEEK' : source}`
+      const siteName = SITE_NAMES[source] ?? source
+      draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${siteName}`
       draft.goal = keywords.length ? `Find ${keywords[0]}${place.trim() ? ` in ${place.trim()}` : ''}.` : ''
       draft.criteria = { ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }
       // Suggest anything reasonable for approval so the first run has something to approve.
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
       const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode) }) })
-      const sourceBody = source === 'Greenhouse' || source === 'Lever'
-        ? { kind: source, url: board && 'token' in board ? board.token : token.trim() }
-        : { kind: 'JobSearch', url: source }
+      const sourceBodies = quickSourceBodies(source, (board && 'token' in board ? board.token : undefined) ?? token.trim())
       try {
-        await api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(sourceBody) })
+        await Promise.all(sourceBodies.map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
       } catch (e) {
         // The campaign exists; let the person fix the source in the full builder instead of losing it.
         navigate(`/campaigns/${campaign.id}/edit?step=3`, { replace: true })
         throw e
       }
       const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
+      rememberNext(params.get('then'))
+      if (repeat > 0) {
+        // This run already started; the schedule begins one interval later. A failure here must not lose the run.
+        await api(`/api/v1/campaigns/${campaign.id}/schedule`, { method: 'PUT', body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', cadenceMinutes: repeat, nextRunAt: firstRepeatAt(repeat), paused: false, expectedVersion: null }) }).catch(() => undefined)
+      }
       navigate(`/research/${jobId}`)
     } catch (e) {
       setError(e as Error)
@@ -104,8 +138,18 @@ export function QuickCampaign() {
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>
+      <QuickPicks onRole={setQuery} onPlace={(pick) => setPlace(placeFor(pick).remote && !placeFor(pick).location ? 'Remote' : placeFor(pick).location)} />
       <label className="field" data-coach="quick-source"><span>Where to look</span>
-        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>{choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
+        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>
+          {wantsCandidate && <optgroup label="Free sites">{[...ALL_FREE, ...FEEDS].map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
+          <optgroup label="Job search sites">{SEARCHES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>
+          {wantsCandidate && <optgroup label="One company">{BOARDS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
+        </select></label>
+      <label className="field"><span>Repeat</span>
+        <select value={repeat} onChange={(e) => setRepeat(Number(e.target.value))}>
+          <option value={0}>Run once</option>
+          {CADENCES.map((c) => <option key={c.minutes} value={c.minutes}>{c.label}</option>)}
+        </select></label>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}
       {mode === 'Job' && skills.length > 0 && <p className="muted-small">Results are ranked by your skills: {skills.join(', ')}.</p>}

@@ -1,3 +1,5 @@
+import { ContactFinder } from '../outreach/ContactFinder'
+import { Card } from '../../components/cards'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -49,7 +51,8 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
       setMessage('Follow-up added.'); setDueAt(''); setNote('')
     } catch (e) { setError(e as Error) } finally { setBusy(false) }
   }
-  return <section className="panel" aria-labelledby="outreach-actions-heading"><header className="panel-head"><h3 id="outreach-actions-heading" className="eyebrow">Reach out</h3></header><div className="panel-body stack-3">
+  return <Card title="Reach out">
+<div className="stack-3">
     {error && (needsProfileConfirm(error)
       ? <ProfileConfirmNotice opportunityId={opportunityId} onConfirmed={() => { setError(undefined); void quickDraft(lastQuick) }} />
       : <ErrorNotice error={error} />)}{message && <p className="notice notice-success">{message} <Link to="/outreach">Open outreach</Link></p>}
@@ -62,6 +65,7 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
     {adv && <>
     <label className="field"><span>Draft channel</span><select value={channel} onChange={(e) => setChannel(e.target.value as DraftChannel)}>{CHANNELS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select></label>
     <label className="field"><span>Recipient (required for email approval)</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} /></label>
+    <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />
     <button className="btn btn-secondary btn-sm" type="button" disabled={busy} onClick={createDraft}>Create draft</button>
     <hr />
     <label className="field"><span>Next action</span><select value={kind} onChange={(e) => setKind(e.target.value as NextActionKind)}><option value="FollowUp">Follow up</option><option value="CheckStatus">Check status</option><option value="Call">Call</option><option value="Other">Other</option></select></label>
@@ -69,5 +73,6 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
     <label className="field"><span>Note</span><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} /></label>
     <button className="btn btn-secondary btn-sm" type="button" disabled={busy || !dueAt} onClick={createAction}>Add next action</button>
     </>}
-  </div></section>
+  </div>
+</Card>
 }

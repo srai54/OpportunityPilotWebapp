@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { api, configureApiAuth } from '../../lib/api'
 import { config, supabaseConfigured } from '../../lib/config'
 import { setSessionPersistence, supabase } from '../../lib/supabase'
-import { activeGuestToken, AUTH_PATHS, type StoredGuestSession } from './authModel'
+import { activeGuestToken, AUTH_PATHS, needsMfa, type StoredGuestSession } from './authModel'
 import { AuthContext } from './AuthContext'
 
 /**
@@ -27,6 +27,11 @@ export interface AuthState {
   /** Supabase only. Each throws an Error with Supabase's message on failure. */
   passwordSignIn: (email: string, password: string, keepSignedIn: boolean) => Promise<void>
   googleSignIn: () => Promise<void>
+  microsoftSignIn: () => Promise<void>
+  /** Signed in with a password or provider, but the account's authenticator-app code has not been entered yet. */
+  mfaRequired: boolean
+  /** Re-reads the assurance level after a code was verified or a factor was added or removed. */
+  refreshMfa: () => Promise<void>
   signUp: (name: string, email: string, password: string) => Promise<SignUpResult>
   resendVerification: (email: string) => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
@@ -86,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(mode !== 'supabase')
   const [sessionExpired, setSessionExpired] = useState(false)
   const [recovering, setRecovering] = useState(false)
+  const [mfaRequired, setMfaRequired] = useState(false)
   const refreshPromise = useRef<Promise<Session | null> | null>(null)
 
   useEffect(() => {
@@ -106,6 +112,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     return () => data.subscription.unsubscribe()
   }, [])
+
+  const refreshMfa = useCallback(async () => {
+    if (!supabase) return
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    setMfaRequired(!error && needsMfa(data))
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    if (!session) return
+    let live = true
+    void supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data, error }) => { if (live) setMfaRequired(!error && needsMfa(data)) })
+    return () => { live = false }
+  }, [session])
 
   const signOut = useCallback(async () => {
     if (supabase) await supabase.auth.signOut()
@@ -198,6 +218,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         if (error) throw new Error(error.message)
       },
+      microsoftSignIn: async () => {
+        const { error } = await requireSupabase().auth.signInWithOAuth({
+          provider: 'azure',
+          options: { redirectTo: origin(), scopes: 'email' },
+        })
+        if (error) throw new Error(error.message)
+      },
+      mfaRequired: session ? mfaRequired : false,
+      refreshMfa,
       signUp: async (name, email, password) => {
         const { data, error } = await requireSupabase().auth.signUp({
           email,
@@ -230,7 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRecovering(false)
       },
     }
-  }, [mode, ready, session, devUser, guestToken, sessionExpired, recovering, signOut])
+  }, [mode, ready, session, devUser, guestToken, sessionExpired, recovering, signOut, mfaRequired, refreshMfa])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

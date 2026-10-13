@@ -746,7 +746,8 @@ export interface ActivityFeedItem {
   at: string
   kind: string
   detail: string
-  opportunityId: string
+  /** null for things that belong to no job or lead (a search, a saved profile). */
+  opportunityId: string | null
   title: string
   organization: string
 }

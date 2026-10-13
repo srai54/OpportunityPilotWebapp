@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { AUTH_PATHS } from './authModel'
 import { MIN_PASSWORD, passwordStrength } from './authModel'
 
 export function BrandMark({ size = 22 }: { size?: number }) {
@@ -95,6 +97,29 @@ export function GoogleButton({ label, onClick, disabled }: { label: string; onCl
       </span>
       {label}
     </button>
+  )
+}
+
+/** The two sign-in choices every account screen leads with: one tap, no password to remember. Neutral marks, not brand logos. */
+export function ProviderButtons({ verb, onGoogle, onMicrosoft, disabled }: { verb: 'Continue' | 'Sign up'; onGoogle: () => void; onMicrosoft: () => void; disabled?: boolean }) {
+  return (
+    <div className="auth-providers">
+      <button type="button" className="btn btn-secondary auth-wide" onClick={onMicrosoft} disabled={disabled}>
+        <span className="auth-provider-mark auth-provider-ms" aria-hidden="true">M</span>
+        {verb} with Microsoft
+      </button>
+      <GoogleButton label={`${verb} with Google`} onClick={onGoogle} disabled={disabled} />
+    </div>
+  )
+}
+
+/** Sign in and Create account side by side, so a new visitor never has to look for the other one. */
+export function AuthTabs({ active }: { active: 'signin' | 'signup' }) {
+  return (
+    <nav className="auth-tabs" aria-label="Account">
+      <Link to={AUTH_PATHS.signin} aria-current={active === 'signin' ? 'page' : undefined}>Sign in</Link>
+      <Link to={AUTH_PATHS.signup} aria-current={active === 'signup' ? 'page' : undefined}>Create account</Link>
+    </nav>
   )
 }
 

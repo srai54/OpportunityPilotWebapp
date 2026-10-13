@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Icon } from './icons'
 import { ApiError, ApiStillUnreachableError, ApiUnreachableError } from '../lib/api'
 
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -30,10 +31,8 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
     return (
       <section className="state state-error" role="alert">
         <div className="row">
-          <span className="state-error-icon" aria-hidden="true">
-            ⚠
-          </span>
-          <h3 className="state-title">Could not load {what}</h3>
+          <span className="state-error-icon" aria-hidden="true"><Icon name="alert" size={18} /></span>
+          <h2 className="state-title">Could not load {what}</h2>
         </div>
         <p className="state-text">{text} Your data is untouched.</p>
         {correlationId && (
@@ -44,7 +43,7 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
         <div className="state-actions">
           {onRetry && (
             <button type="button" className="btn btn-primary btn-sm" onClick={onRetry}>
-              ↻ Try again
+              <Icon name="refresh" size={14} /> Try again
             </button>
           )}
           {secondary}

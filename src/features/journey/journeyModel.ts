@@ -115,8 +115,8 @@ export function nextStep(workspace: Workspace, o: Overview | undefined): NextSte
     }
   if (n(o.draftsSent) > 0 || n(o.applied) > 0)
     return {
-      step: 'follow', action: 'Check replies & follow up', to: '/follow-ups',
-      text: n(o.followUpsOpen) > 0 ? 'Follow-ups are scheduled. Check for replies.' : 'Add a follow-up so nothing goes quiet.',
+      step: 'follow', action: 'See what you sent', to: '/follow-ups',
+      text: n(o.followUpsOpen) > 0 ? 'A nudge is scheduled. If someone replied, update that lead.' : 'Sent. If someone replied, update that lead; otherwise nudge them in a few days.',
     }
   return {
     step: 'find', action: sales ? 'Find more companies' : 'Find more jobs', to: '/wellfound',
