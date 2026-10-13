@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
 import { api } from '../../lib/api'
 import type { DraftListItem } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
@@ -38,6 +40,7 @@ export function SendAllCard({ items, onDone }: Readonly<{ items: DraftListItem[]
     return (
       <Card tone={s.failed > 0 ? 'default' : 'signature'} title={s.headline} subtitle={`Accepted by ${name} is recorded as sent. It is not a delivery confirmation.`}
         footer={<button type="button" className="btn btn-secondary btn-sm" onClick={() => setResults(undefined)}>Close</button>}>
+        <ProgressBar pct={percentOf(results.filter((r) => r.outcome === 'Sent').length, results.length)} label="Messages sent" text={`${results.filter((r) => r.outcome === 'Sent').length} of ${results.length} sent`} tone={s.failed > 0 ? 'warning' : 'success'} />
         <ul className="plain-list stack-2" aria-label="Result for each message">
           {s.lines.map((l) => <li key={l.id}><strong>{l.recipient}</strong> · {l.outcome}{l.reason ? ` — ${l.reason}` : ''}</li>)}
         </ul>
@@ -64,6 +67,7 @@ export function SendAllCard({ items, onDone }: Readonly<{ items: DraftListItem[]
           </ul>
         </div>
       )}
+      {busy && <ProgressBar pct={100} active label="Sending" text={`Sending ${shown.length}…`} />}
       {error && <ErrorNotice error={error} />}
     </Card>
   )

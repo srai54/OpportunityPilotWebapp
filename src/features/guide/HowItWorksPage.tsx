@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Card } from '../../components/cards'
+import { Icon } from '../../components/icons'
 import { PageHeader } from '../../components/PageHeader'
 import { useShell } from '../shell/ShellContext'
 import { ALWAYS_TRUE, FLOW_STEPS } from './guideModel'
@@ -13,7 +14,7 @@ export function HowItWorksPage() {
       <ol className="hwf-cards plain-list" aria-label="The five steps">
         {FLOW_STEPS.map((s, i) => (
           <li key={s.title} className="ccard hwf-card">
-            <span className="hwf-icon" aria-hidden="true">{s.icon}</span>
+            <span className="hwf-icon"><Icon name={s.icon} size={20} /></span>
             <span className="hwf-num">Step {i + 1}</span>
             <h2 className="hwf-title">{s.title}</h2>
             <p className="muted">{sales ? s.sales : s.candidate}</p>

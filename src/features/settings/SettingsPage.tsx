@@ -7,6 +7,7 @@ import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { SecurityCard } from '../auth/SecurityCard'
+import { Icon } from '../../components/icons'
 import { MailboxesCard } from '../mail/MailboxesCard'
 import { MAIL_APPS, readMailApp, writeMailApp, type MailApp } from '../outreach/composer'
 import { useShell } from '../shell/ShellContext'
@@ -129,7 +130,7 @@ export function SettingsPage() {
             <ul className="plain-list settings-rules">
               {FIXED_RULES.map(([t, d]) => (
                 <li key={t}>
-                  <span aria-hidden="true">🔒︎</span>
+                  <Icon name="lock" size={16} />
                   <span className="grow">
                     <strong>{t}</strong>
                     <span className="muted-small">{d}</span>

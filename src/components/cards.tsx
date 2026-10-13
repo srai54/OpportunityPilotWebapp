@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { avatarSlot, initialsOf, MATCH_WORDS, matchBand, ringDash, selectedLabel } from './cardModel'
+import { Icon } from './icons'
 import { Badge } from './StatusBadge'
 
 /* The card family (DESIGN.md section 13). In the simple view every list of things is a list of these. */
@@ -148,7 +149,7 @@ export interface StepCardProps {
 export function StepCard({ n, title, text, done, current, action }: Readonly<StepCardProps>) {
   return (
     <li className={`ccard step-card${current ? ' ccard-signature' : ''}${done ? ' is-done' : ''}`} aria-current={current ? 'step' : undefined}>
-      <span className="step-badge" aria-hidden="true">{done ? '✓' : n}</span>
+      <span className="step-badge" aria-hidden="true">{done ? <Icon name="check" size={14} /> : n}</span>
       <div className="step-text">
         <h3 className="step-title">{title}{done && <span className="sr-only"> (done)</span>}</h3>
         <p className="step-sub">{text}</p>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { CommandBar } from '../command/CommandBar'
+import { GrowthStrip } from '../growth/GrowthStrip'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { AnalyticsOverview, Overview } from '../../lib/types'
@@ -75,6 +76,7 @@ export function OverviewPage() {
         </p>
       )}
       {a && !hasAnyActivity(a) && workspace === 'candidate' && <SampleRunCard />}
+      {a && hasAnyActivity(a) && <GrowthStrip />}
       {a && (workspace === 'sales' ? <SalesOverview a={a} overview={overview.data} /> : <CandidateOverview a={a} overview={overview.data} />)}
     </div>
   )

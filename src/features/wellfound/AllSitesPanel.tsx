@@ -7,6 +7,8 @@ import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { safeHref } from '../opportunities/opportunityModel'
 import { RoleList, ROLE_LIST_ID } from '../suggest/RoleList'
+import { placeFor } from '../suggest/picks'
+import { QuickPicks } from '../suggest/QuickPicks'
 import type { Workspace } from '../shell/shellModel'
 import { feedsPath, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
 import { boardJobsPath, campaignFromSearchPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
@@ -64,13 +66,14 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
           <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Place (optional), e.g. Berlin" /></label>
         <button className="btn btn-primary" type="submit" disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Search all sites'}</button>
       </div>
+      <QuickPicks onRole={setQuery} onPlace={(pick) => { const { location: l, remote } = placeFor(pick); setLocation(l); if (remote) setRemoteOnly(true) }} />
       <div className="search-tools row wrap" data-coach="find-filters">
         <label className="chip-check"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} /> Remote only</label>
         <label className="chip-check" title="Reads each posting's own text; it is a hint, not a promise"><input type="checkbox" checked={visaOnly} onChange={(e) => setVisaOnly(e.target.checked)} /> Mentions visa or relocation</label>
         <label className="chip-check" title={paidReady ? 'Uses 3 of your free monthly searches (one each)' : 'Not set up on this server'}>
           <input type="checkbox" checked={includePaid && paidReady} disabled={!paidReady} onChange={(e) => setIncludePaid(e.target.checked)} /> Also LinkedIn, Indeed and SEEK
         </label>
-        <span className="muted-small">{paidReady ? 'That part uses 3 of your free monthly searches.' : 'LinkedIn, Indeed and SEEK need the job-data key on the server.'} The free sites cost nothing.</span>
+        <span className="muted-small">{paidReady ? 'LinkedIn, Indeed and SEEK use 3 free monthly searches.' : 'LinkedIn, Indeed and SEEK are off here.'} Free sites cost nothing.</span>
       </div>
       <p className="muted-small" data-testid="sites-read">Reads: Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas{paidReady ? ', LinkedIn, Indeed, SEEK' : ''} — and any regional board the server owner has connected. Wellfound and Trends have their own tabs.</p>
     </form>

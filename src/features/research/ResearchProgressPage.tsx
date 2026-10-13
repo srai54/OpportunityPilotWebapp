@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
 import { Badge } from '../../components/StatusBadge'
 import { PageHeader } from '../../components/PageHeader'
 import { api, ApiError } from '../../lib/api'
@@ -267,6 +269,7 @@ function ResearchProgress({ jobId }: { jobId: string }) {
         <h3 id="stages-heading" className="section-heading">
           Stages
         </h3>
+        <ProgressBar pct={percentOf(stages.filter((s) => s.status === 'done').length, stages.length)} active={active} label="Run stages done" text={`${stages.filter((s) => s.status === 'done').length} of ${stages.length}`} tone={job.state === 'Failed' ? 'warning' : 'primary'} />
         <ol className="plain-list stages">
           {stages.map((s) => (
             <li key={s.stage} className={`stage stage-${s.status}`} aria-current={s.status === 'current' ? 'step' : undefined}>

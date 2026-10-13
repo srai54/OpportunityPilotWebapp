@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { progressUrl, shownSummary, updateMailto } from './progressModel'
+import { progressUrl, shownSummary, stagePercent, updateMailto } from './progressModel'
 
 describe('progress link helpers', () => {
   it('builds the link from the site address and token', () => {
@@ -15,5 +15,11 @@ describe('progress link helpers', () => {
   it('says what is shown', () => {
     expect(shownSummary([])).toBe('the stage only')
     expect(shownSummary(['Client', 'Offer'])).toBe('the stage, plus client name, offer status (never the pay)')
+  })
+  it('puts each stage on a bar from preparing to accepted', () => {
+    expect(stagePercent('We are preparing your profile')).toBeLessThan(stagePercent('Your profile was sent to the client'))
+    expect(stagePercent('Interview scheduled')).toBeLessThan(stagePercent('An offer was made'))
+    expect(stagePercent('Offer accepted')).toBe(100)
+    expect(stagePercent('Withdrawn')).toBe(0)
   })
 })

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/cards'
+import { Icon } from '../../components/icons'
 import { useShell } from '../shell/ShellContext'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from './commandModel'
 
@@ -55,7 +56,7 @@ export function CommandBar() {
         <div className="search-bar">
           <label className="search-field search-field-main"><span className="sr-only">What should it do?</span>
             <input value={text} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false) }} maxLength={300} placeholder={ws === 'sales' ? 'e.g. find companies hiring React developers in Berlin' : 'e.g. find .NET developer jobs in Pune'} /></label>
-          {canSpeak && <button type="button" className={`btn btn-secondary${listening ? ' is-listening' : ''}`} aria-pressed={listening} onClick={speak}>{listening ? 'Listening… tap to stop' : '🎤 Speak'}</button>}
+          {canSpeak && <button type="button" className={`btn btn-secondary${listening ? ' is-listening' : ''}`} aria-pressed={listening} onClick={speak}><Icon name="mic" size={16} /> {listening ? 'Listening… tap to stop' : 'Speak'}</button>}
           <button type="submit" className="btn btn-primary" disabled={!text.trim()}>Go</button>
         </div>
         {heard && <p className="muted-small" role="status">Heard: “{text}”. Fix it above if it is wrong, then press Go.</p>}

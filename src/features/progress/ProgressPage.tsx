@@ -2,9 +2,10 @@ import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
+import { ProgressBar } from '../../components/ProgressBar'
 import { ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
-import type { ProgressView } from './progressModel'
+import { stagePercent, type ProgressView } from './progressModel'
 
 const when = (iso: string, zone?: string | null) => {
   try { return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', ...(zone ? { timeZone: zone } : {}) }) } catch { return new Date(iso).toLocaleString() }
@@ -31,6 +32,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
         {view.data?.items.map((item, i) => (
           <Card key={`${item.stage}-${i}`} title={item.role ?? 'Your application'} subtitle={item.client ?? undefined} actions={<Badge tone="primary">{item.stage}</Badge>}>
             <div className="stack-2">
+              <ProgressBar pct={stagePercent(item.stage)} label={`Progress: ${item.stage}`} tone={item.stage.includes('accepted') ? 'success' : 'primary'} size="sm" />
               <p className="muted-small">Last change {when(item.updatedAt)}</p>
               {item.interview && (
                 <p><strong>Round {item.interview.round}:</strong> {when(item.interview.scheduledAt, item.interview.timeZone)}

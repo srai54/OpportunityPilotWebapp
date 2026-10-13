@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
+import { ProgressBar } from '../../components/ProgressBar'
+import { percentOf } from '../../components/percent'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { LoadingState } from '../../components/States'
@@ -436,6 +438,8 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
           Version {existing.version} · saved {dateFmt.format(new Date(existing.updatedAt))}
           {dirty && <span className="text-warning"> · unsaved changes</span>}
         </p>
+        <ProgressBar pct={percentOf(ready.requiredFilled + ready.claimsConfirmed, ready.requiredTotal + ready.claimsConfirmed + ready.claimsAwaiting.length)} label="Profile completeness"
+          text={`${ready.requiredFilled} of ${ready.requiredTotal} required`} tone={ready.ready ? 'success' : 'primary'} size="sm" />
         <p className={`small ${ready.ready ? '' : 'text-warning'}`} aria-live="polite">
           {ready.ready
             ? 'Ready: every required field is filled and every claim is confirmed. Drafts cite this exact version.'

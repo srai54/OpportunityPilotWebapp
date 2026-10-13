@@ -17,6 +17,19 @@ export interface ProgressItem {
 }
 export interface ProgressView { firstName: string; asOf: string; items: ProgressItem[] }
 
+/** How far along a stage is, for the candidate's bar. These are the stage words the server sends. */
+export function stagePercent(stage: string): number {
+  const s = stage.toLowerCase()
+  if (s.includes('accepted')) return 100
+  if (s.includes('offer was made')) return 90
+  if (s.includes('waiting for the client')) return 80
+  if (s.includes('interview scheduled')) return 70
+  if (s.includes('asked for an interview')) return 55
+  if (s.includes('sent to the client')) return 40
+  if (s.includes('preparing')) return 15
+  return 0
+}
+
 export function progressUrl(origin: string, token: string): string {
   return `${origin.replace(/\/$/, '')}/progress/${encodeURIComponent(token)}`
 }

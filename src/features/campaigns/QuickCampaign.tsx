@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
+import { placeFor } from '../suggest/picks'
+import { QuickPicks } from '../suggest/QuickPicks'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
@@ -136,6 +138,7 @@ export function QuickCampaign() {
         <label className="search-field"><span className="sr-only">Location</span>
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>
+      <QuickPicks onRole={setQuery} onPlace={(pick) => setPlace(placeFor(pick).remote && !placeFor(pick).location ? 'Remote' : placeFor(pick).location)} />
       <label className="field" data-coach="quick-source"><span>Where to look</span>
         <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>
           {wantsCandidate && <optgroup label="Free sites">{[...ALL_FREE, ...FEEDS].map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
