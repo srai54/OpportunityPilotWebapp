@@ -10,7 +10,7 @@ import { useApi } from '../../lib/useApi'
 import { splitTags } from '../profiles/profileFields'
 import { useShell } from '../shell/ShellContext'
 import {
-  campaignPayload, newDraft, parseBoardInput, quickSourceBodies, SEARCH_BOARDS, suggestedMode,
+  CADENCES, campaignPayload, firstRepeatAt, newDraft, parseBoardInput, quickSourceBodies, SEARCH_BOARDS, suggestedMode,
   type BoardKind, type SupportedMode,
 } from './campaignModel'
 
@@ -50,6 +50,7 @@ export function QuickCampaign() {
   const preferred = choices.find((c) => c.value === params.get('board'))?.value
   const [source, setSource] = useState<SourceChoice>(preferred ?? (workspace === 'sales' ? 'LinkedIn' : 'FreeFeeds'))
   const [token, setToken] = useState('')
+  const [repeat, setRepeat] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
 
@@ -92,6 +93,10 @@ export function QuickCampaign() {
         throw e
       }
       const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
+      if (repeat > 0) {
+        // This run already started; the schedule begins one interval later. A failure here must not lose the run.
+        await api(`/api/v1/campaigns/${campaign.id}/schedule`, { method: 'PUT', body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', cadenceMinutes: repeat, nextRunAt: firstRepeatAt(repeat), paused: false, expectedVersion: null }) }).catch(() => undefined)
+      }
       navigate(`/research/${jobId}`)
     } catch (e) {
       setError(e as Error)
@@ -119,6 +124,11 @@ export function QuickCampaign() {
           {wantsCandidate && <optgroup label="Free sites">{[...ALL_FREE, ...FEEDS].map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
           <optgroup label="Job search sites">{SEARCHES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>
           {wantsCandidate && <optgroup label="One company">{BOARDS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
+        </select></label>
+      <label className="field"><span>Repeat</span>
+        <select value={repeat} onChange={(e) => setRepeat(Number(e.target.value))}>
+          <option value={0}>Run once</option>
+          {CADENCES.map((c) => <option key={c.minutes} value={c.minutes}>{c.label}</option>)}
         </select></label>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}

@@ -9,7 +9,7 @@ import type { CampaignSummary, ProfileSummary } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { formatWhen } from '../applications/applicationStatus'
 import { JOB_STATE_LABELS } from '../research/researchModel'
-import { campaignFilterCounts, filterCampaigns, isRunning, MODE_LABELS, type CampaignModeFilter } from './campaignModel'
+import { campaignFilterCounts, filterCampaigns, isRunning, MODE_LABELS, repeatLabel, type CampaignModeFilter } from './campaignModel'
 
 const FLOW = [
   { title: 'Goal and mode', text: 'Pick a profile, choose Jobs or Customers and describe what you are after.' },
@@ -22,6 +22,7 @@ const FLOW = [
 export function CampaignsPage() {
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
+  const schedules = useApi<{ campaignId: string; cadenceMinutes: number; nextRunAt: string; paused: boolean }[]>('/api/v1/schedules')
   const [filter, setFilter] = useState<CampaignModeFilter>('all')
   const noProfiles = profiles.data?.length === 0
   const counts = campaignFilterCounts(campaigns.data ?? [])
@@ -105,6 +106,7 @@ export function CampaignsPage() {
                   <th scope="col" className="op-num">Found</th>
                   <th scope="col">Suggest at</th>
                   <th scope="col">Last run</th>
+                  <th scope="col">Repeats</th>
                   <th scope="col">Status</th>
                   <th scope="col">
                     <span className="sr-only">Next step</span>
@@ -142,6 +144,9 @@ export function CampaignsPage() {
                         ) : (
                           'Never run'
                         )}
+                      </td>
+                      <td className="muted-small">
+                        <Link to={`/campaigns/${c.id}/edit?step=4`}>{repeatLabel(schedules.data?.find((x) => x.campaignId === c.id))}</Link>
                       </td>
                       <td>
                         {c.lastJob ? <Badge tone={state?.tone}>{state?.text ?? c.lastJob.state}</Badge> : <Badge>Not run</Badge>}

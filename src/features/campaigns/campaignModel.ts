@@ -656,6 +656,17 @@ export function cadenceLabel(minutes: number): string {
   return CADENCES.find((c) => c.minutes === minutes)?.label ?? `Every ${minutes} minutes`
 }
 
+/** When a schedule should first fire: one interval from now (the run being started covers "now"). Event handlers only. */
+export function firstRepeatAt(minutes: number): string { return new Date(Date.now() + minutes * 60_000).toISOString() }
+
+/** What the Repeats column and the schedule line say: "Daily · next Oct 14, 9:00 AM", "Paused", or "Not scheduled". */
+export function repeatLabel(s: { cadenceMinutes: number; nextRunAt: string; paused: boolean } | undefined): string {
+  if (!s) return 'Not scheduled'
+  if (s.paused) return 'Paused'
+  const next = new Date(s.nextRunAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return `${cadenceLabel(s.cadenceMinutes)} · next ${next}`
+}
+
 type ModeCopy = {
   goal: string
   steps: [string, string][]
