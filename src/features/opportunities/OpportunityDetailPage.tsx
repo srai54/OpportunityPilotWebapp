@@ -257,13 +257,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           </section>
 
           {details && <>
-          <section className="panel" aria-labelledby="unknown-heading">
-            <header className="panel-head">
-              <h3 id="unknown-heading" className="eyebrow">
-                What is still unknown
-              </h3>
-            </header>
-            <div className="panel-body">
+          <Card title="What is still unknown">
+<div className="stack-3">
               {unknown.length === 0 && o.gaps.length === 0 ? (
                 <p className="muted-small">Every scored criterion had evidence.</p>
               ) : (
@@ -286,7 +281,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 Add a source that covers these
               </Link>
             </div>
-          </section>
+</Card>
 
           {o.scoredBy && (
             <p className="muted-small">
@@ -295,15 +290,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             </p>
           )}
 
-          <section className="panel" aria-labelledby="facts-heading">
-            <header className="panel-head">
-              <h3 id="facts-heading" className="eyebrow">
-                Facts
-              </h3>
-              <div className="grow" />
-              <span className="muted-small">Extracted by rules</span>
-            </header>
-            <div className="panel-body">
+          <Card title="Facts" actions={<span className="muted-small">Extracted by rules</span>}>
+<div className="stack-3">
               {o.facts.length === 0 && <p className="muted-small">No facts were extracted.</p>}
               <ul className="plain-list fact-list">
                 {o.facts.map((f) => {
@@ -326,7 +314,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 })}
               </ul>
             </div>
-          </section>
+</Card>
           </>}
         </div>
 
@@ -399,13 +387,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           </div>
 
           {details && <>
-          <section className="panel" aria-labelledby="evidence-heading">
-            <header className="panel-head">
-              <h3 id="evidence-heading" className="eyebrow">
-                Evidence — {o.evidence.length} {o.evidence.length === 1 ? 'source' : 'sources'}
-              </h3>
-            </header>
-            <div className="panel-body evidence-panel">
+          <Card title={`Evidence — ${o.evidence.length} ${o.evidence.length === 1 ? 'source' : 'sources'}`}>
+<div className="evidence-panel">
               {o.evidence.length === 0 ? (
                 <p className="muted-small">No evidence was stored for this opportunity, so nothing here is verified.</p>
               ) : (
@@ -416,15 +399,10 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
                 </ol>
               )}
             </div>
-          </section>
+</Card>
 
-          <section className="panel" aria-labelledby="activity-heading">
-            <header className="panel-head">
-              <h3 id="activity-heading" className="eyebrow">
-                Activity
-              </h3>
-            </header>
-            <div className="panel-body">
+          <Card title="Activity">
+<div className="stack-3">
               {o.activities.length === 0 ? (
                 <p className="muted-small">No activity yet.</p>
               ) : (
@@ -468,7 +446,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
               </form>
               <p className="hint">Status changes are yours alone. Research never resets a status you set.</p>
             </div>
-          </section>
+</Card>
           </>}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../lib/api'
+import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -58,9 +59,8 @@ function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales:
   }
 
   return (
-    <section className="panel" aria-labelledby="my-activity">
-      <header className="panel-head"><h3 className="eyebrow" id="my-activity">My activity</h3><div className="grow" /><span className="muted-small">newest first</span></header>
-      <div className="panel-body">
+    <Card title="My activity" actions={<span className="muted-small">newest first</span>}>
+<div className="stack-3">
         <div className="toolbar">
           <div className="segmented" role="group" aria-label="Kind of activity">
             {ACTIVITY_GROUPS.map((g) => (
@@ -90,7 +90,7 @@ function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales:
         {moreError && <ErrorNotice error={moreError} />}
         {canLoadMore && <div className="row"><button type="button" className="btn btn-secondary btn-sm" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>}
       </div>
-    </section>
+</Card>
   )
 }
 
@@ -162,18 +162,16 @@ function InsightsView() {
             })}
           </section>
 
-          <section className="panel" data-coach="insights-trend">
-            <header className="panel-head"><h3 className="eyebrow">Activity over time</h3><div className="grow" /><span className="muted-small">last {days} days · per day</span></header>
-            <div className="panel-body stack-3">
+          <Card title="Activity over time" actions={<span className="muted-small">last {days} days · per day</span>} coach="insights-trend">
+<div className="stack-3">
               <p>{trendSummary(workspace, days, t.current, t.previous)}</p>
               <TrendChart points={t.points} series={series} summary={trendSummary(workspace, days, t.current, t.previous)} />
             </div>
-          </section>
+</Card>
 
           <div className="panel-grid-2">
-            <section className="panel" data-coach="insights-progress">
-              <header className="panel-head"><h3 className="eyebrow">Progress</h3></header>
-              <div className="panel-body stack-4">
+            <Card title="Progress" coach="insights-progress">
+<div className="stack-4">
                 <div className="stack-2">
                   <strong>Your path: {stepsDone} of {steps.length} steps done</strong>
                   <ProgressBar pct={Math.round((stepsDone / steps.length) * 100)} label="Steps of the path done" text={`${stepsDone} of ${steps.length}`} />
@@ -192,69 +190,63 @@ function InsightsView() {
                   <p className="muted-small">Last 7 days. The goal is yours to set and is kept in this browser.</p>
                 </div>
               </div>
-            </section>
+</Card>
 
-            <section className="panel">
-              <header className="panel-head"><h3 className="eyebrow">Funnel</h3><div className="grow" /><span className="muted-small">last {days} days</span></header>
-              <div className="panel-body stack-3">
+            <Card title="Funnel" actions={<span className="muted-small">last {days} days</span>}>
+<div className="stack-3">
                 <HBars
                   rows={funnelRows(workspace, t.current).map((r) => ({ label: r.label, value: r.count, note: r.fromPrevious === null ? undefined : `${r.fromPrevious}% of previous` }))}
                   empty="Nothing found yet."
                 />
                 <p className="muted-small">Each step is counted once per {sales ? 'company' : 'job'}, the first time it got there.</p>
               </div>
-            </section>
+</Card>
           </div>
 
           <ActivityPanel sales={sales} />
 
           {a && (
             <div className="panel-grid-3">
-              <section className="panel">
-                <header className="panel-head"><h3 className="eyebrow">How well they fit</h3></header>
-                <div className="panel-body stack-2">
+              <Card title="How well they fit">
+<div className="stack-2">
                   <HBars rows={trimBands(a.fitHistogram.bands).map((b) => ({ label: `${b.from}–${b.to}`, value: b.count }))} empty="No scores yet." />
                   <p className="muted-small">Match score of everything found, in bands of ten. A ranking against your criteria, not a chance of success.</p>
                 </div>
-              </section>
-              <section className="panel">
-                <header className="panel-head"><h3 className="eyebrow">Where results come from</h3></header>
-                <div className="panel-body stack-2">
+</Card>
+              <Card title="Where results come from">
+<div className="stack-2">
                   <HBars
                     rows={a.sources.slice(0, 6).map((s) => ({ label: s.label, value: s.qualified, note: `of ${s.read} read${s.failing ? ' · failing' : ''}` }))}
                     empty="No source has run yet."
                   />
                   <p className="muted-small">Qualified results per source, out of what it read.</p>
                 </div>
-              </section>
+</Card>
               {sales ? (
-                <section className="panel">
-                  <header className="panel-head"><h3 className="eyebrow">Industries and signals</h3></header>
-                  <div className="panel-body stack-3">
+                <Card title="Industries and signals">
+<div className="stack-3">
                     <HBars rows={(a.qualifiedByIndustry ?? []).map((x) => ({ label: x.industry, value: x.count }))} empty="No industry matched yet." />
                     <HBars rows={(a.signalsFound ?? []).slice(0, 5).map((x) => ({ label: x.signal, value: x.count }))} empty="No buying signal matched yet." />
                   </div>
-                </section>
+</Card>
               ) : (
-                <section className="panel">
-                  <header className="panel-head"><h3 className="eyebrow">Needs your attention</h3></header>
-                  <div className="panel-body">
+                <Card title="Needs your attention">
+<div className="stack-3">
                     {a.attention.length === 0
                       ? <p className="muted-small">Nothing is waiting on you.</p>
                       : <ul className="plain-list stack-2">{a.attention.map((x) => <li key={x.kind}>{x.detail}</li>)}</ul>}
                   </div>
-                </section>
+</Card>
               )}
             </div>
           )}
 
-          <section className="panel">
-            <header className="panel-head"><h3 className="eyebrow">Market view</h3></header>
-            <div className="panel-body row wrap">
+          <Card title="Market view">
+<div className="row wrap">
               <p className="grow">Which skills and companies are in demand right now comes from live job boards, not from your records, so it lives under Find ({sales ? 'Find companies' : 'Find jobs'} → Trends) with its source and sample size shown.</p>
               <Link className="btn btn-secondary btn-sm" to="/wellfound?tab=trends">Open hiring trends</Link>
             </div>
-          </section>
+</Card>
         </>
       )}
     </div>

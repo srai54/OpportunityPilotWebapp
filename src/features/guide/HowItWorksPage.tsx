@@ -1,3 +1,4 @@
+import { Card } from '../../components/cards'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/PageHeader'
 import { SampleRunCard } from '../overview/SampleRunCard'
@@ -48,7 +49,7 @@ export function HowItWorksPage() {
           <div className="grow" />
           <span className="muted-small">Open a research run and read its event log — every source writes one line.</span>
         </header>
-        <div className="table-scroll" role="region" aria-labelledby="guide-sources" tabIndex={0}>
+        <div className="table-scroll" role="region" aria-label="Sources table, scrollable" tabIndex={0}>
           <table className="table">
             <thead>
               <tr>
@@ -98,11 +99,8 @@ export function HowItWorksPage() {
         {workspace === 'candidate' ? (
           <SampleRunCard />
         ) : (
-          <section className="panel">
-            <header className="panel-head">
-              <h3 className="eyebrow">Try it</h3>
-            </header>
-            <div className="panel-body">
+          <Card title="Try it">
+<div className="stack-3">
               <p className="muted-small">
                 For Sales, build a Customer, Partner, Investor or Freelance campaign from a CSV, a pasted list or a job board
                 search, queue a run, shortlist with the evidence, then draft, approve and send outreach yourself. Staffing deals
@@ -112,7 +110,7 @@ export function HowItWorksPage() {
                 Build a Customers campaign
               </Link>
             </div>
-          </section>
+</Card>
         )}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { Card } from '../../components/cards'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -49,7 +50,8 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
       setMessage('Follow-up added.'); setDueAt(''); setNote('')
     } catch (e) { setError(e as Error) } finally { setBusy(false) }
   }
-  return <section className="panel" aria-labelledby="outreach-actions-heading"><header className="panel-head"><h3 id="outreach-actions-heading" className="eyebrow">Reach out</h3></header><div className="panel-body stack-3">
+  return <Card title="Reach out">
+<div className="stack-3">
     {error && (needsProfileConfirm(error)
       ? <ProfileConfirmNotice opportunityId={opportunityId} onConfirmed={() => { setError(undefined); void quickDraft(lastQuick) }} />
       : <ErrorNotice error={error} />)}{message && <p className="notice notice-success">{message} <Link to="/outreach">Open outreach</Link></p>}
@@ -69,5 +71,6 @@ export function OutreachActionsPanel({ opportunityId }: { opportunityId: string 
     <label className="field"><span>Note</span><input value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} /></label>
     <button className="btn btn-secondary btn-sm" type="button" disabled={busy || !dueAt} onClick={createAction}>Add next action</button>
     </>}
-  </div></section>
+  </div>
+</Card>
 }

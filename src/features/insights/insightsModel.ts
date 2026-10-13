@@ -145,11 +145,12 @@ export function goalProgress(done: number, goal: number): { pct: number; text: s
 /** Plain-language one-line takeaway for the trend chart, so the picture is also said in words. */
 export function trendSummary(workspace: Workspace, days: number, current: TrendTotals, previous: TrendTotals): string {
   const s = seriesFor(workspace)
-  const label = (k: SeriesKey) => s.find((x) => x.key === k)!.label.toLowerCase()
+  const label = (k: SeriesKey) => s.find((x) => x.key === k)!.label
   if (current.found + current.approved + current.reached + current.replied + current.sent === 0)
     return `Nothing recorded in the last ${days} days yet.`
   const d = delta(current.found, previous.found)
-  return `Last ${days} days: ${current.found} ${label('found')} (${d.text}), ${current.approved} ${label('approved')}, ${current.reached} ${label('reached')}, ${current.replied} replies.`
+  // Label first, then the number: it reads right for 1 and for 6 ("Leads approved: 1"), with no plural to get wrong.
+  return `Last ${days} days: ${label('found')} ${current.found} (${d.text}) · ${label('approved')} ${current.approved} · ${label('reached')} ${current.reached} · Replies ${current.replied}.`
 }
 
 const ACTIVITY_VERBS: Record<string, string> = {

@@ -1,3 +1,4 @@
+import { Card } from '../../components/cards'
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { HowItWorks } from '../../components/HowItWorks'
@@ -13,9 +14,8 @@ import { DATE_OPTIONS, SAMPLE_OPTIONS, headlines, payLine, skillGap, startupTren
 
 function Bars({ title, rows, empty }: Readonly<{ title: string; rows: TrendCount[]; empty: string }>) {
   const max = Math.max(1, ...rows.map((r) => r.count))
-  return <section className="panel" aria-label={title}>
-    <header className="panel-head"><h3 className="eyebrow">{title}</h3></header>
-    <div className="panel-body">
+  return <Card title={title}>
+<div className="stack-3">
       {rows.length === 0 ? <p className="muted-small">{empty}</p> : <ul className="bar-list">
         {rows.map((r) => <li key={r.name} className="bar-row">
           <span className="bar-name" title={r.name}>{r.name}</span>
@@ -24,7 +24,7 @@ function Bars({ title, rows, empty }: Readonly<{ title: string; rows: TrendCount
         </li>)}
       </ul>}
     </div>
-  </section>
+</Card>
 }
 
 function Stat({ label, value, sub }: Readonly<{ label: string; value: string | number; sub: string }>) {
@@ -50,7 +50,9 @@ function SkillGapPanel({ skills }: Readonly<{ skills: TrendCount[] }>) {
         <div><span className="eyebrow">In demand, not on your profile</span><div className="row wrap">{gap.missing.length ? gap.missing.map((s) => <span key={s.name} className="skill-chip skill-missing">{s.name} · {s.sharePercent}%</span>) : <span className="muted-small">Nothing missing — you cover every skill listed.</span>}</div></div>
         <p className="muted-small">Percentages are the share of the sampled postings that mention the skill. Add a skill to your profile only if you really have it — the app never adds one for you.</p>
       </div>
-  return <section className="panel" aria-label="How you compare"><header className="panel-head"><h3 className="eyebrow">How you compare</h3></header><div className="panel-body">{body}</div></section>
+  return <Card title="How you compare">
+<div className="stack-3">{body}</div>
+</Card>
 }
 
 function Report({ r }: Readonly<{ r: TrendReport }>) {
@@ -78,10 +80,9 @@ function Report({ r }: Readonly<{ r: TrendReport }>) {
       <Bars title="Job type" rows={r.employmentTypes} empty="No job type given." />
       <Bars title="Places" rows={r.locations} empty="No city given." />
     </div>
-    {r.pay.length > 0 && <section className="panel" aria-label="Pay">
-      <header className="panel-head"><h3 className="eyebrow">Pay shown in the postings</h3></header>
-      <div className="panel-body"><ul className="plain-list">{r.pay.map((p) => <li key={p.period}><strong className="op-numeric">{payLine(p)}</strong> <span className="muted-small">typical range across {p.postings} posting{p.postings === 1 ? '' : 's'} (currency not given by the source)</span></li>)}</ul></div>
-    </section>}
+    {r.pay.length > 0 && <Card title="Pay shown in the postings">
+<div className="stack-3"><ul className="plain-list">{r.pay.map((p) => <li key={p.period}><strong className="op-numeric">{payLine(p)}</strong> <span className="muted-small">typical range across {p.postings} posting{p.postings === 1 ? '' : 's'} (currency not given by the source)</span></li>)}</ul></div>
+</Card>}
     <p className="muted-small">{r.observedAt ? `Retrieved ${new Date(r.observedAt).toLocaleString()}. ` : ''}{r.quotaRemaining != null ? `${r.quotaRemaining} searches left this month.` : ''}</p>
   </div>
 }

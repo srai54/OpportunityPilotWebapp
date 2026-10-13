@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
@@ -31,9 +32,8 @@ export function MailboxesCard() {
   }
 
   return (
-    <section className="panel" aria-labelledby="set-mailbox">
-      <header className="panel-head"><h3 id="set-mailbox" className="eyebrow">Send from your own mailbox</h3></header>
-      <div className="panel-body">
+    <Card title="Send from your own mailbox">
+      <div className="stack-3">
         <p className="muted-small">Connect Outlook or Gmail and an approved message goes out with one click. You still approve every message; the app only asks for permission to send, never to read your mail.</p>
         {notice && <p className={`notice notice-${notice.tone}`} role="status">{notice.text}</p>}
         {(boxes.error || error) && <ErrorNotice error={(boxes.error ?? error)!} onRetry={boxes.reload} what="your mailboxes" />}
@@ -58,6 +58,6 @@ export function MailboxesCard() {
         </ul>
         {boxes.data?.every((m) => !m.configured) && <p className="muted-small">Sending from a mailbox is switched on by the owner of this server (an Entra or Google app has to be registered once). Until then, "Approve &amp; send" opens your mail app as before.</p>}
       </div>
-    </section>
+    </Card>
   )
 }

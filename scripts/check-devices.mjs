@@ -58,7 +58,7 @@ const MATRIX = [
   ]),
 ]
 const SIGNED_OUT = ['/signin', '/signup']
-const SIGNED_IN = ['/', '/opportunities', `/opportunities/${opps[0].id}`, '/profiles', '/campaigns', '/campaigns/new', '/outreach', '/follow-ups', '/settings', '/insights', '/connectors']
+const SIGNED_IN = ['/', '/opportunities', `/opportunities/${opps[0].id}`, '/profiles', '/campaigns', '/campaigns/new', '/outreach', '/follow-ups', '/settings', '/insights', '/connectors', '/staffing', '/staffing/candidates', '/how-it-works', '/wellfound']
 
 let problems = 0
 for (const [label, type, descriptor] of MATRIX) {

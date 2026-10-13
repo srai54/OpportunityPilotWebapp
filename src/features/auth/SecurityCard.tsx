@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { useAuth } from './AuthContext'
@@ -47,9 +48,8 @@ export function SecurityCard() {
   }
 
   return (
-    <section className="panel" aria-labelledby="set-security">
-      <header className="panel-head"><h3 id="set-security" className="eyebrow">Security</h3></header>
-      <div className="panel-body">
+    <Card title="Security">
+      <div className="stack-3">
         <p className="muted-small">Add a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password) on top of your password or provider sign-in. Free, and nothing to install on our side.</p>
         {done && <p className="notice notice-success" role="status">{done}</p>}
         {error && <ErrorNotice error={error} />}
@@ -84,6 +84,6 @@ export function SecurityCard() {
           </div>
         )}
       </div>
-    </section>
+    </Card>
   )
 }

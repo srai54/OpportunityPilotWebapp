@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Card } from '../../components/cards'
 import { PageHeader } from '../../components/PageHeader'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { api } from '../../lib/api'
@@ -58,13 +59,8 @@ export function SettingsPage() {
 
       <div className="panel-grid-2">
         <div className="stack-4">
-          <section className="panel" aria-labelledby="set-account">
-            <header className="panel-head">
-              <h3 id="set-account" className="eyebrow">
-                Account
-              </h3>
-            </header>
-            <dl className="settings-rows panel-body">
+          <Card title="Account">
+            <dl className="settings-rows">
               <div>
                 <dt>Signed in as</dt>
                 <dd>
@@ -102,16 +98,11 @@ export function SettingsPage() {
               </div>
               <div><dt>Your data</dt><dd className="row wrap"><button className="btn btn-secondary btn-sm" type="button" disabled={accountBusy} onClick={exportData}>Export JSON</button><button className="btn btn-ghost btn-sm text-danger" type="button" disabled={accountBusy} onClick={deleteData}>Delete all data</button></dd></div>
             </dl>
-            {accountError && <div className="panel-body"><ErrorNotice error={accountError} /></div>}
-          </section>
+            {accountError && <ErrorNotice error={accountError} />}
+          </Card>
 
-          <section className="panel" aria-labelledby="set-display">
-            <header className="panel-head">
-              <h3 id="set-display" className="eyebrow">
-                Display
-              </h3>
-            </header>
-            <div className="panel-body">
+          <Card title="Display">
+            <div className="stack-3">
               <p className="muted-small">Saved in this browser. System follows your device's light or dark setting.</p>
               <ThemeChoiceGroup />
               <label className="field"><span><strong>Open emails in</strong></span>
@@ -126,7 +117,7 @@ export function SettingsPage() {
                 <span><strong>Advanced</strong> — show the full menu, campaigns, follow-ups, staffing, help and the detailed settings below</span>
               </label>
             </div>
-          </section>
+          </Card>
 
           <SecurityCard />
           <MailboxesCard />
@@ -134,13 +125,8 @@ export function SettingsPage() {
 
         <div className="stack-4">
           {advanced && <>
-          <section className="panel" aria-labelledby="set-rules">
-            <header className="panel-head">
-              <h3 id="set-rules" className="eyebrow">
-                Rules that cannot be switched off
-              </h3>
-            </header>
-            <ul className="plain-list settings-rules panel-body">
+          <Card title="Rules that cannot be switched off">
+            <ul className="plain-list settings-rules">
               {FIXED_RULES.map(([t, d]) => (
                 <li key={t}>
                   <span aria-hidden="true">🔒︎</span>
@@ -152,15 +138,10 @@ export function SettingsPage() {
                 </li>
               ))}
             </ul>
-          </section>
+          </Card>
 
-          <section className="panel" aria-labelledby="set-deploy">
-            <header className="panel-head">
-              <h3 id="set-deploy" className="eyebrow">
-                This deployment
-              </h3>
-            </header>
-            <dl className="settings-rows panel-body">
+          <Card title="This deployment">
+            <dl className="settings-rows">
               <div>
                 <dt>Web</dt>
                 <dd className="mono">{typeof window === 'undefined' ? '' : window.location.host} · {typeof __APP_COMMIT__ === "string" ? __APP_COMMIT__ : "local"}</dd>
@@ -196,12 +177,12 @@ export function SettingsPage() {
                 </dd>
               </div>
             </dl>
-            <div className="panel-body">
+            <div>
               <button type="button" className="btn btn-secondary btn-sm cap-action" onClick={() => void signOut()}>
                 Sign out
               </button>
             </div>
-          </section>
+          </Card>
           </>}
         </div>
       </div>

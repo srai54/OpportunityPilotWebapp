@@ -1,3 +1,4 @@
+import { Card } from '../../components/cards'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -163,11 +164,8 @@ export function CampaignsPage() {
 
       {campaigns.data && campaigns.data.length > 0 && (
         <div className="panel-grid-2">
-          <section className="panel">
-            <header className="panel-head">
-              <h3 className="eyebrow">Jobs campaigns feed Approvals</h3>
-            </header>
-            <div className="panel-body">
+          <Card title="Jobs campaigns feed Approvals">
+<div className="stack-3">
               <p className="muted-small">
                 A Jobs campaign with a suggest threshold puts everything scoring at or above it into the approval queue. You approve
                 a batch; approved jobs become shortlisted and the agent (or you) applies.
@@ -177,12 +175,9 @@ export function CampaignsPage() {
                 <span className="chip">Applied</span>
               </p>
             </div>
-          </section>
-          <section className="panel">
-            <header className="panel-head">
-              <h3 className="eyebrow">Business campaigns continue into outreach</h3>
-            </header>
-            <div className="panel-body">
+</Card>
+          <Card title="Business campaigns continue into outreach">
+<div className="stack-3">
               <p className="muted-small">
                 Customer, Partner, Investor, and Freelance campaigns use evidence-based company/project scoring, then continue into reviewed drafts and follow-ups.
                 you can read and export.
@@ -192,7 +187,7 @@ export function CampaignsPage() {
                 <span className="chip">You contact (approved draft, receipt)</span>
               </p>
             </div>
-          </section>
+</Card>
         </div>
       )}
     </div>

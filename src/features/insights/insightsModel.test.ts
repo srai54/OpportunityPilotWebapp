@@ -105,7 +105,7 @@ describe('trendSummary', () => {
   })
   it('states the numbers and the change in words', () => {
     const s = trendSummary('sales', 14, { ...zero, found: 6, approved: 2, reached: 1 }, { ...zero, found: 2 })
-    expect(s).toBe('Last 14 days: 6 companies found (up 4), 2 leads approved, 1 contacted, 0 replies.')
+    expect(s).toBe('Last 14 days: Companies found 6 (up 4) · Leads approved 2 · Contacted 1 · Replies 0.')
   })
 })
 
