@@ -5,6 +5,7 @@ import { EmptyState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
+import { ProgressShare } from '../progress/ProgressShare'
 import { CANDIDATE_FIELDS, money } from './staffingModel'
 import type { Availability, CandidateField, Consent, RateUnit, StaffingCandidate } from './staffingTypes'
 
@@ -12,12 +13,14 @@ export function StaffingCandidatesPage() {
   const list = useApi<StaffingCandidate[]>('/api/v1/staffing/candidates')
   const [editing, setEditing] = useState<StaffingCandidate | 'new' | null>(null)
   const [consentFor, setConsentFor] = useState<StaffingCandidate | null>(null)
+  const [sharing, setSharing] = useState<StaffingCandidate | null>(null)
 
   return <div className="page page-wide stack-4">
     <PageHeader title="Candidates" subtitle="Your bench. A candidate can be submitted to a client only with recorded consent, and only the fields they allow."
       actions={<button className="btn btn-primary" type="button" onClick={() => setEditing('new')}>+ Add candidate</button>} />
     {editing && <CandidateForm key={editing === 'new' ? 'new' : editing.id} candidate={editing === 'new' ? null : editing}
       onDone={() => { setEditing(null); list.reload() }} />}
+    {sharing && <ProgressShare key={sharing.id} candidate={sharing} onClose={() => setSharing(null)} />}
     {consentFor && <ConsentForm key={consentFor.id} candidate={consentFor} onDone={() => { setConsentFor(null); list.reload() }} />}
 
     <section className="panel">
@@ -34,7 +37,8 @@ export function StaffingCandidatesPage() {
               {c.consentEvidence && <div className="muted-small">{c.consentEvidence}</div>}</td>
             <td className="small">{c.shareableFields.length ? c.shareableFields.join(', ') : '—'}</td>
             <td className="row"><button className="btn btn-secondary btn-sm" type="button" onClick={() => setEditing(c)}>Edit</button>
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setConsentFor(c)}>Consent</button></td>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setConsentFor(c)}>Consent</button>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSharing(c)}>Share progress</button></td>
           </tr>)}</tbody>
         </table></div>}
     </section>

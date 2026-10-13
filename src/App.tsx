@@ -27,6 +27,7 @@ const StaffingDealsPage = lazy(() => import('./features/staffing/StaffingDealsPa
 const StaffingDealPage = lazy(() => import('./features/staffing/StaffingDealPage').then((m) => ({ default: m.StaffingDealPage })))
 const StaffingCandidatesPage = lazy(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
 const AppShell = lazy(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
+const ProgressPage = lazy(() => import('./features/progress/ProgressPage').then((m) => ({ default: m.ProgressPage })))
 const HowItWorksPage = lazy(() => import('./features/guide/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
 const WellfoundPage = lazy(() => import('./features/wellfound/WellfoundPage').then((m) => ({ default: m.WellfoundPage })))
 
@@ -47,6 +48,9 @@ function AuthGate() {
   const location = useLocation()
   const navigate = useNavigate()
   const [onboarded, setOnboarded] = useState(() => readFlag(ONBOARDED_KEY, false))
+  // A candidate's private progress link works without an account.
+  const progressToken = /^\/progress\/([^/]+)$/.exec(location.pathname)?.[1]
+  if (progressToken) return <Suspense fallback={<div className="boot" role="status">Loading…</div>}><ProgressPage token={decodeURIComponent(progressToken)} /></Suspense>
   if (!ready) return <div className="boot" role="status">Checking your session…</div>
   if (recovering) return <NewPasswordPage />
   if (!user) {
