@@ -6,6 +6,7 @@ import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ProgressShare } from '../progress/ProgressShare'
+import { ResumeTailorPanel } from '../resume/ResumeTailorPanel'
 import { CANDIDATE_FIELDS, money } from './staffingModel'
 import type { Availability, CandidateField, Consent, RateUnit, StaffingCandidate } from './staffingTypes'
 
@@ -14,12 +15,14 @@ export function StaffingCandidatesPage() {
   const [editing, setEditing] = useState<StaffingCandidate | 'new' | null>(null)
   const [consentFor, setConsentFor] = useState<StaffingCandidate | null>(null)
   const [sharing, setSharing] = useState<StaffingCandidate | null>(null)
+  const [fitFor, setFitFor] = useState<StaffingCandidate | null>(null)
 
   return <div className="page page-wide stack-4">
     <PageHeader title="Candidates" subtitle="Your bench. A candidate can be submitted to a client only with recorded consent, and only the fields they allow."
       actions={<button className="btn btn-primary" type="button" onClick={() => setEditing('new')}>+ Add candidate</button>} />
     {editing && <CandidateForm key={editing === 'new' ? 'new' : editing.id} candidate={editing === 'new' ? null : editing}
       onDone={() => { setEditing(null); list.reload() }} />}
+    {fitFor && <div className="stack-2"><div className="row"><span className="grow" /><button className="btn btn-secondary btn-sm" type="button" onClick={() => setFitFor(null)}>Close</button></div><ResumeTailorPanel key={fitFor.id} editableJob jobTitle="" jobText="" candidate={{ name: fitFor.name, email: fitFor.email }} /></div>}
     {sharing && <ProgressShare key={sharing.id} candidate={sharing} onClose={() => setSharing(null)} />}
     {consentFor && <ConsentForm key={consentFor.id} candidate={consentFor} onDone={() => { setConsentFor(null); list.reload() }} />}
 
@@ -38,7 +41,8 @@ export function StaffingCandidatesPage() {
             <td className="small">{c.shareableFields.length ? c.shareableFields.join(', ') : '—'}</td>
             <td className="row"><button className="btn btn-secondary btn-sm" type="button" onClick={() => setEditing(c)}>Edit</button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setConsentFor(c)}>Consent</button>
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSharing(c)}>Share progress</button></td>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSharing(c)}>Share progress</button>
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setFitFor(c)}>Resume fit</button></td>
           </tr>)}</tbody>
         </table></div>}
     </section>

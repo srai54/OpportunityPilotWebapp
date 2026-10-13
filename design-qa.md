@@ -86,3 +86,43 @@ final result: passed
 Post-change browser capture and 375 px interaction check were not run because the user explicitly asked to stop browser-based testing. No claim of live visual verification is made.
 
 final result: code-verified; visual check intentionally skipped by user request
+
+---
+
+# Design QA — Application header redesign
+
+**Source visual truth:** `D:\Temp\codex-clipboard-8a23a8ed-5631-407b-b08f-8847dec185de.png` (1240 × 99 px).
+
+**Implementation evidence:** browser-rendered capture emitted inline from the local `/connectors` preview on 13 October 2026.
+
+**Viewport and normalization:** desktop Edge viewport, 1119 px capture width at device scale 1. The source is a shallow header crop; the implementation evidence includes the same header plus its surrounding application context, so comparison focused on the header region rather than page-body fidelity.
+
+**State:** dark theme, Candidate workspace, Guide on, Advanced off, Connectors route, local development user.
+
+## Findings
+
+No actionable P0, P1 or P2 findings remain.
+
+- The page title, workspace selector and utility controls stay on one aligned row without the account control dropping below it.
+- Candidate/Sales is visually distinct from Guide/Advanced: workspace selection uses semantic workspace accents, while view preferences use a quiet contained group.
+- Help, theme and account actions share one icon-button treatment and consistent target size.
+- The current page title remains visible in Simple mode; behavior, routes, switch semantics and accessible names are preserved.
+- Progressive breakpoints hide secondary context before primary controls and collapse workspace labels only on the narrowest phones.
+
+## Required fidelity surfaces
+
+- **Typography:** existing Inter/system stack is preserved; page title is promoted to 700 weight while secondary hints remain visually quiet.
+- **Spacing/layout:** controls are grouped into context and action zones; the header is nowrap, with responsive reductions at 1180, 1040, 860, 700 and 520 px.
+- **Colors/tokens:** existing surface, line, primary, amber and AI tokens are reused in light and dark themes; no new hard-coded palette was introduced.
+- **Image quality/assets:** there is no product imagery in this component; all visible controls use the existing Lucide icon system.
+- **Copy/content:** Candidate, Sales, page title, AI state, Guide, Advanced, help, theme and account controls retain their original meaning.
+
+## Verification
+
+- Primary interactions visually present: workspace buttons, Guide/Advanced switches, help, theme and account menu.
+- Browser-rendered header inspected at desktop width; no visible wrapping, clipping or horizontal overflow.
+- Console-facing production build completed; lint passed; 37 test files and 333 tests passed.
+
+Focused-region comparison used the header crop because the reference contains no page-body design. No P3 follow-up is required for this iteration.
+
+final result: passed

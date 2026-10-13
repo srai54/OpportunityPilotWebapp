@@ -4,6 +4,7 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { Avatar, Card, MatchRing } from '../../components/cards'
+import { ResumeTailorPanel } from '../resume/ResumeTailorPanel'
 import { api } from '../../lib/api'
 import type { Evidence, OpportunityDetail, OpportunityStatus } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
@@ -225,6 +226,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           }
         />
       </div>
+
+      {o.mode === 'Job' && <ResumeTailorPanel jobTitle={o.title} jobText={o.description ?? ''} />}
 
       <span className="sr-only" role="status" aria-live="polite">
         {announcement}
