@@ -10,7 +10,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "preview": "vite preview",
-    "check:devices": "node scripts/check-devices.mjs"
+    "check:devices": "node scripts/check-devices.mjs",
+    "check:shell": "node scripts/check-shell.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",

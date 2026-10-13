@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { Icon } from '../../components/icons'
 import { ProgressBar } from '../../components/ProgressBar'
@@ -21,6 +21,7 @@ import {
   type ApiStatus,
   gmailLabel,
   initials,
+  navGroupFor,
   navGroupsFor,
   readAdvanced,
   writeAdvanced,
@@ -28,7 +29,6 @@ import {
   navCount,
   readNavCollapsed,
   readWorkspace,
-  topbarHint,
   type Workspace,
   WORKSPACES,
   writeNavCollapsed,
@@ -102,10 +102,10 @@ function useDismiss(open: boolean, close: () => void, root: React.RefObject<HTML
   }, [open, close, root, trigger])
 }
 
-/** A small labelled on/off switch for the top bar (Guide, Advanced). */
-function TopSwitch({ label, on, onChange, coach, hint }: Readonly<{ label: string; on: boolean; onChange: (on: boolean) => void; coach?: string; hint?: string }>) {
+/** A small labelled on/off switch for the app bar (Guide, Advanced). */
+function TopSwitch({ label, on, onChange, coach, hint, testId }: Readonly<{ label: string; on: boolean; onChange: (on: boolean) => void; coach?: string; hint?: string; testId?: string }>) {
   return (
-    <button type="button" className="top-switch" role="switch" aria-checked={on} title={hint} data-coach={coach} onClick={() => onChange(!on)}>
+    <button type="button" className="top-switch" role="switch" aria-checked={on} title={hint} data-coach={coach} data-testid={testId} onClick={() => onChange(!on)}>
       <span className="top-switch-track" aria-hidden="true"><i /></span>
       <span>{label}</span>
     </button>
@@ -117,22 +117,21 @@ export function AppShell() {
   const apiStatus = useApiStatus()
   // Capabilities need no database, so they also explain a degraded API (e.g. missing setup).
   const capabilities = useApi<Capabilities>(apiStatus === 'ready' || apiStatus === 'degraded' ? '/api/v1/capabilities' : null)
-  // For the rail counts and the top-bar hint; screens that show the figures fetch their own copy.
+  // For the rail counts and the journey; screens that show the figures fetch their own copy.
   const overview = useApi<Overview>(apiStatus === 'ready' ? '/api/v1/overview' : null)
   const awaitingApproval = overview.data?.awaitingApproval
   const reloadOverview = overview.reload
   const location = useLocation()
   const matches = useMatches()
-  const isDrawerLayout = useIsDrawerLayout()
+  const isNarrow = useIsDrawerLayout()
 
   const [collapsedPref, setCollapsedPref] = useState(readNavCollapsed)
-  const collapsed = collapsedPref && !isDrawerLayout
   const [workspace, setWorkspaceState] = useState<Workspace>(readWorkspace)
   const setWorkspace = useCallback((ws: Workspace) => {
     setWorkspaceState(ws)
     writeWorkspace(ws)
   }, [])
-  const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op.demoBanner') === '1' } catch { return false } })
+  const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op-demo-hidden') === '1' } catch { return false } })
   const [replay, setReplay] = useState(0)
   const [guide, setGuideState] = useState(() => !tipsOff())
   // Bumped every time Guide is turned on, so the tours for the current screen start again.
@@ -151,21 +150,37 @@ export function AppShell() {
     writeAdvanced(on)
   }, [])
 
-  // Drawer and popovers remember the path they were opened on, so any route change closes them.
+  // Advanced on a wide screen keeps a rail beside the page; everything else (Simple at any width, Advanced on a phone) uses a drawer.
+  const railVisible = advanced && !isNarrow
+  const collapsed = railVisible && collapsedPref
+  // The drawer and popovers remember the path they were opened on, so any route change closes them.
   const [drawerPath, setDrawerPath] = useState<string | null>(null)
   const [menuPath, setMenuPath] = useState<string | null>(null)
-  const drawerOpen = advanced && isDrawerLayout && drawerPath === location.pathname
+  const drawerOpen = !railVisible && drawerPath === location.pathname
   const menuOpen = menuPath === location.pathname
 
   const menuRef = useRef<HTMLDivElement>(null)
   const avatarRef = useRef<HTMLButtonElement>(null)
-  const railRef = useRef<HTMLElement>(null)
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const burgerRef = useRef<HTMLButtonElement>(null)
+  const chromeRef = useRef<HTMLDivElement>(null)
+  const [chromeH, setChromeH] = useState(104)
 
   const title =
     [...matches].reverse().map((m) => (m.handle as { title?: string } | undefined)?.title).find(Boolean) ??
     'OpportunityPilot'
-  const hint = topbarHint(location.pathname, workspace, overview.data)
+  const section = navGroupFor(location.pathname, navGroupsFor(workspace, true))?.label
+
+  // The rail sticks under the app bar and journey bar, whatever height they have at this width.
+  useLayoutEffect(() => {
+    const el = chromeRef.current
+    if (!el) return
+    const measure = () => setChromeH(el.offsetHeight)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // The journey bar and Next bar read these counts, so refresh them whenever the person moves to another screen.
   useEffect(() => { reloadOverview() }, [location.pathname, reloadOverview])
@@ -184,29 +199,18 @@ export function AppShell() {
     document.title = `${title} · OpportunityPilot`
   }, [title])
 
-  // Widening past the breakpoint forgets an open drawer, so narrowing again does not reopen it.
-  useEffect(() => {
-    const mq = window.matchMedia(DRAWER_QUERY)
-    const onChange = () => {
-      if (!mq.matches) setDrawerPath(null)
-    }
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
-
-  // However the drawer closed (its button, Escape, scrim, a link, a route change), focus goes back to the menu
-  // button. Done after the commit: until then the button sits in the inert page and cannot take focus.
+  // However the drawer closed (its button, Escape, scrim, a link, a route change), focus goes back to the hamburger.
   const drawerWasOpen = useRef(false)
   useEffect(() => {
-    if (drawerWasOpen.current && !drawerOpen) menuButtonRef.current?.focus()
+    if (drawerWasOpen.current && !drawerOpen) burgerRef.current?.focus()
     drawerWasOpen.current = drawerOpen
   }, [drawerOpen])
 
   // Drawer: focus moves in, Tab stays in, Escape closes, the page behind does not scroll.
   useEffect(() => {
     if (!drawerOpen) return
-    const rail = railRef.current
-    const target = rail?.querySelector<HTMLElement>('[aria-current="page"]') ?? rail?.querySelector<HTMLElement>(FOCUSABLE)
+    const drawer = drawerRef.current
+    const target = drawer?.querySelector<HTMLElement>('[aria-current="page"]') ?? drawer?.querySelector<HTMLElement>(FOCUSABLE)
     target?.focus()
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -216,15 +220,15 @@ export function AppShell() {
         closeDrawer()
         return
       }
-      if (e.key !== 'Tab' || !rail) return
-      const items = [...rail.querySelectorAll<HTMLElement>(FOCUSABLE)]
+      if (e.key !== 'Tab' || !drawer) return
+      const items = [...drawer.querySelectorAll<HTMLElement>(FOCUSABLE)]
       if (items.length === 0) return
       const first = items[0]
       const last = items[items.length - 1]
-      if (e.shiftKey && (document.activeElement === first || !rail.contains(document.activeElement))) {
+      if (e.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
         e.preventDefault()
         last.focus()
-      } else if (!e.shiftKey && (document.activeElement === last || !rail.contains(document.activeElement))) {
+      } else if (!e.shiftKey && (document.activeElement === last || !drawer.contains(document.activeElement))) {
         e.preventDefault()
         first.focus()
       }
@@ -246,236 +250,219 @@ export function AppShell() {
   const pathDone = pathSteps.filter((s) => s.done).length
   const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : [])]
 
-  const railClass = ['rail', collapsed && 'rail-collapsed', drawerOpen && 'rail-open'].filter(Boolean).join(' ')
+  const burgerLabel = railVisible ? (collapsed ? 'Expand the menu' : 'Collapse the menu') : drawerOpen ? 'Close the menu' : 'Open the menu'
+  const onBurger = railVisible ? toggleCollapsed : () => setDrawerPath(drawerOpen ? null : location.pathname)
+
+  /** The menu: the same list in the side rail (Advanced, wide) and in the drawer (everything else). */
+  const navList = (iconsOnly: boolean, afterClick?: () => void) => (
+    <>
+      <div className="rail-groups">
+        {navGroupsFor(workspace, advanced).map((group) => (
+          <div key={group.id} className="rail-group">
+            {group.label &&
+              (iconsOnly ? (
+                <div className="rail-divider" aria-hidden="true" />
+              ) : (
+                <div className="rail-section" id={`nav-group-${group.id}`}>{group.label}</div>
+              ))}
+            <ul className="rail-list" aria-labelledby={group.label && !iconsOnly ? `nav-group-${group.id}` : undefined} aria-label={group.label && iconsOnly ? group.label : undefined}>
+              {group.items.map((n) => {
+                const count = navCount(n, overview.data)
+                const name = navAccessibleName(n, count)
+                return (
+                  <li key={n.to}>
+                    <NavLink
+                      to={n.to}
+                      end={n.end}
+                      className="rail-link"
+                      data-coach={n.to === '/wellfound' ? 'nav-find' : n.to === '/opportunities' ? 'nav-opps' : n.to === '/outreach' ? 'nav-outreach' : undefined}
+                      aria-label={iconsOnly ? name : undefined}
+                      title={iconsOnly ? name : undefined}
+                      onClick={afterClick}
+                    >
+                      <Icon name={n.icon} size={17} className="rail-icon" />
+                      {iconsOnly ? (
+                        n.count?.tone === 'attention' && count !== null && <span className="nav-dot" aria-hidden="true" />
+                      ) : (
+                        <>
+                          <span className="rail-label">{n.label}</span>
+                          {n.notBuilt && <span className="nav-soon">Soon<span className="sr-only"> (not built yet)</span></span>}
+                          {n.count && count !== null && (
+                            <span className={`nav-count nav-count-${n.count.tone} op-numeric`}>
+                              {count}
+                              <span className="sr-only"> {n.count.srLabel}</span>
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </NavLink>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div className="rail-footer">
+        {!iconsOnly && (
+          <div className="rail-path">
+            <span className="rail-path-title">Your path</span>
+            <ProgressBar pct={percentOf(pathDone, pathSteps.length)} label="Steps of your path done" text={`${pathDone} of ${pathSteps.length}`} size="sm" tone={pathDone === pathSteps.length ? 'success' : 'primary'} />
+          </div>
+        )}
+        {statuses.map((s) => (
+          <div key={s.text} className="rail-status" title={iconsOnly ? s.text : undefined}>
+            <span className={`dot dot-${s.tone}`} aria-hidden="true" />
+            <span className={iconsOnly ? 'sr-only' : undefined}>{s.text}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
 
   return (
     <ShellContext.Provider
       value={{ capabilities: caps, awaitingApproval, overview: overview.data, refreshOverview: overview.reload, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide }}
     >
-      <div className={`shell ws-${workspace} ${advanced ? 'is-advanced' : 'is-simple'}`}>
-        <a href="#main" className="skip-link">
-          Skip to content
-        </a>
-        {advanced && (
-        <nav ref={railRef} className={railClass} aria-label="Primary" id="primary-nav">
-          <div className="rail-head">
-            {isDrawerLayout ? (
-              <button type="button" className="rail-toggle" aria-label="Close navigation" onClick={closeDrawer}>
-                <Icon name="menu" size={18} />
-              </button>
-            ) : (
+      <div className={`shell ws-${workspace} ${advanced ? 'is-advanced' : 'is-simple'}`} style={{ ['--chrome-h' as string]: `${chromeH}px` }}>
+        <a href="#main" className="skip-link">Skip to content</a>
+
+        <div className="chrome" ref={chromeRef}>
+          <header className="appbar" data-testid="app-topbar">
+            <div className="ab-l">
               <button
+                ref={burgerRef}
                 type="button"
-                className="rail-toggle"
-                aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-                aria-expanded={!collapsed}
-                data-tip={collapsed ? 'Expand navigation' : undefined}
-                onClick={toggleCollapsed}
+                className="ab-burger"
+                data-testid="app-burger"
+                aria-label={burgerLabel}
+                aria-controls={railVisible ? 'primary-nav' : 'nav-drawer'}
+                aria-expanded={railVisible ? !collapsed : drawerOpen}
+                onClick={onBurger}
               >
-                <Icon name="menu" size={collapsed ? 19 : 18} />
+                <Icon name="menu" size={19} />
               </button>
-            )}
-            {!collapsed && <span className="rail-brand-name">OpportunityPilot</span>}
-          </div>
-
-          <div className="rail-groups">
-            {navGroupsFor(workspace, advanced).map((group) => (
-              <div key={group.id} className="rail-group">
-                {group.label &&
-                  (collapsed ? (
-                    <div className="rail-divider" aria-hidden="true" />
-                  ) : (
-                    <div className="rail-section" id={`nav-group-${group.id}`}>
-                      {group.label}
-                    </div>
-                  ))}
-                <ul
-                  className="rail-list"
-                  aria-labelledby={group.label && !collapsed ? `nav-group-${group.id}` : undefined}
-                  aria-label={group.label && collapsed ? group.label : undefined}
-                >
-                  {group.items.map((n) => {
-                    const count = navCount(n, overview.data)
-                    const name = navAccessibleName(n, count)
-                    return (
-                      <li key={n.to}>
-                        <NavLink
-                          to={n.to}
-                          end={n.end}
-                          className="rail-link"
-                          data-coach={n.to === '/wellfound' ? 'nav-find' : n.to === '/opportunities' ? 'nav-opps' : n.to === '/outreach' ? 'nav-outreach' : undefined}
-                          aria-label={collapsed ? name : undefined}
-                          data-tip={collapsed ? name : undefined}
-                          onClick={drawerOpen ? closeDrawer : undefined}
-                        >
-                          <span className="rail-tile"><Icon name={n.icon} size={collapsed ? 18 : 16} className="rail-icon" /></span>
-                          {collapsed ? (
-                            n.count?.tone === 'attention' && count !== null && <span className="nav-dot" aria-hidden="true" />
-                          ) : (
-                            <>
-                              <span className="rail-label">{n.label}</span>
-                              {n.notBuilt && (
-                                <span className="nav-soon">
-                                  Soon<span className="sr-only"> (not built yet)</span>
-                                </span>
-                              )}
-                              {n.count && count !== null && (
-                                <span className={`nav-count nav-count-${n.count.tone} op-numeric`}>
-                                  {count}
-                                  <span className="sr-only"> {n.count.srLabel}</span>
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </NavLink>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="rail-footer">
-            {!collapsed && (
-              <div className="rail-path">
-                <span className="rail-path-title">Your path</span>
-                <ProgressBar pct={percentOf(pathDone, pathSteps.length)} label="Steps of your path done" text={`${pathDone} of ${pathSteps.length}`} size="sm" tone={pathDone === pathSteps.length ? 'success' : 'primary'} />
-              </div>
-            )}
-            {statuses.map((s) => (
-              <div key={s.text} className="rail-status" title={collapsed ? s.text : undefined}>
-                <span className={`dot dot-${s.tone}`} aria-hidden="true" />
-                <span className={collapsed ? 'sr-only' : undefined}>{s.text}</span>
-              </div>
-            ))}
-          </div>
-        </nav>
-        )}
-        {drawerOpen && <div className="scrim" onClick={closeDrawer} aria-hidden="true" />}
-
-        <div className="main-col" inert={drawerOpen}>
-          <div className="topbar-wrap">
-          <header className="topbar">
-            <div className="topbar-primary">
-              {advanced && (
-                <button
-                  ref={menuButtonRef}
-                  type="button"
-                  className="menu-toggle"
-                  aria-label="Open navigation"
-                  aria-controls="primary-nav"
-                  aria-expanded={drawerOpen}
-                  onClick={() => setDrawerPath(location.pathname)}
-                >
-                  <Icon name="menu" size={20} />
-                </button>
-              )}
               <Link to="/" className="brand" aria-label="OpportunityPilot home">
                 <span className="brand-mark" aria-hidden="true">OP</span>
                 <span className="brand-name">OpportunityPilot</span>
               </Link>
+              <span className="ab-sep" aria-hidden="true" />
               <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
                 {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
                   <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
                     <Icon name={WORKSPACES[key].icon} size={14} />
-                    <span>{WORKSPACES[key].label}</span>
+                    <span className="ws-seg-label">{WORKSPACES[key].label}</span>
                   </button>
                 ))}
               </div>
-              <div className="topbar-heading">
-                <h1 className="topbar-title">{title}</h1>
-                {hint && <span className="topbar-hint">{hint}</span>}
-              </div>
+              {advanced ? (
+                <>
+                  <span className="ab-sep ab-sep-crumb" aria-hidden="true" />
+                  <div className="crumb" aria-label="You are here">
+                    {section && <span className="crumb-sec">{section}<span className="crumb-slash" aria-hidden="true"> / </span></span>}
+                    <h1 className="crumb-page">{title}</h1>
+                  </div>
+                </>
+              ) : (
+                <h1 className="sr-only">{title}</h1>
+              )}
             </div>
-            <div className="topbar-actions">
+            <div className="ab-r">
               {advanced && aiMode && (
-                <span className="pill pill-neutral topbar-ai">
+                <span className="pill pill-neutral ab-status">
                   <Icon name="sparkles" size={13} />
                   {aiMode.text}
                 </span>
               )}
               <div className="top-switches" aria-label="View preferences">
-                <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" />
-                <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" />
+                <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" testId="toggle-guide" />
+                <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
-              <div className="topbar-utilities">
-                <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
-                  <Icon name="help" size={17} />
+              <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
+                <Icon name="help" size={17} />
+              </button>
+              <ThemeToggle />
+              <div className="account" ref={menuRef}>
+                <button
+                  ref={avatarRef}
+                  type="button"
+                  className="avatar"
+                  data-testid="account-menu-button"
+                  aria-label="Account menu"
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  onClick={() => setMenuPath((p) => (p === location.pathname ? null : location.pathname))}
+                >
+                  <span className="avatar-initials" aria-hidden="true">{user ? initials(user.email) : '?'}</span>
                 </button>
-                <ThemeToggle />
-                <div className="account" ref={menuRef}>
-                  <button
-                    ref={avatarRef}
-                    type="button"
-                    className="avatar"
-                    aria-label="Account menu"
-                    aria-haspopup="menu"
-                    aria-expanded={menuOpen}
-                    onClick={() => setMenuPath((p) => (p === location.pathname ? null : location.pathname))}
-                  >
-                    <span className="avatar-initials" aria-hidden="true">
-                      {user ? initials(user.email) : '?'}
-                    </span>
-                  </button>
-                  {menuOpen && (
-                    <div className="menu" role="menu">
-                      <div className="menu-meta">{user?.email}</div>
-                      <div className="menu-switches">
-                        <TopSwitch label="Guide" on={guide} onChange={setGuide} />
-                        <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} />
-                      </div>
-                      <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>
-                      <Link to="/" role="menuitem" className="menu-item" onClick={closeMenu}>Home</Link>
-                      <button type="button" role="menuitem" className="menu-item" onClick={() => void signOut()}>
-                        Sign out
+                {menuOpen && (
+                  <div className="menu" role="menu" data-testid="account-menu">
+                    <div className="menu-meta">{user?.email}</div>
+                    <div className="menu-switches">
+                      <button type="button" role="menuitemcheckbox" aria-checked={guide} data-testid="toggle-guide" className="menu-item menu-check" onClick={() => setGuide(!guide)}>
+                        <span>Guide</span><span className="muted-small">{guide ? 'On' : 'Off'}</span>
+                      </button>
+                      <button type="button" role="menuitemcheckbox" aria-checked={advanced} data-testid="toggle-advanced" className="menu-item menu-check" onClick={() => setAdvanced(!advanced)}>
+                        <span>Advanced</span><span className="muted-small">{advanced ? 'On' : 'Off'}</span>
                       </button>
                     </div>
-                  )}
-                </div>
+                    <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>
+                    <Link to="/" role="menuitem" className="menu-item" onClick={closeMenu}>Home</Link>
+                    <button type="button" role="menuitem" className="menu-item" onClick={() => void signOut()}>Sign out</button>
+                  </div>
+                )}
               </div>
             </div>
           </header>
           <JourneyBar workspace={workspace} overview={overview.data} pathname={location.pathname} />
-          </div>
-
-          {apiStatus === 'waking' && (
-            <div className="banner" role="status">
-              <Icon name="alert" size={15} className="banner-icon" />
-              <span>
-                <strong>Starting the API service…</strong> The host sleeps when idle; the first request can take up to a
-                minute.
-              </span>
-            </div>
-          )}
-          {(caps?.temporaryStorage || caps?.guestSignIn) && !demoHidden && (
-            <div className="banner" role="status">
-              <Icon name="alert" size={15} className="banner-icon" />
-              <span>
-                <strong>Demo mode.</strong>{' '}
-                {caps.temporaryStorage
-                  ? 'Your data is temporary and is cleared when the server restarts.'
-                  : 'Data is stored, but sign-in is guest-only.'}{' '}
-                {caps.guestSignIn && 'You are signed in as a private guest.'}
-              </span>
-              <button type="button" className="btn btn-ghost btn-sm banner-close" aria-label="Dismiss this message" onClick={() => { setDemoHidden(true); try { sessionStorage.setItem('op.demoBanner', '1') } catch { /* shown again next time */ } }}>✕</button>
-            </div>
-          )}
-          {apiStatus === 'degraded' && (
-            <div className="banner banner-danger" role="alert">
-              <Icon name="alert" size={15} className="banner-icon" />
-              <span>
-                The API is running but reports its database as unavailable. Data screens will fail until it recovers.
-              </span>
-            </div>
-          )}
-
-          {guide && <NextBar workspace={workspace} overview={overview.data} pathname={location.pathname} search={location.search} />}
-          <main id="main" className="content" tabIndex={-1}>
-            <Outlet />
-          </main>
-          <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />
         </div>
+
+        <div className="shell-body">
+          {railVisible && (
+            <nav className={`rail${collapsed ? ' rail-collapsed' : ''}`} aria-label="Primary" id="primary-nav" data-testid="app-rail">
+              {navList(collapsed)}
+            </nav>
+          )}
+          <div className="main-col">
+            {apiStatus === 'waking' && (
+              <div className="banner" role="status">
+                <Icon name="alert" size={15} className="banner-icon" />
+                <span><strong>Starting the API service…</strong> The host sleeps when idle; the first request can take up to a minute.</span>
+              </div>
+            )}
+            {(caps?.temporaryStorage || caps?.guestSignIn) && !demoHidden && (
+              <div className="banner" role="status">
+                <Icon name="alert" size={15} className="banner-icon" />
+                <span>
+                  <strong>Demo mode.</strong>{' '}
+                  {caps.temporaryStorage ? 'Your data is temporary and is cleared when the server restarts.' : 'Data is stored, but sign-in is guest-only.'}{' '}
+                  {caps.guestSignIn && 'You are signed in as a private guest.'}
+                </span>
+                <button type="button" className="btn btn-ghost btn-sm banner-close" aria-label="Dismiss this message" onClick={() => { setDemoHidden(true); try { sessionStorage.setItem('op-demo-hidden', '1') } catch { /* shown again next time */ } }}>✕</button>
+              </div>
+            )}
+            {apiStatus === 'degraded' && (
+              <div className="banner banner-danger" role="alert">
+                <Icon name="alert" size={15} className="banner-icon" />
+                <span>The API is running but reports its database as unavailable. Data screens will fail until it recovers.</span>
+              </div>
+            )}
+            {guide && <NextBar workspace={workspace} overview={overview.data} pathname={location.pathname} search={location.search} />}
+            <main id="main" className="content" tabIndex={-1} inert={drawerOpen}>
+              <Outlet />
+            </main>
+          </div>
+        </div>
+
+        {drawerOpen && (
+          <>
+            <div className="scrim" onClick={closeDrawer} aria-hidden="true" />
+            <div ref={drawerRef} className="rail rail-open drawer" id="nav-drawer" data-testid="nav-drawer" role="dialog" aria-modal="true" aria-label="Menu">
+              <nav aria-label="Primary" className="drawer-nav">{navList(false, closeDrawer)}</nav>
+            </div>
+          </>
+        )}
+        <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />
       </div>
     </ShellContext.Provider>
   )

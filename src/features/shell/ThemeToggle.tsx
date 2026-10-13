@@ -25,13 +25,16 @@ function ThemeGlyph({ choice }: { choice: ThemeChoice }) {
 export function ThemeToggle() {
   const [choice, setChoice] = useTheme()
   const next = nextTheme(choice)
+  // For System, say what it currently looks like, so the label always matches what is rendered.
+  const shown = choice === 'system' ? `System (${window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'})` : themeLabel(choice)
   return (
     <button
       type="button"
       className="theme-toggle"
+      data-testid="theme-toggle"
       onClick={() => setChoice(next)}
-      aria-label={`Theme: ${themeLabel(choice)}. Switch to ${themeLabel(next)}`}
-      title={`Theme: ${themeLabel(choice)} (click for ${themeLabel(next)})`}
+      aria-label={`Theme: ${shown}. Switch to ${themeLabel(next)}`}
+      title={`Theme: ${shown} (click for ${themeLabel(next)})`}
     >
       <ThemeGlyph choice={choice} />
     </button>
