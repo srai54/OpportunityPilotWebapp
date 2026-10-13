@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { CommandBar } from '../command/CommandBar'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { AnalyticsOverview, Overview } from '../../lib/types'
@@ -63,6 +64,7 @@ export function OverviewPage() {
           </>
         }
       />
+      <CommandBar />
       {analytics.error && <ErrorNotice error={analytics.error} onRetry={analytics.reload} what="the analytics" />}
       {!a && !analytics.error && <LoadingState label="Computing the figures…" waking={analytics.waking} stats={5} rows={5} />}
       {a && a.activeResearch && (
@@ -461,6 +463,7 @@ function FirstRun({ overview }: { overview: Overview }) {
         <button type="button" className={workspace === 'candidate' ? 'active' : ''} aria-pressed={workspace === 'candidate'} onClick={() => setWorkspace('candidate')}>Find a job</button>
         <button type="button" className={workspace === 'sales' ? 'active' : ''} aria-pressed={workspace === 'sales'} onClick={() => setWorkspace('sales')}>Find customers</button>
       </div>
+      <CommandBar />
       <GuidedStart overview={overview} workspace={workspace} />
       {workspace === 'candidate' && <SampleRunCard />}
     </div>

@@ -1,0 +1,76 @@
+import { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Card } from '../../components/cards'
+import { useShell } from '../shell/ShellContext'
+import { commandPath, describeCommand, parseCommand, type ParsedCommand } from './commandModel'
+
+type Recognition = { lang: string; interimResults: boolean; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void }
+type RecognitionCtor = new () => Recognition
+
+function recognitionCtor(): RecognitionCtor | null {
+  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
+
+/**
+ * "Tell it what to do": type or speak a short instruction. It is read as a search (what, where, remote, repeat) and what you want
+ * next (apply or send). You always see what will happen first; nothing is sent or applied by it.
+ */
+export function CommandBar() {
+  const navigate = useNavigate()
+  const { workspace } = useShell()
+  const ws = workspace === 'sales' ? 'sales' : 'candidate'
+  const [text, setText] = useState('')
+  const [heard, setHeard] = useState(false)
+  const [listening, setListening] = useState(false)
+  const [plan, setPlan] = useState<ParsedCommand | null>(null)
+  const [tried, setTried] = useState(false)
+  const recognizer = useRef<Recognition | null>(null)
+  const canSpeak = recognitionCtor() !== null
+
+  function understand() {
+    const parsed = parseCommand(text, ws)
+    setPlan(parsed); setTried(true)
+  }
+
+  function speak() {
+    const Ctor = recognitionCtor()
+    if (!Ctor) return
+    if (listening) { recognizer.current?.stop(); return }
+    const r = new Ctor()
+    r.lang = navigator.language || 'en-US'
+    r.interimResults = false
+    r.onresult = (e) => { setText(e.results[0]?.[0]?.transcript ?? ''); setHeard(true); setPlan(null); setTried(false) }
+    r.onend = () => setListening(false)
+    r.onerror = () => setListening(false)
+    recognizer.current = r
+    setListening(true)
+    r.start()
+  }
+
+  const example = ws === 'sales' ? 'find companies hiring payroll engineers in London then send outreach' : 'find react developer jobs in Berlin and apply every day'
+  return (
+    <Card title="Tell it what to do" subtitle={`Type or say it, e.g. “${example}”. You confirm before anything runs.`} coach="command-bar">
+      <form className="stack-3" onSubmit={(e) => { e.preventDefault(); understand() }} aria-label="Command">
+        <div className="search-bar">
+          <label className="search-field search-field-main"><span className="sr-only">What should it do?</span>
+            <input value={text} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false) }} maxLength={300} placeholder={ws === 'sales' ? 'e.g. find companies hiring React developers in Berlin' : 'e.g. find .NET developer jobs in Pune'} /></label>
+          {canSpeak && <button type="button" className={`btn btn-secondary${listening ? ' is-listening' : ''}`} aria-pressed={listening} onClick={speak}>{listening ? 'Listening… tap to stop' : '🎤 Speak'}</button>}
+          <button type="submit" className="btn btn-primary" disabled={!text.trim()}>Go</button>
+        </div>
+        {heard && <p className="muted-small" role="status">Heard: “{text}”. Fix it above if it is wrong, then press Go.</p>}
+        {!canSpeak && <p className="muted-small">Voice needs Chrome, Edge or Safari. Typing works everywhere.</p>}
+        {tried && !plan && <p className="notice notice-warning" role="alert">I need at least a role or skill to search for, e.g. “react developer in Berlin”.</p>}
+        {plan && (
+          <div className="notice notice-neutral stack-2" role="status">
+            <p>{describeCommand(plan, ws)}</p>
+            <div className="row wrap">
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(commandPath(plan, ws))}>Yes, run it</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPlan(null)}>Change it</button>
+            </div>
+          </div>
+        )}
+      </form>
+    </Card>
+  )
+}

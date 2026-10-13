@@ -46,6 +46,21 @@ import {
  * /opportunities (campaign chosen with ?campaign=, defaulting to the newest) and /campaigns/:id/opportunities.
  * Opportunities belong to a campaign in the API, so the list is always one campaign's.
  */
+/** Shown once after a command-bar run: what you asked for, and the steps that get you there. Dismissing it forgets it. */
+function NextHint({ sales }: Readonly<{ sales: boolean }>) {
+  const [wanted, setWanted] = useState<string | null>(() => { try { return sessionStorage.getItem('op.then') } catch { return null } })
+  if (wanted !== 'apply' && wanted !== 'send') return null
+  const apply = wanted === 'apply' && !sales
+  function dismiss() { try { sessionStorage.removeItem('op.then') } catch { /* nothing to clear */ } setWanted(null) }
+  return (
+    <div className="notice notice-neutral stack-2" role="status">
+      <p><strong>{apply ? 'You asked to apply.' : 'You asked to send outreach.'}</strong> Approve the ones you want (tick them, then Approve).{' '}
+        {apply ? 'Then tick the approved ones and press “Apply to N”: each posting opens for you to submit.' : 'Then press “Draft messages” and open Outreach, where “Send all” sends the ones you approved.'}</p>
+      <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={dismiss}>Got it</button></div>
+    </div>
+  )
+}
+
 function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
   const sales = useShell().workspace === 'sales'
   const { advanced } = useShell()
@@ -69,6 +84,7 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
           : 'Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success.'}
       />
       {tabs}
+      <NextHint sales={sales} />
 
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} />}
       {campaigns.loading && !campaigns.data && <LoadingState label="Loading campaigns…" waking={campaigns.waking} rows={3} />}
@@ -549,6 +565,7 @@ export function OpportunitiesPage() {
       <div className="page page-wide stack-4">
         <PageHeader title={sales ? 'Leads' : 'Opportunities'} subtitle={sales ? 'Approve the companies worth contacting in one click, or reject the rest.' : 'Approve the jobs worth your time in one click, or reject the rest.'} />
         {tabs}
+        <NextHint sales={sales} />
         <ApprovalQueuePage embedded />
       </div>
     )

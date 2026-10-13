@@ -28,7 +28,7 @@ export const COACH_FLOWS: CoachFlow[] = [
     steps: [
       { target: 'find-search', title: '1. Type a role and a place', body: 'A role is enough. Press Search — real postings appear below, each linked to the original.', sales: { body: 'A role is enough. Press Search — companies that are hiring appear below, each linked to the original posting.' } },
       { target: 'find-filters', title: '2. Narrow it down', body: 'More filters has date, job type, experience, distance, country, pay shown only and more. Optional.' },
-      { target: 'find-tabs', title: '3. Try another site', body: 'All sites reads Arbeitnow, Jobicy, We Work Remotely, Remotive and Remote OK for free, plus LinkedIn, Indeed and SEEK. Or pick one site. Trends shows which skills are asked for most.' },
+      { target: 'find-tabs', title: '3. Try another site', body: 'All sites reads Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK and Himalayas for free, plus LinkedIn, Indeed and SEEK. Or pick one site. Trends shows which skills are asked for most.' },
       { target: 'find-campaign', title: '4. Keep what you find', body: 'Start a campaign from this search: every job is scored against your profile and the best are suggested for you to approve.', sales: { body: 'Start a campaign from this search: every company is scored against your profile and the best become leads for you to approve.' } },
     ],
   },

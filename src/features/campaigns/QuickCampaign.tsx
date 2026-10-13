@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -34,6 +34,11 @@ const BOARDS: { value: SourceChoice; label: string }[] = [
   { value: 'Lever', label: 'One company\'s Lever board' },
 ]
 
+/** What you said you want after the search ("apply" or "send"); the Review screen shows it once as a hint, then forgets it. */
+function rememberNext(next: string | null) {
+  try { if (next === 'apply' || next === 'send') sessionStorage.setItem('op.then', next); else sessionStorage.removeItem('op.then') } catch { /* the hint is optional */ }
+}
+
 /**
  * The simple way to start: what to find, where, and one source — then Create & run. Everything else (weights, hard filters,
  * thresholds, other sources) lives in the full builder, one click away under Advanced.
@@ -50,7 +55,8 @@ export function QuickCampaign() {
   const preferred = choices.find((c) => c.value === params.get('board'))?.value
   const [source, setSource] = useState<SourceChoice>(preferred ?? (workspace === 'sales' ? 'LinkedIn' : 'FreeFeeds'))
   const [token, setToken] = useState('')
-  const [repeat, setRepeat] = useState(0)
+  const [repeat, setRepeat] = useState(() => (CADENCES.some((c) => c.minutes === Number(params.get('repeat'))) ? Number(params.get('repeat')) : 0))
+  const autoStarted = useRef(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
 
@@ -70,8 +76,18 @@ export function QuickCampaign() {
   ].filter(Boolean) as string[]
   const fullPath = `/campaigns/new?full=1${query ? `&keywords=${encodeURIComponent(query)}` : ''}${place ? `&location=${encodeURIComponent(place)}` : ''}`
 
-  async function submit(event: FormEvent) {
-    event.preventDefault()
+  // Started from the command bar: everything is filled in and was confirmed there, so run once the profile is known.
+  const wantsAuto = params.get('auto') === '1'
+  useEffect(() => {
+    if (!wantsAuto || autoStarted.current || !chosen || problems.length > 0 || busy) return
+    autoStarted.current = true
+    void submit()
+    // One-shot start; submit reads the current form state.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsAuto, chosen, problems.length, busy])
+
+  async function submit(event?: FormEvent) {
+    event?.preventDefault()
     if (problems.length || !chosen || busy) return
     setBusy(true); setError(undefined)
     try {
@@ -93,6 +109,7 @@ export function QuickCampaign() {
         throw e
       }
       const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
+      rememberNext(params.get('then'))
       if (repeat > 0) {
         // This run already started; the schedule begins one interval later. A failure here must not lose the run.
         await api(`/api/v1/campaigns/${campaign.id}/schedule`, { method: 'PUT', body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC', cadenceMinutes: repeat, nextRunAt: firstRepeatAt(repeat), paused: false, expectedVersion: null }) }).catch(() => undefined)

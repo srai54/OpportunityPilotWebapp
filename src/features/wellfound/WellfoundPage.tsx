@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
+import { CommandBar } from '../command/CommandBar'
 import { HowItWorks } from '../../components/HowItWorks'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, FilteredEmpty, LoadingState } from '../../components/States'
@@ -130,6 +131,7 @@ export function WellfoundPage() {
     <PageHeader title={workspace === 'sales' ? 'Find companies' : 'Find jobs'} subtitle={workspace === 'sales'
       ? 'See which companies are hiring right now. One search covers every site we can read, with live hiring signals.'
       : 'One search over every site we can read, each job linked to its original posting.'} />
+    <CommandBar />
 
     {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 

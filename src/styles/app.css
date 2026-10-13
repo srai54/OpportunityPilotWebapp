@@ -1931,3 +1931,7 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
 .hwf-num { font-size: var(--op-text-micro); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--op-muted); }
 .hwf-title { font-size: var(--op-text-screen); margin: 0; }
 .hwf-card .btn { margin-top: auto; }
+
+/* FB16: command bar */
+.btn.is-listening { border-color: var(--op-c3); color: var(--op-c3); }
+@media (prefers-reduced-motion: no-preference) { .btn.is-listening { animation: listen-pulse 1.4s ease-in-out infinite; } @keyframes listen-pulse { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--op-c3) 25%, transparent); } } }
