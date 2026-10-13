@@ -55,7 +55,9 @@ export function flowIdForPath(pathname: string): string | null {
   if (/^\/research\/[^/]+$/.test(pathname)) return 'run'
   if (pathname === '/follow-ups') return 'followups'
   if (pathname === '/insights') return 'insights'
-  if (pathname === '/opportunities') return 'opps'
+  if (pathname === '/campaigns') return 'campaigns'
+  // The run lands on /campaigns/:id/opportunities, so that is the Review screen the guide must cover.
+  if (pathname === '/opportunities' || /^\/campaigns\/[^/]+\/opportunities$/.test(pathname)) return 'opps'
   if (/^\/opportunities\/[^/]+$/.test(pathname)) return 'opp'
   if (pathname === '/outreach') return 'outreach'
   return null

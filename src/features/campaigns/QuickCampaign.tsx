@@ -10,14 +10,25 @@ import { useApi } from '../../lib/useApi'
 import { splitTags } from '../profiles/profileFields'
 import { useShell } from '../shell/ShellContext'
 import {
-  campaignPayload, newDraft, parseBoardInput, SEARCH_BOARDS, suggestedMode,
+  campaignPayload, newDraft, parseBoardInput, quickSourceBodies, SEARCH_BOARDS, suggestedMode,
   type BoardKind, type SupportedMode,
 } from './campaignModel'
 
-type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Greenhouse' | 'Lever'
+type FeedChoice = 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk'
+type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Greenhouse' | 'Lever' | 'FreeFeeds' | FeedChoice
 
 const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` }))
-/** Candidates can also read one company's own board; Sales cannot (a board lists jobs, and a Sales campaign needs the hiring company). */
+/** The free public feeds: no key, no quota. Candidates only (a feed lists jobs, and a Sales campaign needs the hiring company). */
+const FEEDS: { value: FeedChoice; label: string }[] = [
+  { value: 'Arbeitnow', label: 'Arbeitnow (Germany, Europe, remote)' },
+  { value: 'Jobicy', label: 'Jobicy (remote)' },
+  { value: 'WeWorkRemotely', label: 'We Work Remotely' },
+  { value: 'Remotive', label: 'Remotive (remote)' },
+  { value: 'RemoteOk', label: 'Remote OK' },
+]
+const ALL_FREE: { value: SourceChoice; label: string }[] = [{ value: 'FreeFeeds', label: 'All free sites at once (no key needed)' }]
+const SITE_NAMES: Record<string, string> = { Seek: 'SEEK', FreeFeeds: 'free sites', WeWorkRemotely: 'We Work Remotely', RemoteOk: 'Remote OK' }
+/** Candidates can also read one company's own board; Sales cannot. */
 const BOARDS: { value: SourceChoice; label: string }[] = [
   { value: 'Greenhouse', label: 'One company\'s Greenhouse board' },
   { value: 'Lever', label: 'One company\'s Lever board' },
@@ -35,9 +46,9 @@ export function QuickCampaign() {
   const [profileId, setProfileId] = useState(params.get('profile') ?? '')
   const [query, setQuery] = useState(params.get('keywords') ?? '')
   const [place, setPlace] = useState(params.get('location') ?? '')
-  const choices = workspace === 'sales' ? SEARCHES : [...SEARCHES, ...BOARDS]
+  const choices = workspace === 'sales' ? SEARCHES : [...ALL_FREE, ...SEARCHES, ...FEEDS, ...BOARDS]
   const preferred = choices.find((c) => c.value === params.get('board'))?.value
-  const [source, setSource] = useState<SourceChoice>(preferred ?? 'LinkedIn')
+  const [source, setSource] = useState<SourceChoice>(preferred ?? (workspace === 'sales' ? 'LinkedIn' : 'FreeFeeds'))
   const [token, setToken] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
@@ -65,17 +76,16 @@ export function QuickCampaign() {
     try {
       const draft = newDraft()
       const keywords = query.trim() ? [query.trim().slice(0, 200)] : []
-      draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${source === 'Seek' ? 'SEEK' : source}`
+      const siteName = SITE_NAMES[source] ?? source
+      draft.name = (query.trim() || (source === 'Greenhouse' || source === 'Lever' ? `${source} board` : 'Search')).slice(0, 80) + ` — ${siteName}`
       draft.goal = keywords.length ? `Find ${keywords[0]}${place.trim() ? ` in ${place.trim()}` : ''}.` : ''
       draft.criteria = { ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }
       // Suggest anything reasonable for approval so the first run has something to approve.
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
       const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode) }) })
-      const sourceBody = source === 'Greenhouse' || source === 'Lever'
-        ? { kind: source, url: board && 'token' in board ? board.token : token.trim() }
-        : { kind: 'JobSearch', url: source }
+      const sourceBodies = quickSourceBodies(source, (board && 'token' in board ? board.token : undefined) ?? token.trim())
       try {
-        await api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(sourceBody) })
+        await Promise.all(sourceBodies.map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
       } catch (e) {
         // The campaign exists; let the person fix the source in the full builder instead of losing it.
         navigate(`/campaigns/${campaign.id}/edit?step=3`, { replace: true })
@@ -105,7 +115,11 @@ export function QuickCampaign() {
           <input value={place} onChange={(e) => setPlace(e.target.value)} placeholder="Location (optional)" /></label>
       </div>
       <label className="field" data-coach="quick-source"><span>Where to look</span>
-        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>{choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select></label>
+        <select value={source} onChange={(e) => setSource(e.target.value as SourceChoice)}>
+          {wantsCandidate && <optgroup label="Free sites">{[...ALL_FREE, ...FEEDS].map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
+          <optgroup label="Job search sites">{SEARCHES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>
+          {wantsCandidate && <optgroup label="One company">{BOARDS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>}
+        </select></label>
       {(source === 'Greenhouse' || source === 'Lever') && <label className="field"><span>{source === 'Greenhouse' ? 'Board name or link' : 'Company name or link'}</span>
         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder={source === 'Greenhouse' ? 'e.g. stripe' : 'e.g. leverdemo'} /></label>}
       {mode === 'Job' && skills.length > 0 && <p className="muted-small">Results are ranked by your skills: {skills.join(', ')}.</p>}

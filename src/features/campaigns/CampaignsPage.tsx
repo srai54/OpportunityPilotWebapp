@@ -90,11 +90,11 @@ export function CampaignsPage() {
               {running > 0 && ` · ${running} running`}
             </h3>
             <div className="grow" />
-            <Link className="btn btn-primary btn-sm" to="/campaigns/new">
+            <Link className="btn btn-primary btn-sm" to="/campaigns/new" data-coach="campaigns-new">
               + New campaign
             </Link>
           </header>
-          <div className="table-scroll" role="region" aria-label="Campaigns table" tabIndex={0}>
+          <div className="table-scroll" role="region" aria-label="Campaigns table" tabIndex={0} data-coach="campaigns-table">
             <table className="table">
               <caption className="sr-only">Your campaigns, newest first.</caption>
               <thead>

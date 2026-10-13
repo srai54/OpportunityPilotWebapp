@@ -365,6 +365,16 @@ export function sourceKindAllowed(kind: SourceKind, mode: OpportunityMode): bool
   return true
 }
 
+export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk']
+
+/** The sources the quick campaign adds for one choice: all free feeds, one feed, one company board, or a job search site. */
+export function quickSourceBodies(choice: string, boardToken: string): { kind: string; url?: string }[] {
+  if (choice === 'Greenhouse' || choice === 'Lever') return [{ kind: choice, url: boardToken }]
+  if (choice === 'FreeFeeds') return FREE_FEED_KINDS.map((kind) => ({ kind }))
+  if ((FREE_FEED_KINDS as string[]).includes(choice)) return [{ kind: choice }]
+  return [{ kind: 'JobSearch', url: choice }]
+}
+
 export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek'
 export const SEARCH_BOARDS: { value: SearchBoard; label: string }[] = [
   { value: 'Indeed', label: 'Indeed' },

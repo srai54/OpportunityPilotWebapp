@@ -72,6 +72,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
         </label>
         <span className="muted-small">{paidReady ? 'That part uses 3 of your free monthly searches.' : 'LinkedIn, Indeed and SEEK need the job-data key on the server.'} The free sites cost nothing.</span>
       </div>
+      <p className="muted-small" data-testid="sites-read">Reads: Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK{paidReady ? ', LinkedIn, Indeed, SEEK' : ''} — and any regional board the server owner has connected. Wellfound and Trends have their own tabs.</p>
     </form>
 
     {busy && <LoadingState label="Searching every site…" rows={3} />}

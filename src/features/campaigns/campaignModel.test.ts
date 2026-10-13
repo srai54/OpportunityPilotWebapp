@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  quickSourceBodies,
   cadenceLabel,
   modeCopy,
   campaignFilterCounts,
@@ -316,5 +317,14 @@ describe('searchSourceBlocker', () => {
   it('lets a run through with keywords or other sources', () => {
     expect(searchSourceBlocker(['JobSearch'], { ...empty, keywords: ['react'] }, 'Job')).toBeNull()
     expect(searchSourceBlocker(['Greenhouse'], empty, 'Job')).toBeNull()
+  })
+})
+
+describe('quickSourceBodies', () => {
+  it('adds every free feed for "all free sites", one feed, one company board or one search site', () => {
+    expect(quickSourceBodies('FreeFeeds', '').map((b) => b.kind)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk'])
+    expect(quickSourceBodies('Remotive', '')).toEqual([{ kind: 'Remotive' }])
+    expect(quickSourceBodies('Greenhouse', 'stripe')).toEqual([{ kind: 'Greenhouse', url: 'stripe' }])
+    expect(quickSourceBodies('Seek', '')).toEqual([{ kind: 'JobSearch', url: 'Seek' }])
   })
 })
