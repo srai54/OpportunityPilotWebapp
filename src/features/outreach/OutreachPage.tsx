@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
+import { SendAllCard } from './SendAllCard'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Card, CardList, MessageCard } from '../../components/cards'
@@ -199,6 +200,8 @@ export function OutreachPage() {
         <Card tone="signature" title={`${readyToSend.length} messages are ready to send`} subtitle="Step through them one by one: check, send, next."
           actions={<Link className="btn btn-primary" to={queuePath(readyToSend.map((d) => d.id))}>Start send queue</Link>} />
       )}
+
+      <SendAllCard items={items} onDone={drafts.reload} />
 
       <div className="outreach-cards">
         <section className="stack-3" aria-label="Messages">
