@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrendPoint } from '../../lib/types'
 import {
-  activityLine, activityVerb, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
+  activityLine, activityPath, activityVerb, hasMore, axisTicks, trimBands, clampGoal, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, linePoints, nearestIndex, niceMax, percent, seriesFor, sumOf, trendSummary,
 } from './insightsModel'
 
 const pt = (date: string, o: Partial<TrendPoint> = {}): TrendPoint => ({ date, found: 0, qualified: 0, approved: 0, reached: 0, replied: 0, sent: 0, ...o })
@@ -118,5 +118,29 @@ describe('activity lines', () => {
   })
   it('shows an unknown kind as written', () => {
     expect(activityVerb('Mystery')).toBe('Mystery')
+  })
+})
+
+describe('activity feed paths and lines', () => {
+  const now = new Date('2026-10-13T10:00:00Z')
+  it('asks for one workspace, the chosen kinds, a start date and the paging cursor', () => {
+    const path = activityPath(true, 'messages', 7, '2026-10-12T09:00:00.000Z', now)
+    const q = new URLSearchParams(path.split('?')[1])
+    expect(q.get('workspace')).toBe('Sales')
+    expect(q.get('kinds')).toBe('DraftCreated,DraftEdited,DraftApproved')
+    expect(q.get('from')).toBe('2026-10-06T10:00:00.000Z')
+    expect(q.get('before')).toBe('2026-10-12T09:00:00.000Z')
+    const all = new URLSearchParams(activityPath(false, 'all', 0, null, now).split('?')[1])
+    expect(all.get('workspace')).toBe('Candidate')
+    expect(all.has('kinds')).toBe(false)
+    expect(all.has('from')).toBe(false)
+  })
+  it('shows the stored sentence for what the person did themselves, with the lead when there is one', () => {
+    expect(activityLine({ kind: 'Searched', title: '', organization: '', detail: 'Searched all free sites for "react": 12 results', opportunityId: null }, false)).toBe('Searched all free sites for "react": 12 results')
+    expect(activityLine({ kind: 'DraftApproved', title: 'Backend Engineer', organization: 'Stripe', detail: 'Approved the email draft (version 2)', opportunityId: 'o1' }, true)).toBe('Approved the email draft (version 2): Stripe')
+  })
+  it('says there is more only when the page was full', () => {
+    expect(hasMore(20)).toBe(true)
+    expect(hasMore(7)).toBe(false)
   })
 })

@@ -161,14 +161,51 @@ const ACTIVITY_VERBS: Record<string, string> = {
   StatusChanged: 'Updated',
 }
 
+/** Kinds the person's own actions are recorded as. Their stored detail is already a full sentence. */
+const OWN_KINDS = new Set(['Searched', 'RunStarted', 'ProfileSaved', 'DraftCreated', 'DraftEdited', 'DraftApproved', 'FollowUpUpdated', 'MailboxConnected'])
+
 /** "You approved" / "Found" for a stored activity kind; an unknown kind is shown as written, never guessed. */
 export function activityVerb(kind: string): string {
   return ACTIVITY_VERBS[kind] ?? kind
 }
 
 /** One readable line per recorded action: the verb, the job or lead, and the stored detail when it adds something. */
-export function activityLine(item: Pick<ActivityFeedItem, 'kind' | 'title' | 'organization' | 'detail'>, sales: boolean): string {
+export function activityLine(item: Pick<ActivityFeedItem, 'kind' | 'title' | 'organization' | 'detail'> & { opportunityId?: string | null }, sales: boolean): string {
+  if (OWN_KINDS.has(item.kind)) {
+    const what = item.opportunityId ? (sales ? item.organization || item.title : item.title) : ''
+    return what ? `${item.detail}: ${what}` : item.detail
+  }
   const what = sales ? item.organization || item.title : [item.title, item.organization].filter(Boolean).join(' · ')
   const detail = item.detail && item.kind === 'StatusChanged' ? ` — ${item.detail}` : ''
   return `${activityVerb(item.kind)} ${what}${detail}`
+}
+
+export type ActivityGroup = 'all' | 'searches' | 'messages' | 'decisions' | 'applications' | 'followups' | 'setup'
+
+/** The filter chips and the stored kinds each one stands for (the API filters on kinds, not on groups). */
+export const ACTIVITY_GROUPS: { key: ActivityGroup; label: string; kinds: string[] }[] = [
+  { key: 'all', label: 'Everything', kinds: [] },
+  { key: 'searches', label: 'Searches', kinds: ['Searched', 'RunStarted', 'Researched'] },
+  { key: 'decisions', label: 'Decisions', kinds: ['Suggested', 'Approved', 'Rejected'] },
+  { key: 'messages', label: 'Messages', kinds: ['DraftCreated', 'DraftEdited', 'DraftApproved'] },
+  { key: 'applications', label: 'Applications', kinds: ['Applied', 'StatusChanged'] },
+  { key: 'followups', label: 'Follow-ups', kinds: ['FollowUpUpdated'] },
+  { key: 'setup', label: 'Profile and mailbox', kinds: ['ProfileSaved', 'MailboxConnected'] },
+]
+
+export const ACTIVITY_RANGES = [{ days: 7, label: '7 days' }, { days: 30, label: '30 days' }, { days: 90, label: '90 days' }, { days: 0, label: 'All time' }] as const
+
+/** The API path for one page of the feed. `before` is the oldest time already shown; `days` 0 means no start date. */
+export function activityPath(sales: boolean, group: ActivityGroup, days: number, before: string | null, now: Date = new Date(), take = 20): string {
+  const q = new URLSearchParams({ workspace: sales ? 'Sales' : 'Candidate', take: String(take) })
+  const kinds = ACTIVITY_GROUPS.find((g) => g.key === group)?.kinds ?? []
+  if (kinds.length) q.set('kinds', kinds.join(','))
+  if (days > 0) q.set('from', new Date(now.getTime() - days * 86_400_000).toISOString())
+  if (before) q.set('before', before)
+  return `/api/v1/analytics/activity?${q}`
+}
+
+/** Pages are full (take) until the last one; a short page means there is nothing older. */
+export function hasMore(pageSize: number, take = 20): boolean {
+  return pageSize >= take
 }

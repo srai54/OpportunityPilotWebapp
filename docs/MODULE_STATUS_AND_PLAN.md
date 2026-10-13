@@ -57,7 +57,7 @@ Status: **Done** = built, tested, and checked in a browser or against the API; *
 |---|---|---|---|---|
 | Overview, journey, coach marks | `overview/`, `journey/`, `coach/`, `guide/` | `Overview` | Done | |
 | Insights (KPIs, trend, funnel, goal) | `insights/` | `Analytics/` | Done | |
-| My activity | `insights/ActivityPanel` | `GET analytics/activity` | Partial | Status changes, approvals, sends only; searches and draft edits not recorded |
+| My activity | `insights/ActivityPanel` | `GET analytics/activity`, `user_events` | Done | Records searches, runs, profile saves, drafts, follow-ups, mailbox connects plus per-opportunity activity; filters and paging; lines without a job/lead show in both workspaces |
 | Connectors page | `connectors/` | — | Done | 16 upcoming connectors, "I want this" kept in the browser |
 
 ### 2.6 Sales team
@@ -92,7 +92,7 @@ Phone and tablet checks pass on all the screens above (see §5).
 | 0 | Release | Merge web #43 and API #36 together; confirm migrations in Supabase `app` | Live site matches the repo; `SQL.md` §2 returns 42 tables |
 | 1 | Identity | Supabase keys set; walk register, Microsoft, Google, authenticator on an iPhone | Each flow recorded in the status report as verified |
 | 2 | Act | Mailbox send live; then "send all" in the queue | One real email from each provider |
-| 3 | Track | Record searches, drafts, sends, follow-ups in My activity; filter by kind/date | Integration tests; panel updated |
+| 3 | Track | ~~Record searches, drafts, sends, follow-ups in My activity; filter by kind/date~~ done (T1) | Integration tests; panel updated |
 | 4 | Find | Switch on one RapidAPI regional board after a 10-call test | Test sample in the repo; board on/off switch |
 | 5 | Act | Run the agent supervised on LinkedIn, then schedule it | First dry run recorded; scheduled cycle visible in status |
 | 6 | Decide | Reply detection and automatic follow-up stop | Reply in a test mailbox moves the lead to Responded |

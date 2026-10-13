@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../../lib/api'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -11,7 +12,7 @@ import { analyticsPath } from '../overview/analyticsModel'
 import { useShell } from '../shell/ShellContext'
 import { HBars, ProgressBar, Spark, TrendChart } from './Charts'
 import {
-  activityLine, clampGoal, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
+  ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, delta, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
 const RANGES = [7, 14, 30, 90] as const
@@ -26,25 +27,68 @@ export function InsightsPage() {
   return <InsightsView key={useShell().workspace} />
 }
 
-/** "My activity": the person's own recorded actions, newest first, each linking to the job or lead. */
+/** "My activity": the person's own recorded actions, newest first, filtered by kind and date, with "Load more". Lines about a job or lead link to it. */
 function ActivityPanel({ sales }: Readonly<{ sales: boolean }>) {
-  const feed = useApi<ActivityFeedItem[]>(`/api/v1/analytics/activity?workspace=${sales ? 'Sales' : 'Candidate'}&take=20`)
+  const [group, setGroup] = useState<ActivityGroup>('all')
+  const [days, setDays] = useState<number>(30)
+  // Keyed so changing a filter starts again from the newest page.
+  return <ActivityList key={`${group}|${days}`} sales={sales} group={group} days={days} onGroup={setGroup} onDays={setDays} />
+}
+
+function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales: boolean; group: ActivityGroup; days: number; onGroup: (g: ActivityGroup) => void; onDays: (d: number) => void }>) {
+  // One fixed "now" per filter: a path that includes the current time would change on every render and refetch forever.
+  const [now] = useState(() => new Date())
+  const first = useApi<ActivityFeedItem[]>(activityPath(sales, group, days, null, now))
+  const [more, setMore] = useState<ActivityFeedItem[]>([])
+  const [lastPage, setLastPage] = useState<number | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [moreError, setMoreError] = useState<Error>()
+  const items = [...(first.data ?? []), ...more]
+  const canLoadMore = first.data !== undefined && hasMore(lastPage ?? first.data.length)
+
+  async function loadMore() {
+    const oldest = items[items.length - 1]
+    if (!oldest) return
+    setLoadingMore(true); setMoreError(undefined)
+    try {
+      const page = await api<ActivityFeedItem[]>(activityPath(sales, group, days, oldest.at, now))
+      setMore((m) => [...m, ...page])
+      setLastPage(page.length)
+    } catch (e) { setMoreError(e as Error) } finally { setLoadingMore(false) }
+  }
+
   return (
     <section className="panel" aria-labelledby="my-activity">
-      <header className="panel-head"><h3 className="eyebrow" id="my-activity">My activity</h3><div className="grow" /><span className="muted-small">latest 20 · newest first</span></header>
+      <header className="panel-head"><h3 className="eyebrow" id="my-activity">My activity</h3><div className="grow" /><span className="muted-small">newest first</span></header>
       <div className="panel-body">
-        {feed.error && <ErrorNotice error={feed.error} onRetry={feed.reload} what="your activity" />}
-        {feed.data?.length === 0 && <p className="muted-small">Nothing recorded yet. Approvals, applications and sends show up here with their date.</p>}
-        {feed.data && feed.data.length > 0 && (
+        <div className="toolbar">
+          <div className="segmented" role="group" aria-label="Kind of activity">
+            {ACTIVITY_GROUPS.map((g) => (
+              <button key={g.key} type="button" className={group === g.key ? 'active' : ''} aria-pressed={group === g.key} onClick={() => onGroup(g.key)}>{g.label}</button>
+            ))}
+          </div>
+          <label className="pill-select">
+            <span>Period</span>
+            <select value={days} onChange={(e) => onDays(Number(e.target.value))}>
+              {ACTIVITY_RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
+            </select>
+          </label>
+        </div>
+        {first.error && <ErrorNotice error={first.error} onRetry={first.reload} what="your activity" />}
+        {first.loading && !first.data && <LoadingState label="Loading your activity…" waking={first.waking} rows={3} />}
+        {first.data?.length === 0 && <p className="muted-small">Nothing recorded for this filter. Searches, approvals, drafts, applications and follow-ups show up here with their date.</p>}
+        {items.length > 0 && (
           <ol className="activity-list">
-            {feed.data.map((x, i) => (
-              <li key={`${x.opportunityId}-${x.at}-${i}`}>
+            {items.map((x, i) => (
+              <li key={`${x.at}-${x.kind}-${i}`}>
                 <time className="muted-small" dateTime={x.at}>{formatWhen(x.at)}</time>
-                <Link to={`/opportunities/${x.opportunityId}`}>{activityLine(x, sales)}</Link>
+                {x.opportunityId ? <Link to={`/opportunities/${x.opportunityId}`}>{activityLine(x, sales)}</Link> : <span>{activityLine(x, sales)}</span>}
               </li>
             ))}
           </ol>
         )}
+        {moreError && <ErrorNotice error={moreError} />}
+        {canLoadMore && <div className="row"><button type="button" className="btn btn-secondary btn-sm" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more'}</button></div>}
       </div>
     </section>
   )

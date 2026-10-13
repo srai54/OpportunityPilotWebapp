@@ -69,7 +69,7 @@ Both share one pipeline: **Find → Review → Reach out / Apply → Follow up**
 |---|---|---|
 | FR-T1 | A follow-up reminder is created automatically after a send (5 days) or "Applied" (7 days) | Built |
 | FR-T2 | Insights: KPIs with change, trend chart, funnel, progress and weekly goal, sources, fit | Built, verified in Edge |
-| FR-T3 | **My activity**: the person's own recorded actions, newest first | Built (status changes, approvals, sends); searches and draft edits are **Planned** |
+| FR-T3 | **My activity**: the person's own recorded actions, newest first | Built: searches, runs, profile saves, drafts written/edited/approved, status changes, approvals, sends, follow-ups; filter by kind and period, load more |
 | FR-T4 | Sales: companies, contacts, deals, submissions, proposals (staffing pipeline) | Built (API + screens) |
 | FR-T5 | Team view (owner, assignment, roles) | Planned (S15, X13) |
 
