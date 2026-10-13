@@ -5,9 +5,9 @@
  */
 
 import {
-  BarChart3, Briefcase, Building2, Calendar, Check, CheckCircle2, ChevronDown, CircleHelp, Clock, Download, FileCheck2, HandCoins,
+  Activity, ArrowDown, ArrowUp, BarChart3, Briefcase, Building2, Calendar, Check, CheckCircle2, ChevronDown, CircleHelp, Clock, Download, FileCheck2, HandCoins,
   LayoutDashboard, Link2, ListChecks, Lock, Mail, Menu, Mic, Plug, RefreshCw, Search, Send, SlidersHorizontal, Sparkles, Target,
-  TrendingUp, TriangleAlert, User, Users, type LucideIcon,
+  MapPin, Banknote, Minus, TrendingUp, TriangleAlert, User, Users, type LucideIcon,
 } from 'lucide-react'
 
 const ICONS = {
@@ -42,6 +42,12 @@ const ICONS = {
   people: Users,
   sparkles: Sparkles,
   download: Download,
+  arrowUp: ArrowUp,
+  arrowDown: ArrowDown,
+  minus: Minus,
+  pulse: Activity,
+  place: MapPin,
+  pay: Banknote,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS
