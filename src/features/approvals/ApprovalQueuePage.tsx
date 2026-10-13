@@ -61,9 +61,12 @@ export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: bo
         title="Approvals"
         subtitle="Jobs that scored at or above your campaign's threshold. Approve to shortlist, reject to dismiss."
       />}
-      <HowItWorks summary="What approving does — nothing is applied when you approve">
-        <p>Approve marks a job as approved. Open its application page to apply yourself, then mark it applied. Skip hides a job;
-          you can restore it from the full list.</p>
+      <HowItWorks summary="What happens after you approve">
+        <p><strong>LinkedIn, Naukri and Instahyre jobs:</strong> your agent applies for them on its next run (it has to be running on your
+          computer: <code>npm run agent -- watch</code>). <strong>Jobs from other sites</strong> (Indeed and the free sites) cannot be applied for
+          by a program, so they wait in <em>Apply to approved</em>: one tap per job opens the posting and records it.</p>
+        <p>Do not want to review each one? When you start a campaign, choose <em>More options → Approve matches scoring 70+ automatically</em>.
+          Skip hides a job; you can restore it from the full list.</p>
       </HowItWorks>
 
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} />}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  quickSourceBodies, repeatLabel,
+  quickSourceBodies, stoppable, repeatLabel,
   cadenceLabel,
   modeCopy,
   campaignFilterCounts,
@@ -334,5 +334,16 @@ describe('repeatLabel', () => {
     expect(repeatLabel(undefined)).toBe('Not scheduled')
     expect(repeatLabel({ cadenceMinutes: 1440, nextRunAt: '2026-10-14T09:00:00Z', paused: true })).toBe('Paused')
     expect(repeatLabel({ cadenceMinutes: 1440, nextRunAt: '2026-10-14T09:00:00Z', paused: false })).toMatch(/^Daily · next /)
+  })
+})
+
+describe('stoppable', () => {
+  it('finds running searches and repeating campaigns, and nothing else', () => {
+    const camps = [{ lastJob: { id: 'a', state: 'Running' } }, { lastJob: { id: 'b', state: 'Completed' } }, { lastJob: null }]
+    const sched = [{ id: 's1', campaignId: 'c', cadenceMinutes: 1440, nextRunAt: '', paused: false, timeZone: 'UTC', version: 1 }, { id: 's2', campaignId: 'd', cadenceMinutes: 1440, nextRunAt: '', paused: true, timeZone: 'UTC', version: 1 }]
+    const r = stoppable(camps, sched)
+    expect(r.runs).toHaveLength(1)
+    expect(r.repeating.map((s) => s.id)).toEqual(['s1'])
+    expect(stoppable([], [])).toEqual({ runs: [], repeating: [] })
   })
 })

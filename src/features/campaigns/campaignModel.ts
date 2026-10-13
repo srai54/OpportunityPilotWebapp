@@ -736,3 +736,10 @@ export const MODE_COPY: Record<Exclude<OpportunityMode, 'Job'>, ModeCopy> = {
 export function modeCopy(mode: OpportunityMode): ModeCopy {
   return MODE_COPY[mode === 'Job' ? 'Customer' : mode]
 }
+
+export type RepeatSchedule = { id: string; campaignId: string; cadenceMinutes: number; nextRunAt: string; paused: boolean; timeZone: string; version: number }
+
+/** What can be stopped right now: runs that are queued or running, and campaigns set to repeat. */
+export function stoppable(campaigns: readonly { lastJob: { id: string; state: string } | null }[], schedules: readonly RepeatSchedule[]): { runs: typeof campaigns[number][]; repeating: RepeatSchedule[] } {
+  return { runs: campaigns.filter((c) => isRunning(c)), repeating: schedules.filter((s) => !s.paused) }
+}

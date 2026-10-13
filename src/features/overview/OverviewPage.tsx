@@ -23,6 +23,7 @@ import {
   type SalesModeFilter,
 } from './analyticsModel'
 import { SampleRunCard } from './SampleRunCard'
+import { StopAllCard } from '../campaigns/StopAllCard'
 import { BestMatches, HomeHero, HomeKpis, HomeSide } from './HomeSections'
 
 /**
@@ -183,6 +184,7 @@ function CandidateOverview({ a, overview, trend }: { a: AnalyticsOverview; overv
   return (
     <>
       <HomeHero a={a} workspace="candidate" trend={trend} />
+      <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="candidate" />
       <div className="two">
         <div className="stack-4">
@@ -292,6 +294,7 @@ function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview:
   return (
     <>
       <HomeHero a={a} workspace="sales" trend={trend} />
+      <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="sales" />
       <div className="two">
         <div className="stack-4">

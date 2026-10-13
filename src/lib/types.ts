@@ -243,6 +243,8 @@ export interface CampaignSummary {
   resultLimit: number
   /** 1–100: qualified Job opportunities scoring at least this become Suggested after a run. null = off. */
   autoSuggestMinScore: number | null
+  /** 1–100: qualified Job opportunities scoring at least this are approved automatically. null = off. */
+  autoApproveMinScore?: number | null
   version: number
   createdAt: string
   updatedAt: string
