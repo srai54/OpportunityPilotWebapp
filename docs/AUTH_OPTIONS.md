@@ -1,5 +1,8 @@
 # Free sign-in and MFA — which two to use
 
+> **2026-10-14:** Hanko was chosen as the main sign-in (passkeys, passwords, email codes, TOTP/security-key MFA), with
+> Supabase kept as the older sign-in. Setup: [`AUTH_SETUP.md`](AUTH_SETUP.md). The comparison below is kept for history.
+
 _2026-10-12 · recommendation only; nothing is switched on. Today the deployed app signs people in as a private **guest** (no accounts) because the Supabase sign-in keys are not set yet (task U1)._
 
 ## The three options you pasted
