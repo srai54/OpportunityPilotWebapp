@@ -21,11 +21,18 @@ export class ApiStillUnreachableError extends ApiUnreachableError {}
 
 type AuthHeaders = () => Promise<Record<string, string>>
 let authHeaders: AuthHeaders = async () => ({})
-let onUnauthorized: () => void = () => {}
+type UnauthorizedHandler = (rejectedHeaders: Record<string, string>) => void
+let onUnauthorized: UnauthorizedHandler = () => {}
 
-export function configureApiAuth(headers: AuthHeaders, unauthorized: () => void) {
+export function configureApiAuth(headers: AuthHeaders, unauthorized: UnauthorizedHandler) {
   authHeaders = headers
   onUnauthorized = unauthorized
+}
+
+/** A late 401 must not clear a newer session that was established while the request was in flight. */
+export function sameAuthIdentity(left: Record<string, string>, right: Record<string, string>): boolean {
+  const identity = (headers: Record<string, string>) => headers.Authorization ?? headers['X-Dev-User'] ?? ''
+  return identity(left) === identity(right)
 }
 
 interface ProblemDetails {
@@ -38,13 +45,15 @@ interface ProblemDetails {
 /** Sends a request with the auth headers and turns failures into ApiError / ApiUnreachableError. */
 async function send(path: string, init: RequestInit): Promise<Response> {
   let response: Response
+  let requestAuthHeaders: Record<string, string>
   try {
+    requestAuthHeaders = await authHeaders()
     response = await fetch(`${config.apiBaseUrl}${path}`, {
       ...init,
       headers: {
         Accept: 'application/json',
         ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(await authHeaders()),
+        ...requestAuthHeaders,
         ...init.headers,
       },
     })
@@ -52,7 +61,10 @@ async function send(path: string, init: RequestInit): Promise<Response> {
     throw new ApiUnreachableError('The API could not be reached.')
   }
 
-  if (response.status === 401) onUnauthorized()
+  if (response.status === 401) {
+    const currentAuthHeaders = await authHeaders()
+    if (sameAuthIdentity(requestAuthHeaders, currentAuthHeaders)) onUnauthorized(requestAuthHeaders)
+  }
 
   if (!response.ok) {
     let problem: ProblemDetails = {}

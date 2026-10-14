@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { Hanko } from '@teamhanko/hanko-elements'
 import { api, configureApiAuth } from '../../lib/api'
@@ -106,10 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hankoSignedIn = useRef(false)
 
   useEffect(() => {
-    hankoSignedIn.current = hankoUser !== null
-  }, [hankoUser])
-
-  useEffect(() => {
     if (!hankoConfigured) return
     let live = true
     const cleanups: (() => void)[] = []
@@ -117,10 +113,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const user = hankoUserFrom(await hanko.validateSession())
         if (!live) return
+        hankoSignedIn.current = user !== null
         setHankoUser(user)
         if (user) setSessionExpired(false)
       } catch {
-        if (live) setHankoUser(null)
+        if (live) {
+          hankoSignedIn.current = false
+          setHankoUser(null)
+        }
       }
     }
     void loadHanko()
@@ -131,10 +131,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hanko.onSessionCreated(() => void check(hanko)),
           hanko.onSessionExpired(() => {
             if (hankoSignedIn.current) setSessionExpired(true)
+            hankoSignedIn.current = false
             setHankoUser(null)
           }),
-          hanko.onUserLoggedOut(() => setHankoUser(null)),
-          hanko.onUserDeleted(() => setHankoUser(null)),
+          hanko.onUserLoggedOut(() => {
+            hankoSignedIn.current = false
+            setHankoUser(null)
+          }),
+          hanko.onUserDeleted(() => {
+            hankoSignedIn.current = false
+            setHankoUser(null)
+          }),
         )
         await check(hanko)
       })
@@ -190,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* the Hanko session is already gone; the local state below is cleared either way */
       }
     }
+    hankoSignedIn.current = false
     setHankoUser(null)
     if (supabase) await supabase.auth.signOut()
     write(DEV_USER_KEY, null)
@@ -221,13 +229,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return (await refreshPromise.current)?.access_token ?? null
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     configureApiAuth(
       async (): Promise<Record<string, string>> => {
-        if (hankoClient.current && hankoSignedIn.current) {
-          const token = hankoClient.current.getSessionToken()
-          if (token) return { Authorization: `Bearer ${token}` }
-        }
+        // Hanko writes the token before React receives onSessionCreated. Reading it directly prevents the first
+        // protected screen from racing the state/ref update and sending an anonymous request.
+        const hankoToken = hankoClient.current?.getSessionToken()
+        if (hankoToken) return { Authorization: `Bearer ${hankoToken}` }
         if (supabase) {
           const token = await currentAccessToken()
           if (token) return { Authorization: `Bearer ${token}` }
@@ -243,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     )
     return () => configureApiAuth(async () => ({}), () => {})
-  }, [currentAccessToken, devUser, guestToken, mode, signOut, hankoUser])
+  }, [currentAccessToken, devUser, guestToken, mode, signOut])
 
   const value = useMemo<AuthState>(() => {
     const user: AuthState['user'] = hankoUser
