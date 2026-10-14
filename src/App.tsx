@@ -1,4 +1,6 @@
-import { lazy, Suspense, useState } from 'react'
+import { Suspense, useState } from 'react'
+import { lazyPage } from './lib/lazyPage'
+import { RouteError } from './components/RouteError'
 import { createBrowserRouter, Link, Navigate, RouterProvider, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { useAuth } from './features/auth/AuthContext'
@@ -11,27 +13,27 @@ import { SignUpPage } from './features/auth/SignUpPage'
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage'
 import { EmptyState } from './components/States'
 
-const CampaignBuilder = lazy(() => import('./features/campaigns/CampaignBuilder').then((m) => ({ default: m.CampaignBuilder })))
-const CampaignsPage = lazy(() => import('./features/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage })))
-const ConnectorsPage = lazy(() => import('./features/connectors/ConnectorsPage').then((m) => ({ default: m.ConnectorsPage })))
-const InsightsPage = lazy(() => import('./features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })))
-const OpportunitiesPage = lazy(() => import('./features/opportunities/OpportunitiesPage').then((m) => ({ default: m.OpportunitiesPage })))
-const OpportunityDetailPage = lazy(() => import('./features/opportunities/OpportunityDetailPage').then((m) => ({ default: m.OpportunityDetailPage })))
-const OverviewPage = lazy(() => import('./features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })))
-const OutreachPage = lazy(() => import('./features/outreach/OutreachPage').then((m) => ({ default: m.OutreachPage })))
-const AutopilotPage = lazy(() => import('./features/autopilot/AutopilotPage').then((m) => ({ default: m.AutopilotPage })))
-const InboxPage = lazy(() => import('./features/inbox/InboxPage').then((m) => ({ default: m.InboxPage })))
-const FollowUpsPage = lazy(() => import('./features/follow-ups/FollowUpsPage').then((m) => ({ default: m.FollowUpsPage })))
-const ProfilesPage = lazy(() => import('./features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })))
-const ResearchProgressPage = lazy(() => import('./features/research/ResearchProgressPage').then((m) => ({ default: m.ResearchProgressPage })))
-const SettingsPage = lazy(() => import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
-const StaffingDealsPage = lazy(() => import('./features/staffing/StaffingDealsPage').then((m) => ({ default: m.StaffingDealsPage })))
-const StaffingDealPage = lazy(() => import('./features/staffing/StaffingDealPage').then((m) => ({ default: m.StaffingDealPage })))
-const StaffingCandidatesPage = lazy(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
-const AppShell = lazy(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
-const ProgressPage = lazy(() => import('./features/progress/ProgressPage').then((m) => ({ default: m.ProgressPage })))
-const HowItWorksPage = lazy(() => import('./features/guide/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
-const WellfoundPage = lazy(() => import('./features/wellfound/WellfoundPage').then((m) => ({ default: m.WellfoundPage })))
+const CampaignBuilder = lazyPage(() => import('./features/campaigns/CampaignBuilder').then((m) => ({ default: m.CampaignBuilder })))
+const CampaignsPage = lazyPage(() => import('./features/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage })))
+const ConnectorsPage = lazyPage(() => import('./features/connectors/ConnectorsPage').then((m) => ({ default: m.ConnectorsPage })))
+const InsightsPage = lazyPage(() => import('./features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })))
+const OpportunitiesPage = lazyPage(() => import('./features/opportunities/OpportunitiesPage').then((m) => ({ default: m.OpportunitiesPage })))
+const OpportunityDetailPage = lazyPage(() => import('./features/opportunities/OpportunityDetailPage').then((m) => ({ default: m.OpportunityDetailPage })))
+const OverviewPage = lazyPage(() => import('./features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })))
+const OutreachPage = lazyPage(() => import('./features/outreach/OutreachPage').then((m) => ({ default: m.OutreachPage })))
+const AutopilotPage = lazyPage(() => import('./features/autopilot/AutopilotPage').then((m) => ({ default: m.AutopilotPage })))
+const InboxPage = lazyPage(() => import('./features/inbox/InboxPage').then((m) => ({ default: m.InboxPage })))
+const FollowUpsPage = lazyPage(() => import('./features/follow-ups/FollowUpsPage').then((m) => ({ default: m.FollowUpsPage })))
+const ProfilesPage = lazyPage(() => import('./features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })))
+const ResearchProgressPage = lazyPage(() => import('./features/research/ResearchProgressPage').then((m) => ({ default: m.ResearchProgressPage })))
+const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const StaffingDealsPage = lazyPage(() => import('./features/staffing/StaffingDealsPage').then((m) => ({ default: m.StaffingDealsPage })))
+const StaffingDealPage = lazyPage(() => import('./features/staffing/StaffingDealPage').then((m) => ({ default: m.StaffingDealPage })))
+const StaffingCandidatesPage = lazyPage(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
+const AppShell = lazyPage(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
+const ProgressPage = lazyPage(() => import('./features/progress/ProgressPage').then((m) => ({ default: m.ProgressPage })))
+const HowItWorksPage = lazyPage(() => import('./features/guide/HowItWorksPage').then((m) => ({ default: m.HowItWorksPage })))
+const WellfoundPage = lazyPage(() => import('./features/wellfound/WellfoundPage').then((m) => ({ default: m.WellfoundPage })))
 
 const SIGNED_OUT_SCREENS = {
   signin: SignInPage,
@@ -94,6 +96,7 @@ function NotFound() {
 const router = createBrowserRouter([
   {
     element: <AuthGate />,
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <OverviewPage />, handle: { title: 'Overview' } },
       { path: 'campaigns', element: <CampaignsPage />, handle: { title: 'Campaigns' } },
