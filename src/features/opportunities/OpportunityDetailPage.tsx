@@ -13,6 +13,7 @@ import { MODE_LABELS } from '../campaigns/campaignModel'
 import { useShell } from '../shell/ShellContext'
 import { CoverNotePanel } from './CoverNotePanel'
 import { OutreachActionsPanel } from './OutreachActionsPanel'
+import { JdCircle } from './JdCircle'
 import {
   displayUrl,
   factLabel,
@@ -388,6 +389,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
           <div id="outreach" data-coach="opp-reach">
             <OutreachActionsPanel o={o} />
           </div>
+          <JdCircle o={o} />
 
           {details && <>
           <Card title={`Evidence — ${o.evidence.length} ${o.evidence.length === 1 ? 'source' : 'sources'}`}>
