@@ -12,7 +12,7 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | Build / dev server | Vite 8 with `@vitejs/plugin-react`; dev server port **5173**, `strictPort` (the API's CORS allows exactly this origin) |
 | Routing | react-router-dom 7 **data router** (`createBrowserRouter` in `src/App.tsx`). Required: `useBlocker` guards unsaved edits in Profiles and the Campaign builder |
 | State | No global store. Server data through `useApi` (GET hook in `src/lib/useApi.ts`) and `api()` / `apiDownload()` (`src/lib/api.ts`); screen state in component state; capabilities shared through `ShellContext` |
-| Auth | `src/features/auth/AuthProvider.tsx`, three modes picked at build time: **supabase** (Supabase URL + publishable key set), **dev** (`VITE_DEV_AUTH=true` and a dev build only), **guest** (neither — demo mode, the API issues a signed random guest token) |
+| Auth | `src/features/auth/AuthProvider.tsx`. **Hanko** (`VITE_HANKO_API_URL` set, `@teamhanko/hanko-elements` 3.0.0 loaded on demand by `src/lib/hanko.ts`) is the main sign-in on top of any mode; setup in `docs/AUTH_SETUP.md`. Three modes picked at build time: **supabase** (Supabase URL + publishable key set), **dev** (`VITE_DEV_AUTH=true` and a dev build only), **guest** (neither — demo mode, the API issues a signed random guest token) |
 | Data | Every record comes from the API (`OpportunityPilotWebApi`, .NET 10). Supabase is used for sign-in only; the browser never reads the database |
 | API base URL | `VITE_API_BASE_URL`, read in `src/lib/config.ts`; default `http://localhost:5051`; production value committed in `.env.production` |
 | Tests | Vitest 5, `environment: node`, only `src/**/*.test.ts` (pure logic; there are no component/DOM tests) |
@@ -102,7 +102,7 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 
 ### Security and configuration
 
-- No secrets in `VITE_` variables — everything `VITE_` is compiled into the public bundle. Only the API URL, the Supabase project URL and the Supabase **publishable** key are allowed.
+- No secrets in `VITE_` variables — everything `VITE_` is compiled into the public bundle. Only the API URL, the Supabase project URL, the Supabase **publishable** key and the Hanko project API URL are allowed.
 - Dev sign-in stays compiled out of production: it is gated by `import.meta.env.DEV` in `config.ts`; never remove that check or add another bypass.
 - `.env.production` holds public values only and is committed on purpose; `.env`, `.env.local` and other `.env.*` files are never committed or edited by the agent.
 - Agent keys are shown once on creation and never stored by the web app.
@@ -152,6 +152,7 @@ The AI does not discover docs on its own; this table is the bridge. Read the row
 | Sales screens: customer campaigns, opportunities (Customer), outreach, follow-ups, proposals, bids, batch approval | `docs/SALES_FLOW.md` | Touching a Sales screen |
 | Every route → component → flow doc → status | `docs/SCREEN_MAP.md` | Adding/removing a route; checking what is built |
 | Env vars, API base URL, deploy targets and URLs, auth modes, design and contract locations | `docs/PROJECT_REF.md` | Configuration, deployment, auth or API questions |
+| Hanko + Supabase sign-in setup (owner steps, env vars, troubleshooting) | `docs/AUTH_SETUP.md` | Touching sign-in, or switching Hanko on |
 | Open gaps, mocks, hard-codes, undecided items | `docs/open-questions.md` | Before inventing anything; after every feature |
 | Vague requests | `skills/prompt-master.SKILL.md` | Two or more context dimensions missing |
 | API contract — campaigns, sources, research, opportunities, agent | `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md` | Any built research/opportunity screen |

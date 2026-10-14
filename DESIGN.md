@@ -95,6 +95,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 | Buttons | One `btn-primary` per view; `btn-secondary` beside it; `btn-ghost` for the rest; disabled buttons explain why nearby |
 | Readiness | "Before you send" chip list: ✓ done, ○ to do (clickable → focuses the field) |
 | Key figures (v4) | `KpiCard` (icon chip, label, value, `DeltaBadge`, sentence, optional line of the last days; a link when it opens the list behind it) inside a `KpiBand` (explicit 4 or 6 columns → 3 → 2, never auto-fit) |
+| Vendor sign-in elements (Hanko `<hanko-auth>`, `<hanko-profile>`) | Class `op-hanko`: themed **only** through the vendor's CSS variables mapped to our tokens (`app.css`), so dark mode follows the tokens; no `::part` overrides with literals. Inside `.auth-card` or a `Card`; it replaces our form, never sits next to a second password form |
 | Goals and health (v4) | `GoalRing` (n of N), `SourcesCard` (health dot + word + last run), `ActivityCard` (timeline; hidden when empty), `ProgressBar` (the one bar: queues, sends, runs, completeness) |
 
 ## 8. Forms
