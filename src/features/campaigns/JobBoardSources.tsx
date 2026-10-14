@@ -1,3 +1,4 @@
+import { useApi } from '../../lib/useApi'
 import { useState, type FormEvent } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge, StatusBadge } from '../../components/StatusBadge'
@@ -6,6 +7,7 @@ import type { Campaign, Source } from '../../lib/types'
 import { useShell } from '../shell/ShellContext'
 import {
   jobSearchTerms,
+  AGENT_BOARDS,
   SEARCH_BOARDS,
   type SearchBoard,
   BOARD_EXAMPLES,
@@ -138,6 +140,9 @@ export function JobSearchForm({ campaign, onAdded, initialBoard }: { campaign: C
   const job = campaign.mode === 'Job'
   const search = jobSearchTerms(campaign.criteria, campaign.mode)
   const name = board === 'Seek' ? 'SEEK' : board
+  const viaAgent = AGENT_BOARDS.includes(board)
+  const agent = useApi<{ connected: boolean; online: boolean }>('/api/v1/agent-keys/status')
+  const command = `npm run agent -- collect ${board.toLowerCase()} --campaign ${campaign.id}`
   const notConfigured = capabilities?.items.find((c) => c.key === JOB_SOURCE_CAPABILITY.JobSearch)?.status === 'NotConfigured'
 
   async function submit(e: FormEvent) {
@@ -177,6 +182,20 @@ export function JobSearchForm({ campaign, onAdded, initialBoard }: { campaign: C
           ))}
         </select>
       </div>
+      {viaAgent ? (
+        <div className="stack-2">
+          <p className="small">
+            {name} has no public search, so your <strong>desktop agent</strong> reads it in your own logged-in browser, using this
+            campaign&rsquo;s job titles and places, and sends the postings here to be scored. Nothing is applied without your approval.
+          </p>
+          <p className="small"><strong>{agent.data?.online ? 'Your agent is running.' : agent.data?.connected ? 'Your agent is not running right now.' : 'No desktop agent connected yet (Home → Desktop agent).'}</strong> On your computer, log in once with <code>npm run agent -- login {board.toLowerCase()}</code>, then run:</p>
+          <div className="row wrap">
+            <input readOnly value={command} aria-label={`Command to collect ${name} jobs`} onFocus={(e) => e.currentTarget.select()} spellCheck={false} className="grow" />
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => { void navigator.clipboard.writeText(command); onAdded(`${name} via the desktop agent`) }}>Copy command</button>
+          </div>
+          <p className="hint">To collect on a schedule, add this campaign as a {board.toLowerCase()} target in the agent&rsquo;s config.json and leave <code>npm run agent -- cycle</code> running.</p>
+        </div>
+      ) : <>
       <p className="small">
         {job ? (
           <>
@@ -223,6 +242,7 @@ export function JobSearchForm({ campaign, onAdded, initialBoard }: { campaign: C
           {busy ? 'Adding…' : `Add ${name} search`}
         </button>
       </div>
+      </>}
     </form>
   )
 }
