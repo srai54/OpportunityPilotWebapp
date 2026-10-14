@@ -832,6 +832,43 @@ p { margin: 0; }
 .auth-center { text-align: center; }
 .auth-divider { display: flex; align-items: center; gap: 12px; color: var(--op-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
 .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--op-line); }
+
+/* Hanko sign-in and profile elements (DESIGN.md §7): Hanko's own UI in a shadow root, themed only through its CSS
+   variables mapped to our tokens. Dark mode follows because the tokens are re-declared; never branch on theme here. */
+.op-hanko {
+  display: block;
+  min-width: 0;
+  --color: var(--op-ink);
+  --color-shade-1: var(--op-muted);
+  --color-shade-2: var(--op-line);
+  --brand-color: var(--op-primary);
+  --brand-color-shade-1: var(--op-primary-hover);
+  --brand-contrast-color: var(--op-on-primary);
+  --background-color: var(--op-surface);
+  --error-color: var(--op-on-danger-tint);
+  --link-color: var(--op-primary);
+  --link-text-decoration: none;
+  --link-text-decoration-hover: underline;
+  --font-family: var(--op-font);
+  --font-size: var(--op-text-body);
+  --font-weight: 400;
+  --border-radius: var(--op-radius-control);
+  --border-style: solid;
+  --border-width: 1px;
+  --item-height: var(--op-touch-target);
+  --item-margin: var(--op-space-2) 0;
+  --container-padding: 0;
+  --container-max-width: 100%;
+  --headline1-font-size: var(--op-text-screen);
+  --headline1-font-weight: 600;
+  --headline1-margin: 0 0 var(--op-space-3);
+  --headline2-font-size: var(--op-text-body);
+  --headline2-font-weight: 600;
+  --headline2-margin: var(--op-space-4) 0 var(--op-space-2);
+  --divider-padding: 0;
+  --input-min-width: 0;
+  --button-min-width: max-content;
+}
 .auth-google-mark {
   display: inline-grid; place-items: center; width: 18px; height: 18px; margin-right: 8px; font-size: 10px; font-weight: 700;
   border: 1px dashed var(--op-field-border); border-radius: 4px; color: var(--op-muted);
