@@ -12,6 +12,57 @@ export interface Integration {
   lastUsedAt: string | null
   lastError: string | null
   feedUrl: string | null
+  /** The server has a sign-in app for this service, so "Connect with …" works (Notion, HubSpot, Slack, Airtable). */
+  oauthConfigured: boolean
+  /** Connected with the service's own sign-in screen instead of a pasted token. */
+  oauthConnected: boolean
+  /** Notion or Airtable signed in, but where the leads go is not chosen yet. */
+  needsTarget: boolean
+}
+
+/** A Notion database, or an Airtable table with its base as `group` (API: GET /api/v1/integrations/{kind}/targets). */
+export interface IntegrationTarget { target: string; table: string | null; name: string; group: string | null }
+
+/** Services that connect with one click on their own sign-in screen when the server has an app for them. */
+export const OAUTH_KINDS: IntegrationKind[] = ['Notion', 'HubSpot', 'Slack', 'Airtable']
+
+/** Notion and Airtable ask where leads go after signing in. */
+export const PICKS_TARGET: IntegrationKind[] = ['Notion', 'Airtable']
+
+export function targetKey(t: IntegrationTarget): string {
+  return t.table ? `${t.target}/${t.table}` : t.target
+}
+
+/** "Leads", or "Leads (in CRM)" for an Airtable table, so two tables with the same name can be told apart. */
+export function targetLabel(t: IntegrationTarget): string {
+  return t.group ? `${t.name} (in ${t.group})` : t.name
+}
+
+/** What a card says when the server has no sign-in app for the service yet. */
+export function setupSentence(kind: IntegrationKind): string {
+  return `The one-click ${KIND_NAMES[kind]} button is not switched on yet. The app owner sets it up once; until then you can use a token.`
+}
+
+export interface OauthReturn { kind: IntegrationKind; ok: boolean; text: string }
+
+/**
+ * The notice after coming back from a service's sign-in screen (`/connectors?connected=Notion` or `?error=declined&service=Notion`).
+ * Null when the address is not such a return.
+ */
+export function oauthReturn(params: URLSearchParams): OauthReturn | null {
+  const connected = params.get('connected')
+  const kind = (connected ?? params.get('service')) as IntegrationKind | null
+  if (!kind || !OAUTH_KINDS.includes(kind)) return null
+  const name = KIND_NAMES[kind]
+  if (connected) {
+    const where = kind === 'Notion' ? ' Now choose which database leads go to.' : kind === 'Airtable' ? ' Now choose which table leads go to.' : kind === 'Slack' ? ' A test message is in the channel you picked.' : ''
+    return { kind, ok: true, text: `${name} is connected.${where}` }
+  }
+  const why: Record<string, string> = {
+    declined: `${name} was not connected because access was not allowed on ${name}’s page. Try again when you are ready.`,
+    expired: `${name} was not connected because the sign-in took too long or was opened twice. Press Connect with ${name} again.`,
+  }
+  return { kind, ok: false, text: why[params.get('error') ?? ''] ?? `${name} did not finish connecting. Try again, or use a token instead.` }
 }
 
 export interface PushLeadResult { opportunityId: string; outcome: 'Added' | 'AlreadyThere' | 'Failed'; reason: string | null; link: string | null }
