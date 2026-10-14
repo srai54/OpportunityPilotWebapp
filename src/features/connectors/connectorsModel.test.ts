@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CATEGORIES, CONNECTORS, connectorStatus, filterConnectors, toggleWant } from './connectorsModel'
+import { CATEGORIES, CONNECTORS, connectorStatus, filterConnectors, isConnected, pluginKindOf, toggleWant } from './connectorsModel'
 import { OAUTH_KINDS, oauthReturn, pushSummary, setupSentence, targetKey, targetLabel, webhookProblem } from './integrationsModel'
 
 describe('catalog', () => {
@@ -91,6 +91,7 @@ describe('one-click sign-in', () => {
     expect(oauthReturn(new URLSearchParams('error=expired&service=Airtable'))?.text).toContain('Press Connect with Airtable again')
     expect(oauthReturn(new URLSearchParams('error=failed&service=HubSpot'))?.text).toContain('use a token instead')
     expect(oauthReturn(new URLSearchParams('connected=Hunter'))).toBeNull()
+    expect(oauthReturn(new URLSearchParams('connected=Gmail'))?.text).toBe('Gmail is connected.')
     expect(oauthReturn(new URLSearchParams('connected=<script>'))).toBeNull()
     expect(oauthReturn(new URLSearchParams(''))).toBeNull()
   })
@@ -101,6 +102,28 @@ describe('one-click sign-in', () => {
     expect(targetKey(table)).toBe('appA/tblB')
     const db = { target: 'abc', table: null, name: 'Leads', group: null }
     expect([targetLabel(db), targetKey(db)]).toEqual(['Leads', 'abc'])
-    expect(setupSentence('Notion')).toContain('use a token')
+    expect(setupSentence('Notion')).toBe('One-click connect coming soon.')
+  })
+})
+
+describe('plugin gallery', () => {
+  it('every card has a short line of at most eight words', () => {
+    for (const c of CONNECTORS) expect(c.short.split(/\s+/).length, c.id).toBeLessThanOrEqual(8)
+  })
+
+  it('maps the five one-click apps, Gmail through its mailbox card', () => {
+    const kinds = CONNECTORS.map(pluginKindOf).filter(Boolean)
+    expect(kinds.sort()).toEqual(['Airtable', 'Gmail', 'HubSpot', 'Notion', 'Slack'])
+    expect(pluginKindOf(CONNECTORS.find((c) => c.id === 'teams')!)).toBeNull()
+  })
+
+  it('reads connected state from integrations and mailboxes', () => {
+    const gmail = CONNECTORS.find((c) => c.id === 'gmail')!
+    const row = { kind: 'Gmail', connected: true } as never
+    expect(isConnected(gmail, [row], [])).toBe(true)
+    expect(isConnected(gmail, [], [{ provider: 'Google', connected: true } as never])).toBe(true)
+    expect(isConnected(gmail, undefined, undefined)).toBe(false)
+    expect(isConnected(CONNECTORS.find((c) => c.id === 'smtp')!, [], [{ provider: 'Smtp', connected: true } as never])).toBe(true)
+    expect(isConnected(CONNECTORS.find((c) => c.id === 'csv') ?? CONNECTORS.find((c) => c.id === 'google-sheets')!, [], [])).toBe(false)
   })
 })

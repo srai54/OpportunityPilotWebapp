@@ -1,6 +1,6 @@
 /** Services connected with a webhook address, a token or a private calendar link (API: /api/v1/integrations). */
 
-export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed' | 'Hunter' | 'Apollo'
+export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed' | 'Hunter' | 'Apollo' | 'Gmail'
 export type IntegrationEvent = 'sent' | 'leads' | 'replies' | 'digest'
 
 export interface Integration {
@@ -18,7 +18,14 @@ export interface Integration {
   oauthConnected: boolean
   /** Notion or Airtable signed in, but where the leads go is not chosen yet. */
   needsTarget: boolean
+  /** One-click "Connect" works for this service: the server has the plugin platform key (Notion, Gmail, HubSpot, Slack, Airtable). */
+  pluginReady: boolean
+  /** Connected with one-click "Connect". */
+  viaPlugin: boolean
 }
+
+/** Services that connect in one click through the plugin platform when the server has its key. */
+export const PLUGIN_KINDS: IntegrationKind[] = ['Notion', 'Gmail', 'HubSpot', 'Slack', 'Airtable']
 
 /** A Notion database, or an Airtable table with its base as `group` (API: GET /api/v1/integrations/{kind}/targets). */
 export interface IntegrationTarget { target: string; table: string | null; name: string; group: string | null }
@@ -39,8 +46,8 @@ export function targetLabel(t: IntegrationTarget): string {
 }
 
 /** What a card says when the server has no sign-in app for the service yet. */
-export function setupSentence(kind: IntegrationKind): string {
-  return `The one-click ${KIND_NAMES[kind]} button is not switched on yet. The app owner sets it up once; until then you can use a token.`
+export function setupSentence(_kind?: IntegrationKind): string {
+  return 'One-click connect coming soon.'
 }
 
 export interface OauthReturn { kind: IntegrationKind; ok: boolean; text: string }
@@ -52,10 +59,10 @@ export interface OauthReturn { kind: IntegrationKind; ok: boolean; text: string 
 export function oauthReturn(params: URLSearchParams): OauthReturn | null {
   const connected = params.get('connected')
   const kind = (connected ?? params.get('service')) as IntegrationKind | null
-  if (!kind || !OAUTH_KINDS.includes(kind)) return null
+  if (!kind || !(OAUTH_KINDS.includes(kind) || PLUGIN_KINDS.includes(kind))) return null
   const name = KIND_NAMES[kind]
   if (connected) {
-    const where = kind === 'Notion' ? ' Now choose which database leads go to.' : kind === 'Airtable' ? ' Now choose which table leads go to.' : kind === 'Slack' ? ' A test message is in the channel you picked.' : ''
+    const where = kind === 'Notion' ? ' Now choose which database leads go to.' : kind === 'Airtable' ? ' Now choose which table leads go to.' : kind === 'Slack' ? ' A test message is in Slack.' : ''
     return { kind, ok: true, text: `${name} is connected.${where}` }
   }
   const why: Record<string, string> = {
@@ -78,7 +85,7 @@ export const EVENT_LABELS: Record<IntegrationEvent, string> = {
 }
 
 export const KIND_NAMES: Record<IntegrationKind, string> = {
-  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar', Hunter: 'Hunter', Apollo: 'Apollo',
+  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar', Hunter: 'Hunter', Apollo: 'Apollo', Gmail: 'Gmail',
 }
 
 /** The steps to get the address or token, written for someone who has never done it. */
@@ -114,6 +121,7 @@ export const HOW_TO: Record<IntegrationKind, { steps: string[]; link?: { href: s
     steps: ['In Apollo: Settings → Integrations → API → Create new key, with access to People API Search and People Enrichment (or a master key).', 'Searching people is free; showing a work email uses 1 Apollo credit each time.'],
     link: { href: 'https://developer.apollo.io/keys/', text: 'Apollo API keys' },
   },
+  Gmail: { steps: ['Press Connect and allow access on Google’s page.'] },
   CalendarFeed: {
     steps: ['Google Calendar: Other calendars → + → From URL → paste the link.', 'Outlook: Add calendar → Subscribe from web → paste the link. Updates arrive on their own (Google checks every few hours).'],
   },

@@ -37,7 +37,7 @@ const ADD_OPTIONS: { kind: AddKind; label: string; description: string }[] = [
   { kind: 'Greenhouse', label: 'Company careers board — Greenhouse', description: 'Every open job of one company on Greenhouse' },
   { kind: 'Lever', label: 'Company careers board — Lever', description: 'Every open job of one company on Lever' },
   { kind: 'FreeFeeds', label: 'Free job feeds — remote and Europe', description: 'Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK: no key, no quota' },
-  { kind: 'JobSearch', label: 'Job board search — Indeed, LinkedIn, SEEK', description: 'Live postings; in Sales, the companies that are hiring' },
+  { kind: 'JobSearch', label: 'Job boards', description: 'LinkedIn, Naukri, Indeed, Instahyre, SEEK' },
 ]
 
 export function SourcesStep({ campaign, preferBoard }: { campaign: Campaign; preferBoard?: SearchBoard }) {

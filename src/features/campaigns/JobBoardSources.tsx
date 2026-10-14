@@ -26,7 +26,7 @@ function SourceCapability({ kind }: { kind: JobSourceKind }) {
         <span className="small">Server status:</span>
         {cap ? <StatusBadge status={cap.status} /> : <Badge>Status unknown</Badge>}
       </div>
-      {cap?.detail && <p className="hint">{cap.detail}</p>}
+      {cap?.detail && cap.status !== 'Ready' && <p className="hint">{cap.detail}</p>}
       {!cap && (
         <p className="hint">
           {capabilities
@@ -177,22 +177,8 @@ export function JobSearchForm({ campaign, onAdded, initialBoard }: { campaign: C
           ))}
         </select>
       </div>
-      <p className="small">
-        {job ? (
-          <>
-            Finds current <strong>{name}</strong> postings for this campaign&rsquo;s <strong>job titles and search phrases</strong>{' '}
-            (the first 3, one search each), posted in the last month, and scores them like any other job.{' '}
-            {`You apply on ${name}.`}
-          </>
-        ) : (
-          <>
-            Finds companies that are <strong>hiring on {name}</strong> for this campaign&rsquo;s <strong>keywords and buying
-            signals</strong> (the first 3, one search each), posted in the last month. Each hiring company becomes one lead,
-            with its job postings as the evidence, and is scored against your criteria.
-          </>
-        )}{' '}
-        {name} has no public search API, so postings come through JSearch, a licensed Google-for-Jobs data service; only
-        postings with a {name} link are kept.
+      <p className="small muted-small">
+        {job ? `Live ${name} postings for this campaign's job titles, scored like any other job.` : `Companies hiring on ${name} for your keywords; each becomes a scored lead.`}
       </p>
       <dl className="criteria-list">
         <div>
@@ -212,7 +198,6 @@ export function JobSearchForm({ campaign, onAdded, initialBoard }: { campaign: C
           them the search has nothing to look for.
         </p>
       )}
-      <p className="hint">Read from the saved campaign each time a run starts, so later edits in step 2 apply.</p>
       <div className="field">
         <label htmlFor="job-search-label">Label (optional)</label>
         <input id="job-search-label" value={label} maxLength={200} onChange={(e) => setLabel(e.target.value)} />

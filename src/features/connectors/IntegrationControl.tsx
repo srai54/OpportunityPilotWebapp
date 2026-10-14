@@ -22,7 +22,7 @@ function HowTo({ kind }: Readonly<{ kind: IntegrationKind }>) {
 }
 
 /** The connect form: a webhook address, or a token plus (Notion, Airtable) where to put the leads. The server checks it with the real service. */
-function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKind; onDone: () => void; onCancel: () => void }>) {
+export function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKind; onDone: () => void; onCancel: () => void }>) {
   const webhook = WEBHOOK_KINDS.includes(kind)
   const [url, setUrl] = useState('')
   const [token, setToken] = useState('')
@@ -85,7 +85,7 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
 }
 
 /** After signing in to Notion or Airtable: choose the database or table that leads go to. */
-function TargetPicker({ kind, onDone }: Readonly<{ kind: IntegrationKind; onDone: () => void }>) {
+export function TargetPicker({ kind, onDone }: Readonly<{ kind: IntegrationKind; onDone: () => void }>) {
   const targets = useApi<IntegrationTarget[]>(`/api/v1/integrations/${kind}/targets`)
   const [chosen, setChosen] = useState('')
   const [busy, setBusy] = useState(false)
@@ -208,7 +208,7 @@ export function IntegrationControl({ kind, row, onChange }: Readonly<{ kind: Int
 
   if (!row?.connected) {
     if (OAUTH_KINDS.includes(kind)) return <OauthConnect kind={kind} row={row} onChange={onChange} />
-    if (kind === 'CalendarFeed') return <div className="stack-2"><HowTo kind={kind} /><div className="row wrap"><button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => void createFeed()}>{busy ? 'Making your link…' : 'Make my private calendar link'}</button></div>{status}</div>
+    if (kind === 'CalendarFeed') return <div className="stack-2"><div className="row wrap"><button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => void createFeed()}>{busy ? 'Making your link…' : 'Make my private calendar link'}</button></div>{status}</div>
     if (open) return <ConnectForm kind={kind} onDone={() => { setOpen(false); onChange() }} onCancel={() => setOpen(false)} />
     return <div className="row wrap"><button type="button" className="btn btn-primary btn-sm" aria-expanded={false} onClick={() => setOpen(true)}>Connect {name}</button>{status}</div>
   }

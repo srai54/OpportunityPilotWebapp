@@ -1743,6 +1743,11 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .connector-titles { flex: 1 1 auto; min-width: 0; display: grid; }
 .connector-name { font-size: 16px; font-weight: 650; }
 .connector-does { margin: 0; }
+.connected-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.connected-chip { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 12px 4px 4px; border: 1px solid var(--op-line); border-radius: 999px; background: var(--op-surface); font-size: var(--op-text-meta); font-weight: 600; overflow-wrap: anywhere; }
+.connected-chip .avatar-tile { width: 32px; height: 32px; border-radius: 999px; font-size: 12px; }
+.connector-advanced { font-size: var(--op-text-meta); min-height: 32px; }
+@media (max-width: 860px) { .connector-advanced { min-height: var(--op-touch-target); } }
 .connector-form, .connector-connected { min-width: 0; }
 .connector-form input, .connector-connected input[readonly] { width: 100%; min-width: 0; }
 /* Text fields fill the card; tick boxes and radio buttons keep their own size. */

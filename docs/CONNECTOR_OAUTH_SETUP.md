@@ -1,4 +1,18 @@
-# One-click connectors (Notion, HubSpot, Slack, Airtable) — one-time setup
+# One-click connectors — one-time setup
+
+## The easy way (recommended): one key, no apps to register
+
+1. Create a free account at https://platform.composio.dev (Hobby plan, no card).
+2. Copy the project API key (Settings → API Keys).
+3. On Render, set `Plugins__ApiKey` to that key on the API service (with `Mail__TokenKey` and `Mail__WebBase`, which are already set for email). Redeploy.
+
+That is all. Every **Connect** button on Connectors (Notion, Gmail, HubSpot, Slack, Airtable) now goes to that app's own page through Composio's ready-made sign-in apps, and comes back connected. Nobody registers an app or pastes a token. Composio holds the tokens; the API stores only Composio's connection id. Limits on the free plan: 20,000 actions a month through Composio's own sign-in apps (https://composio.dev/pricing). The consent page shows Composio's app name, not OpportunityPilot. Not yet run against a real Composio key.
+
+Everything below is the older way (your own app per service). It still works and is used only when `Plugins__ApiKey` is not set, or behind "Advanced: use your own token".
+
+---
+
+## Older way: Notion, HubSpot, Slack, Airtable apps of your own
 
 _2026-10-14 · for the person who owns the Render deployment. The code is built and tested against fake services; each "Connect with …" button stays **Needs server setup** until you register that service's app and set its values in Render. Nothing here has been run against the real services yet._
 
