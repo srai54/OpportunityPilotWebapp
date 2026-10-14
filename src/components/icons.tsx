@@ -5,7 +5,7 @@
  */
 
 import {
-  Activity, ArrowDown, ArrowUp, BarChart3, Briefcase, Building2, Calendar, Check, CheckCircle2, ChevronDown, CircleHelp, Clock, Download, FileCheck2, HandCoins,
+  Activity, ArrowDown, ArrowUp, BarChart3, Bot, Briefcase, Building2, Calendar, Check, CheckCircle2, ChevronDown, CircleHelp, Clock, Download, FileCheck2, HandCoins,
   LayoutDashboard, Link2, ListChecks, Lock, Mail, Menu, Mic, Plug, RefreshCw, Search, Send, SlidersHorizontal, Sparkles, Target,
   MapPin, Banknote, Minus, TrendingUp, TriangleAlert, User, Users, type LucideIcon,
 } from 'lucide-react'
@@ -33,6 +33,7 @@ const ICONS = {
   search: Search,
   mic: Mic,
   mail: Mail,
+  autopilot: Bot,
   calendar: Calendar,
   check: Check,
   refresh: RefreshCw,

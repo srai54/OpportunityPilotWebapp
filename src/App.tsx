@@ -19,6 +19,7 @@ const OpportunitiesPage = lazy(() => import('./features/opportunities/Opportunit
 const OpportunityDetailPage = lazy(() => import('./features/opportunities/OpportunityDetailPage').then((m) => ({ default: m.OpportunityDetailPage })))
 const OverviewPage = lazy(() => import('./features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })))
 const OutreachPage = lazy(() => import('./features/outreach/OutreachPage').then((m) => ({ default: m.OutreachPage })))
+const AutopilotPage = lazy(() => import('./features/autopilot/AutopilotPage').then((m) => ({ default: m.AutopilotPage })))
 const InboxPage = lazy(() => import('./features/inbox/InboxPage').then((m) => ({ default: m.InboxPage })))
 const FollowUpsPage = lazy(() => import('./features/follow-ups/FollowUpsPage').then((m) => ({ default: m.FollowUpsPage })))
 const ProfilesPage = lazy(() => import('./features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })))
@@ -105,6 +106,7 @@ const router = createBrowserRouter([
       { path: 'approvals', element: <Navigate to="/opportunities?view=approvals" replace />, handle: { title: 'Opportunities' } },
       { path: 'outreach', handle: { title: 'Outreach' }, element: <OutreachPage /> },
       { path: 'inbox', handle: { title: 'Inbox' }, element: <InboxPage /> },
+      { path: 'autopilot', handle: { title: 'Autopilot' }, element: <AutopilotPage /> },
       { path: 'follow-ups', handle: { title: 'Follow-ups' }, element: <FollowUpsPage /> },
       { path: 'staffing', element: <StaffingDealsPage />, handle: { title: 'Staffing deals' } },
       { path: 'staffing/deals/:id', element: <StaffingDealPage />, handle: { title: 'Staffing deal' } },

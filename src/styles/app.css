@@ -2319,3 +2319,9 @@ html { scroll-padding-bottom: 96px; }
 .prog-actions > * { flex: 0 0 auto; }
 .how-to-steps a { text-decoration: underline; }
 .inbox-subject { margin: 4px 0 0; font-size: var(--op-text-body); color: var(--op-ink); }
+
+/* Autopilot: rules with state and a way to change each */
+.auto-rules { list-style: none; margin: 0; padding: 0; display: grid; }
+.auto-rule { display: flex; align-items: center; gap: var(--op-space-3); padding: var(--op-space-3) 0; border-bottom: 1px solid var(--op-line); flex-wrap: wrap; }
+.auto-rule:last-child { border-bottom: 0; }
+.auto-text { display: grid; gap: 2px; flex: 1 1 240px; min-width: 0; }
