@@ -1708,10 +1708,15 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .connector-does { margin: 0; }
 .connector-form, .connector-connected { min-width: 0; }
 .connector-form input, .connector-connected input[readonly] { width: 100%; min-width: 0; }
+/* Text fields fill the card; tick boxes and radio buttons keep their own size. */
+.connector-form input[type=checkbox], .connector-form input[type=radio] { width: auto; }
 .connector-connected input[readonly] { font-family: var(--op-font-mono, ui-monospace, monospace); font-size: var(--op-text-meta); }
 .how-to-steps { margin: 0; padding-left: 1.25em; display: grid; gap: 4px; }
 .connector-events { border: 0; margin: 0; padding: 0; display: grid; gap: 2px; min-width: 0; }
 .connector-events legend { padding: 0; margin-bottom: 4px; }
+.connector-target { min-width: 0; overflow-wrap: anywhere; }
+.connector-target input { flex: none; }
+@media (max-width: 860px) { .connector-target { min-height: var(--op-touch-target); } }
 
 /* All sites */
 .site-lines { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font-size: var(--op-text-meta); color: var(--op-muted); }
