@@ -2418,3 +2418,5 @@ html { scroll-padding-bottom: 96px; }
 .tone-neutral { stroke: var(--op-muted); background: var(--op-muted); }
 .tone-danger { stroke: var(--op-on-danger-tint); background: var(--op-on-danger-tint); }
 @media (prefers-reduced-motion: reduce) { .donut-arc { transition: none; } .live-pill i, .agent-dot.is-live, .donut-dot.is-live { animation: none; } }
+.result-check { flex: 0 0 auto; margin-top: 4px; width: 18px; height: 18px; accent-color: var(--op-primary); }
+.result-card.is-selected { border-color: var(--op-primary-tint-border); background: var(--op-primary-tint); }

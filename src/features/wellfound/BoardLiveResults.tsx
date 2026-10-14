@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { BulkBar } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { HowItWorks } from '../../components/HowItWorks'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
+import type { ProfileSummary } from '../../lib/types'
+import { bulkFromSearch, sameCompany, type BulkResult } from './bulkFromSearch'
 import { safeHref } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
 import { BOARDS, campaignFromSearchPath, employmentLabel, recruiterSearchUrl, formatSalary, applyView, type BoardJob, type BoardSearchResult, type JobBoard, type ResultView } from './boardModel'
@@ -41,6 +44,36 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
     return all
   }, [first.data, pages])
   const { shown, hidden } = useMemo(() => applyView(jobs, view), [jobs, view])
+  const sales = workspace === 'sales'
+  const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState('')
+  const [bulkDone, setBulkDone] = useState<BulkResult>()
+  const [bulkError, setBulkError] = useState<Error>()
+  /** Sales sees one row per hiring company; ticking a company ticks all its postings. */
+  const companies = useMemo(() => {
+    const groups: { company: string; jobs: BoardJob[] }[] = []
+    for (const j of shown) {
+      const g = groups.find((x) => sameCompany(x.company, j.companyName))
+      if (g) g.jobs.push(j); else groups.push({ company: j.companyName, jobs: [j] })
+    }
+    return groups.sort((a, b) => b.jobs.length - a.jobs.length)
+  }, [shown])
+  const pickedJobs = shown.filter((j) => picked.has(j.providerJobId))
+  const pickedCompanies = companies.filter((c) => c.jobs.some((j) => picked.has(j.providerJobId)))
+  const toggle = (ids: string[]) => setPicked((cur) => {
+    const next = new Set(cur)
+    const all = ids.every((id) => next.has(id))
+    for (const id of ids) { if (all) next.delete(id); else next.add(id) }
+    return next
+  })
+  async function runBulk() {
+    setBulkBusy('Starting…'); setBulkError(undefined); setBulkDone(undefined)
+    try {
+      setBulkDone(await bulkFromSearch({ sales, board, boardName: name, query, location, picked: pickedJobs, profiles: profiles.data ?? [], onStep: setBulkBusy }))
+      setPicked(new Set())
+    } catch (e) { setBulkError(e as Error) } finally { setBulkBusy('') }
+  }
 
   if (!path) return null
   if (first.error) return <ErrorNotice error={first.error} onRetry={first.reload} what={`live ${name} jobs`} />
@@ -85,13 +118,42 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
     {jobs.length > 0 && <HowItWorks summary="What happens next — step by step">
       <ol className="guide-steps">{(workspace === 'sales' ? SALES_STEPS : CANDIDATE_STEPS).map((step) => <li key={step}>{step}</li>)}</ol>
     </HowItWorks>}
+    {bulkError && <ErrorNotice error={bulkError} />}
+    {bulkDone && <div className="notice notice-success" role="status">
+      {sales
+        ? <>{bulkDone.approved} compan{bulkDone.approved === 1 ? 'y' : 'ies'} added as approved leads. <Link to="/outreach">Write the emails</Link> · <Link to={`/opportunities?campaign=${bulkDone.campaignId}`}>See the leads</Link></>
+        : <>{bulkDone.approved} job{bulkDone.approved === 1 ? '' : 's'} approved for applying. Your desktop agent applies to all of them: <code>npm run agent -- apply {name.toLowerCase()} --submit</code> · <Link to={`/opportunities?campaign=${bulkDone.campaignId}`}>See the jobs</Link></>}
+    </div>}
+    {shown.length > 0 && <div className="row wrap">
+      <label className="check"><input type="checkbox" checked={shown.length > 0 && shown.every((j) => picked.has(j.providerJobId))}
+        onChange={() => toggle(shown.map((j) => j.providerJobId))} /> {sales ? `Select all ${companies.length} companies` : `Select all ${shown.length} jobs`}</label>
+    </div>}
+    {sales && shown.length > 0 && <ul className="result-list" aria-label={`Companies hiring on ${name}`}>
+      {companies.map((c) => {
+        const ids = c.jobs.map((j) => j.providerJobId)
+        const on = ids.every((id) => picked.has(id))
+        const titles = [...new Set(c.jobs.map((j) => j.title))]
+        return <li key={c.company} className={`result-card${on ? ' is-selected' : ''}`}>
+          <input type="checkbox" className="result-check" checked={on} onChange={() => toggle(ids)} aria-label={`Select ${c.company}`} />
+          <div className="result-main">
+            <strong className="result-title">{c.company}</strong>
+            <div className="result-sub">{c.jobs.length} open role{c.jobs.length === 1 ? '' : 's'}: {titles.slice(0, 3).join(', ')}{titles.length > 3 ? ` and ${titles.length - 3} more` : ''}</div>
+            <div className="result-sub">{[...new Set(c.jobs.map((j) => j.location).filter(Boolean))].slice(0, 3).join(' · ')}</div>
+          </div>
+          <div className="result-side">
+            <a className="btn btn-ghost btn-sm" href={recruiterSearchUrl(c.company, query)} target="_blank" rel="noopener noreferrer">Find recruiters ↗<span className="sr-only"> at {c.company} (opens LinkedIn in a new tab)</span></a>
+          </div>
+        </li>
+      })}
+    </ul>}
     {shown.length === 0
       ? <p className="muted-small">{jobs.length > 0 ? 'Every loaded job is hidden by your filters. Turn one off, or load more.' : r.message}</p>
-      : <ul className="result-list">
+      : !sales && <ul className="result-list">
         {shown.map((job) => {
           const salary = formatSalary(job)
           const href = safeHref(job.boardUrl) ?? undefined
-          return <li key={job.providerJobId} className="result-card">
+          return <li key={job.providerJobId} className={`result-card${picked.has(job.providerJobId) ? ' is-selected' : ''}`}>
+            <input type="checkbox" className="result-check" checked={picked.has(job.providerJobId)} onChange={() => toggle([job.providerJobId])} aria-label={`Select ${job.title} at ${job.companyName}`} />
             <div className="result-main">
               <a className="result-title" href={href} target="_blank" rel="noopener noreferrer">{job.title}<span className="sr-only"> (opens on {name} in a new tab)</span></a>
               <div className="result-sub">{[job.companyName, job.location, job.isRemote ? 'Remote' : null, employmentLabel(job.employmentType)].filter(Boolean).join(' · ')}</div>
@@ -106,6 +168,11 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
           </li>
         })}
       </ul>}
+    <BulkBar count={sales ? pickedCompanies.length : pickedJobs.length} noun={sales ? { one: 'company', many: 'companies' } : { one: 'job', many: 'jobs' }} onClear={() => setPicked(new Set())}>
+      <button type="button" className="btn btn-primary btn-sm" disabled={bulkBusy !== ''} onClick={() => void runBulk()}>
+        {bulkBusy || (sales ? `Add ${pickedCompanies.length} as leads` : `Apply to ${pickedJobs.length}`)}
+      </button>
+    </BulkBar>
     {moreError && <ErrorNotice error={moreError} onRetry={() => void loadMore()} what={`more ${name} jobs`} />}
     {cursor
       ? <div className="row"><button type="button" className="btn btn-secondary" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? 'Loading…' : 'Load more jobs'}</button><span className="muted-small">Each page uses 1 of your free searches{left != null ? ` (${left} left)` : ''}.</span></div>
