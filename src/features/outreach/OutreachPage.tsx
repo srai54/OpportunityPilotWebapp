@@ -36,6 +36,7 @@ export function OutreachPage() {
   const [error, setError] = useState<Error>()
   const [notice, setNotice] = useState('')
   const [sendTick, setSendTick] = useState(0)
+  const [sendOpen, setSendOpen] = useState(false)
   const { advanced, workspace } = useShell()
   const sales = workspace === 'sales'
   const [adv, setAdv] = useState(advanced)
@@ -151,6 +152,24 @@ export function OutreachPage() {
     if (target.kind === 'mailto' && target.url) window.location.href = target.url
     else if (target.url) window.open(target.url, '_blank', 'noopener')
     setNotice(`${target.label}. Press Send there, then come back and click "I pressed Send".`)
+  }
+
+  /**
+   * Send the same message on another channel: reuse this lead's unsent draft of that channel, or write a new one. The person
+   * reviews it before it goes anywhere.
+   */
+  async function switchChannel(to: 'Email' | 'LinkedInMessage') {
+    if (!selected) return
+    setError(undefined)
+    const existing = items.find((d) => d.opportunityId === selected.opportunityId && d.channel === to && d.state !== 'Sent')
+    try {
+      const row = existing
+        ? await api<OutreachDraft>(`/api/v1/drafts/${existing.id}`)
+        : await api<OutreachDraft>(`/api/v1/opportunities/${selected.opportunityId}/drafts`, { method: 'POST', body: JSON.stringify({ channel: to, recipient: null }) })
+      drafts.reload()
+      setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? ''); setTried(false)
+      setNotice(to === 'Email' ? 'Email ready. Add the address (or use Find a contact), check it, then Approve & send.' : 'LinkedIn note ready (300 characters). Check it, then Approve & send opens LinkedIn.')
+    } catch (e) { setError(e as Error) }
   }
 
   /** A sent message cannot change, so "edit and send again" reopens it as a new editable version (the earlier send stays on record). */
@@ -305,12 +324,13 @@ export function OutreachPage() {
                   <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
                   <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
                 <div className="row wrap">
-                  <button className="btn btn-primary btn-lg" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>{working ? 'Opening…' : selected.state === 'Draft' ? 'Approve & send →' : 'Open to send →'}</button>
+                  {!sendOpen && <button className="btn btn-primary btn-lg" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>{working ? 'Opening…' : selected.state === 'Draft' ? 'Approve & send →' : 'Open to send →'}</button>}
                   <button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save</button>
                   {selected.state === 'Approved' ? <button className="btn btn-ghost" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-ghost" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve only</button>}
                   <button className="btn btn-ghost" type="button" disabled={working} onClick={copyDraft}>Copy text</button>
                 </div>
-                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={appLabel} onOpenAgain={() => void openAgain()}
+                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={selected.channel === 'Email' ? appLabel : 'LinkedIn'} onOpenAgain={() => void openAgain()}
+                  channel={selected.channel} onSwitchChannel={(to) => void switchChannel(to)} onPending={setSendOpen}
                   onChange={() => { drafts.reload(); void open(selected) }}
                   onSent={() => { if (inQueue && position < queueIds.length - 1) setTimeout(nextInQueue, 600) }} />
               </Card>

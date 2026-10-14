@@ -1,7 +1,13 @@
 import { useState } from 'react'
+import { ErrorNotice } from '../../components/ErrorNotice'
+import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
-import { EVENT_LABELS, HOW_TO, KIND_NAMES, WEBHOOK_KINDS, webhookProblem, type Integration, type IntegrationEvent, type IntegrationKind } from './integrationsModel'
+import { useApi } from '../../lib/useApi'
+import {
+  EVENT_LABELS, HOW_TO, KIND_NAMES, OAUTH_KINDS, PICKS_TARGET, WEBHOOK_KINDS, setupSentence, targetKey, targetLabel, webhookProblem,
+  type Integration, type IntegrationEvent, type IntegrationKind, type IntegrationTarget,
+} from './integrationsModel'
 
 const ALL_EVENTS = Object.keys(EVENT_LABELS) as IntegrationEvent[]
 
@@ -29,7 +35,7 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    const problem = webhook ? webhookProblem(kind, url) : !token.trim() ? `Paste the ${name} token.` : kind !== 'HubSpot' && !target.trim() ? `Paste the ${kind === 'Notion' ? 'database' : 'base'} link.` : null
+    const problem = webhook ? webhookProblem(kind, url) : !token.trim() ? `Paste the ${name} token.` : (kind === 'Notion' || kind === 'Airtable') && !target.trim() ? `Paste the ${kind === 'Notion' ? 'database' : 'base'} link.` : null
     if (problem) { setMessage(problem); return }
     setBusy(true); setMessage('')
     try {
@@ -47,7 +53,7 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
           <input value={url} onChange={(e) => setUrl(e.target.value)} inputMode="url" autoComplete="off" spellCheck={false} />
         </label>
       ) : (
-        <label className="field"><span><strong>{kind === 'HubSpot' ? 'Access token' : kind === 'Notion' ? 'Integration secret' : 'Personal access token'}</strong></span>
+        <label className="field"><span><strong>{kind === 'HubSpot' ? 'Access token' : kind === 'Notion' ? 'Integration secret' : kind === 'Hunter' || kind === 'Apollo' ? 'API key' : 'Personal access token'}</strong></span>
           <input type="password" value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" spellCheck={false} />
         </label>
       )}
@@ -75,6 +81,99 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
         <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={onCancel}>Cancel</button>
       </div>
     </form>
+  )
+}
+
+/** After signing in to Notion or Airtable: choose the database or table that leads go to. */
+function TargetPicker({ kind, onDone }: Readonly<{ kind: IntegrationKind; onDone: () => void }>) {
+  const targets = useApi<IntegrationTarget[]>(`/api/v1/integrations/${kind}/targets`)
+  const [chosen, setChosen] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const name = KIND_NAMES[kind]
+  const what = kind === 'Notion' ? 'database' : 'table'
+  const list = targets.data ?? []
+  const picked = list.find((t) => targetKey(t) === chosen)
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    if (!picked) { setMessage(`Choose a ${what} first.`); return }
+    setBusy(true); setMessage('')
+    try {
+      await api(`/api/v1/integrations/${kind}/target`, { method: 'PUT', body: JSON.stringify({ target: picked.target, table: picked.table ?? undefined }) })
+      onDone()
+    } catch (err) { setMessage((err as Error).message); setBusy(false) }
+  }
+
+  if (targets.loading) return <LoadingState label={`Looking for your ${name} ${what}s`} waking={targets.waking} rows={2} />
+  if (targets.error) return <ErrorNotice error={targets.error} onRetry={targets.reload} />
+  if (list.length === 0) {
+    return (
+      <div className="stack-2">
+        <p className="muted-small">
+          {kind === 'Notion'
+            ? 'No database was shared. Press Connect with Notion again and tick the page that holds your leads database, or add the connection to the database in Notion (••• → Connections).'
+            : 'No table you can edit was shared. Press Connect with Airtable again and add the base that holds your leads.'}
+        </p>
+        <div className="row wrap"><button type="button" className="btn btn-secondary btn-sm" onClick={targets.reload}>Look again</button></div>
+      </div>
+    )
+  }
+  return (
+    <form className="stack-3 connector-form" onSubmit={(e) => void save(e)} aria-label={`Choose where ${name} leads go`}>
+      <fieldset className="field connector-events">
+        <legend><strong>Which {what} should leads go to?</strong></legend>
+        {list.map((t) => (
+          <label key={targetKey(t)} className="check connector-target">
+            <input type="radio" name={`${kind}-target`} value={targetKey(t)} checked={chosen === targetKey(t)} onChange={() => setChosen(targetKey(t))} /> {targetLabel(t)}
+          </label>
+        ))}
+      </fieldset>
+      {message && <p className="notice notice-warning" role="alert">{message}</p>}
+      <div className="row-actions">
+        <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>{busy ? `Checking with ${name}…` : `Use this ${what}`}</button>
+      </div>
+    </form>
+  )
+}
+
+/** The one-click connect: the service's own sign-in screen when the server has its app, with the token form kept behind "Use a token instead". */
+function OauthConnect({ kind, row, onChange }: Readonly<{ kind: IntegrationKind; row: Integration | undefined; onChange: () => void }>) {
+  const [tokenOpen, setTokenOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const name = KIND_NAMES[kind]
+  const configured = row?.oauthConfigured === true
+
+  async function start() {
+    setBusy(true); setError('')
+    try {
+      const { url } = await api<{ url: string }>(`/api/v1/integrations/${kind}/oauth`, { method: 'POST' })
+      window.location.assign(url)
+    } catch (e) { setError((e as Error).message); setBusy(false) }
+  }
+
+  return (
+    <div className="stack-2 connector-form">
+      {configured ? (
+        <div className="row wrap">
+          <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void start()}>{busy ? `Opening ${name}…` : `Connect with ${name}`}</button>
+          <span className="muted-small">You allow access on {name}’s page, then come back here.</span>
+        </div>
+      ) : (
+        <p className="muted-small">{setupSentence(kind)}</p>
+      )}
+      {error && <p className="muted-small field-error" role="alert">{error}</p>}
+      {tokenOpen ? (
+        <ConnectForm kind={kind} onDone={() => { setTokenOpen(false); onChange() }} onCancel={() => setTokenOpen(false)} />
+      ) : (
+        <div className="row wrap">
+          <button type="button" className={`btn btn-sm ${configured ? 'btn-ghost' : 'btn-secondary'}`} aria-expanded={false} onClick={() => setTokenOpen(true)}>
+            Use a token instead<span className="sr-only"> for {name}</span>
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -108,6 +207,7 @@ export function IntegrationControl({ kind, row, onChange }: Readonly<{ kind: Int
   const status = note && <p className={`muted-small ${note.ok ? '' : 'field-error'}`} role="status">{note.text}</p>
 
   if (!row?.connected) {
+    if (OAUTH_KINDS.includes(kind)) return <OauthConnect kind={kind} row={row} onChange={onChange} />
     if (kind === 'CalendarFeed') return <div className="stack-2"><HowTo kind={kind} /><div className="row wrap"><button type="button" className="btn btn-primary btn-sm" disabled={busy !== null} onClick={() => void createFeed()}>{busy ? 'Making your link…' : 'Make my private calendar link'}</button></div>{status}</div>
     if (open) return <ConnectForm kind={kind} onDone={() => { setOpen(false); onChange() }} onCancel={() => setOpen(false)} />
     return <div className="row wrap"><button type="button" className="btn btn-primary btn-sm" aria-expanded={false} onClick={() => setOpen(true)}>Connect {name}</button>{status}</div>
@@ -116,10 +216,11 @@ export function IntegrationControl({ kind, row, onChange }: Readonly<{ kind: Int
   return (
     <div className="stack-2 connector-connected">
       <div className="row wrap">
-        <Badge tone={row.lastError ? 'warning' : 'success'}>{row.lastError ? 'Needs attention' : 'Connected'}</Badge>
+        <Badge tone={row.lastError || row.needsTarget ? 'warning' : 'success'}>{row.lastError ? 'Needs attention' : row.needsTarget ? 'One step left' : 'Connected'}</Badge>
         <span className="muted-small">{row.label}{row.lastUsedAt ? ` · last used ${new Date(row.lastUsedAt).toLocaleString()}` : ''}</span>
       </div>
       {row.lastError && <p className="muted-small field-error">{row.lastError}</p>}
+      {row.needsTarget && PICKS_TARGET.includes(kind) && <TargetPicker kind={kind} onDone={onChange} />}
       {kind === 'CalendarFeed' && row.feedUrl && (
         <div className="stack-2">
           <label className="field"><span><strong>Your private calendar link</strong></span>
@@ -141,7 +242,7 @@ export function IntegrationControl({ kind, row, onChange }: Readonly<{ kind: Int
       )}
       <div className="row wrap">
         {kind === 'CalendarFeed' && row.feedUrl && <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void copy(row.feedUrl!)}>Copy link</button>}
-        {kind !== 'CalendarFeed' && <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void test()}>{busy === 'test' ? 'Checking…' : webhook ? 'Send a test message' : 'Check connection'}</button>}
+        {kind !== 'CalendarFeed' && !row.needsTarget && <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void test()}>{busy === 'test' ? 'Checking…' : webhook ? 'Send a test message' : 'Check connection'}</button>}
         <button type="button" className="btn btn-ghost btn-sm" disabled={busy !== null} onClick={() => void disconnect()}>{kind === 'CalendarFeed' ? 'Turn off link' : 'Disconnect'}<span className="sr-only"> {name}</span></button>
       </div>
       {status}

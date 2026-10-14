@@ -1,7 +1,7 @@
 /** Services connected with a webhook address, a token or a private calendar link (API: /api/v1/integrations). */
 
-export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed'
-export type IntegrationEvent = 'sent' | 'leads' | 'digest'
+export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed' | 'Hunter' | 'Apollo'
+export type IntegrationEvent = 'sent' | 'leads' | 'replies' | 'digest'
 
 export interface Integration {
   kind: IntegrationKind
@@ -12,6 +12,57 @@ export interface Integration {
   lastUsedAt: string | null
   lastError: string | null
   feedUrl: string | null
+  /** The server has a sign-in app for this service, so "Connect with …" works (Notion, HubSpot, Slack, Airtable). */
+  oauthConfigured: boolean
+  /** Connected with the service's own sign-in screen instead of a pasted token. */
+  oauthConnected: boolean
+  /** Notion or Airtable signed in, but where the leads go is not chosen yet. */
+  needsTarget: boolean
+}
+
+/** A Notion database, or an Airtable table with its base as `group` (API: GET /api/v1/integrations/{kind}/targets). */
+export interface IntegrationTarget { target: string; table: string | null; name: string; group: string | null }
+
+/** Services that connect with one click on their own sign-in screen when the server has an app for them. */
+export const OAUTH_KINDS: IntegrationKind[] = ['Notion', 'HubSpot', 'Slack', 'Airtable']
+
+/** Notion and Airtable ask where leads go after signing in. */
+export const PICKS_TARGET: IntegrationKind[] = ['Notion', 'Airtable']
+
+export function targetKey(t: IntegrationTarget): string {
+  return t.table ? `${t.target}/${t.table}` : t.target
+}
+
+/** "Leads", or "Leads (in CRM)" for an Airtable table, so two tables with the same name can be told apart. */
+export function targetLabel(t: IntegrationTarget): string {
+  return t.group ? `${t.name} (in ${t.group})` : t.name
+}
+
+/** What a card says when the server has no sign-in app for the service yet. */
+export function setupSentence(kind: IntegrationKind): string {
+  return `The one-click ${KIND_NAMES[kind]} button is not switched on yet. The app owner sets it up once; until then you can use a token.`
+}
+
+export interface OauthReturn { kind: IntegrationKind; ok: boolean; text: string }
+
+/**
+ * The notice after coming back from a service's sign-in screen (`/connectors?connected=Notion` or `?error=declined&service=Notion`).
+ * Null when the address is not such a return.
+ */
+export function oauthReturn(params: URLSearchParams): OauthReturn | null {
+  const connected = params.get('connected')
+  const kind = (connected ?? params.get('service')) as IntegrationKind | null
+  if (!kind || !OAUTH_KINDS.includes(kind)) return null
+  const name = KIND_NAMES[kind]
+  if (connected) {
+    const where = kind === 'Notion' ? ' Now choose which database leads go to.' : kind === 'Airtable' ? ' Now choose which table leads go to.' : kind === 'Slack' ? ' A test message is in the channel you picked.' : ''
+    return { kind, ok: true, text: `${name} is connected.${where}` }
+  }
+  const why: Record<string, string> = {
+    declined: `${name} was not connected because access was not allowed on ${name}’s page. Try again when you are ready.`,
+    expired: `${name} was not connected because the sign-in took too long or was opened twice. Press Connect with ${name} again.`,
+  }
+  return { kind, ok: false, text: why[params.get('error') ?? ''] ?? `${name} did not finish connecting. Try again, or use a token instead.` }
 }
 
 export interface PushLeadResult { opportunityId: string; outcome: 'Added' | 'AlreadyThere' | 'Failed'; reason: string | null; link: string | null }
@@ -22,11 +73,12 @@ export const LEAD_TARGETS: IntegrationKind[] = ['HubSpot', 'Notion', 'Airtable']
 export const EVENT_LABELS: Record<IntegrationEvent, string> = {
   sent: 'An email is sent',
   leads: 'A search finds new leads',
+  replies: 'Someone replies to your email',
   digest: 'Daily summary (follow-ups due, messages waiting)',
 }
 
 export const KIND_NAMES: Record<IntegrationKind, string> = {
-  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar',
+  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar', Hunter: 'Hunter', Apollo: 'Apollo',
 }
 
 /** The steps to get the address or token, written for someone who has never done it. */
@@ -53,6 +105,14 @@ export const HOW_TO: Record<IntegrationKind, { steps: string[]; link?: { href: s
   Airtable: {
     steps: ['Go to airtable.com/create/tokens → Create token with scopes data.records:read, data.records:write and schema.bases:read, and add your base.', 'Copy the token, and the link of the base or table from your browser.'],
     link: { href: 'https://airtable.com/developers/web/guides/personal-access-tokens', text: 'Airtable’s guide' },
+  },
+  Hunter: {
+    steps: ['Sign in at hunter.io → API (in the account menu) and copy your API key.', 'The free plan gives 25 searches a month; a search that finds nobody is not counted.'],
+    link: { href: 'https://hunter.io/api-keys', text: 'Hunter API keys' },
+  },
+  Apollo: {
+    steps: ['In Apollo: Settings → Integrations → API → Create new key, with access to People API Search and People Enrichment (or a master key).', 'Searching people is free; showing a work email uses 1 Apollo credit each time.'],
+    link: { href: 'https://developer.apollo.io/keys/', text: 'Apollo API keys' },
   },
   CalendarFeed: {
     steps: ['Google Calendar: Other calendars → + → From URL → paste the link.', 'Outlook: Add calendar → Subscribe from web → paste the link. Updates arrive on their own (Google checks every few hours).'],

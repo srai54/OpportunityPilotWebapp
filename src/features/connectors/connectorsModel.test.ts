@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { CATEGORIES, CONNECTORS, filterConnectors, toggleWant } from './connectorsModel'
-import { pushSummary, webhookProblem } from './integrationsModel'
+import { CATEGORIES, CONNECTORS, connectorStatus, filterConnectors, toggleWant } from './connectorsModel'
+import { OAUTH_KINDS, oauthReturn, pushSummary, setupSentence, targetKey, targetLabel, webhookProblem } from './integrationsModel'
 
 describe('catalog', () => {
   it('has unique ids, every category in use, and nothing claims to be live', () => {
@@ -70,5 +70,37 @@ describe('pushSummary', () => {
       { opportunityId: 'b', outcome: 'AlreadyThere', reason: 'x', link: null },
       { opportunityId: 'c', outcome: 'Failed', reason: 'HubSpot refused the token.', link: null },
     ])).toBe('1 added to HubSpot, 1 already there, 1 not sent: HubSpot refused the token.')
+  })
+})
+
+describe('one-click sign-in', () => {
+  it('a sign-in card says Connect now only when the server has the app, and Needs server setup otherwise', () => {
+    const notion = CONNECTORS.find((c) => c.id === 'notion')!
+    expect(connectorStatus(notion, true)).toBe('Connect now')
+    expect(connectorStatus(notion, false)).toBe('Needs server setup')
+    expect(connectorStatus(notion, undefined)).toBe('Needs server setup')
+    // Teams has no sign-in: it keeps its catalog status.
+    expect(connectorStatus(CONNECTORS.find((c) => c.id === 'teams')!, false)).toBe('Connect now')
+    for (const kind of OAUTH_KINDS) expect(CONNECTORS.find((c) => c.action === `int-${kind}`)?.needs).not.toMatch(/token|secret|webhook/i)
+  })
+
+  it('reads the return from a sign-in screen and never trusts an unknown service', () => {
+    expect(oauthReturn(new URLSearchParams('connected=Notion'))).toEqual({ kind: 'Notion', ok: true, text: 'Notion is connected. Now choose which database leads go to.' })
+    expect(oauthReturn(new URLSearchParams('connected=HubSpot'))?.text).toBe('HubSpot is connected.')
+    expect(oauthReturn(new URLSearchParams('error=declined&service=Slack'))).toMatchObject({ kind: 'Slack', ok: false })
+    expect(oauthReturn(new URLSearchParams('error=expired&service=Airtable'))?.text).toContain('Press Connect with Airtable again')
+    expect(oauthReturn(new URLSearchParams('error=failed&service=HubSpot'))?.text).toContain('use a token instead')
+    expect(oauthReturn(new URLSearchParams('connected=Hunter'))).toBeNull()
+    expect(oauthReturn(new URLSearchParams('connected=<script>'))).toBeNull()
+    expect(oauthReturn(new URLSearchParams(''))).toBeNull()
+  })
+
+  it('labels Airtable tables with their base and keys them uniquely', () => {
+    const table = { target: 'appA', table: 'tblB', name: 'Leads', group: 'CRM' }
+    expect(targetLabel(table)).toBe('Leads (in CRM)')
+    expect(targetKey(table)).toBe('appA/tblB')
+    const db = { target: 'abc', table: null, name: 'Leads', group: null }
+    expect([targetLabel(db), targetKey(db)]).toEqual(['Leads', 'abc'])
+    expect(setupSentence('Notion')).toContain('use a token')
   })
 })

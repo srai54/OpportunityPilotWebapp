@@ -13,6 +13,7 @@ All are `VITE_` build-time values compiled into the public bundle — public val
 | `VITE_API_BASE_URL` | API origin, no trailing slash | `http://localhost:5051` (also the code default) | `https://opportunitypilotwebapi.onrender.com` — committed in `.env.production` and `render.yaml`; a value set in the Vercel/Render dashboard overrides `.env.production` | `src/lib/config.ts` |
 | `VITE_SUPABASE_URL` | Supabase project URL (auth only) | empty → no Supabase | Not set yet (Vercel dashboard; `render.yaml` prompts with `sync: false`) → production runs guest mode (OQ-FE-014) | `src/lib/config.ts` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key — never the service-role key | empty | Not set yet (as above) | `src/lib/config.ts` |
+| `VITE_HANKO_API_URL` | Hanko project API URL (public; https, or http on localhost). When set, Hanko is the main sign-in | empty → no Hanko (the package is never loaded) | Not set yet (Vercel dashboard; `render.yaml` prompts with `sync: false`). Must match the API's `Auth__HankoApiUrl`; owner steps in `docs/AUTH_SETUP.md` | `src/lib/config.ts` |
 | `VITE_DEV_AUTH` | `true` enables development sign-in (`X-Dev-User`); needs the API in Development with `Auth:DevBypass=true` | `true` | Ignored: gated by `import.meta.env.DEV`, so it is compiled out of production builds | `src/lib/config.ts` |
 | `NODE_VERSION` | Node for the Render build | — | `22.12.0` in `render.yaml` | Render |
 
@@ -58,6 +59,7 @@ Chosen at build time in `src/features/auth/AuthProvider.tsx`:
 
 | Mode | When | Credentials sent to the API | Notes |
 |---|---|---|---|
+| hanko (on top of any mode) | `VITE_HANKO_API_URL` set | `Authorization: Bearer <Hanko session token>` (`hanko.getSessionToken()`) | Shown first on the sign-in page (`<hanko-auth>`: passkey, password, email code, MFA); the mode below becomes "the older sign-in" (`/signin?with=classic`). Settings → Security shows `<hanko-profile>` for Hanko users. `@teamhanko/hanko-elements` 3.0.0 is loaded on demand |
 | supabase | `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` set | `Authorization: Bearer <Supabase access token>` | Email/password + Google; access tokens refresh automatically and once more before API calls when near expiry |
 | dev | Supabase not set, `VITE_DEV_AUTH=true`, dev build | `X-Dev-User: <name>` | Any name is a separate synthetic user; impossible in production builds |
 | guest | Neither of the above (current production) | `Authorization: Bearer <guest token>` from `POST /api/v1/auth/guest` | Demo mode; the browser enforces the returned expiry. With real sign-in the API keeps guests only when `Auth__AllowGuests=true`; data may be in-memory and reset on restart |

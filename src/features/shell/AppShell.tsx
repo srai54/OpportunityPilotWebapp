@@ -343,7 +343,6 @@ export function AppShell() {
                 <Icon name="menu" size={19} />
               </button>
               <Link to="/" className="brand" aria-label="OpportunityPilot home">
-                <span className="brand-mark" aria-hidden="true">OP</span>
                 <span className="brand-name">OpportunityPilot</span>
               </Link>
               <span className="ab-sep" aria-hidden="true" />
