@@ -163,6 +163,7 @@ export type SourceKind =
   | 'Arbeitnow'
   | 'Jobicy'
   | 'WeWorkRemotely'
+  | 'TheMuse'
 export type SourceStatus = 'Pending' | 'Ok' | 'Failed' | 'Skipped'
 export type ResearchJobState = 'Queued' | 'Running' | 'Completed' | 'CompletedWithGaps' | 'Failed' | 'Cancelled'
 export type ResearchStage = 'Prepare' | 'Gather' | 'Extract' | 'Filter' | 'Score' | 'Complete'

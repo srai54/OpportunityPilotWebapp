@@ -317,6 +317,7 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   Arbeitnow: 'Arbeitnow jobs (Germany, Europe, remote)',
   Jobicy: 'Jobicy remote jobs',
   WeWorkRemotely: 'We Work Remotely jobs',
+  TheMuse: 'The Muse jobs',
 }
 
 /** Open job sources the server fetches from documented public APIs. Job campaigns only. */
@@ -338,7 +339,7 @@ export type JobSourceKind = Extract<
   | 'WeWorkRemotely'
 >
 export type BoardKind = Extract<SourceKind, 'Greenhouse' | 'Lever' | 'Ashby' | 'SmartRecruiters' | 'Recruitee' | 'Workable'>
-export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk' | 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely'>
+export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk' | 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'TheMuse'>
 
 export const JOB_SOURCE_CAPABILITY: Record<JobSourceKind, SourceCapabilityKey> = {
   Greenhouse: 'greenhouse',
@@ -365,7 +366,7 @@ export function sourceKindAllowed(kind: SourceKind, mode: OpportunityMode): bool
   return true
 }
 
-export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk']
+export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'TheMuse']
 
 /** The sources the quick campaign adds for one choice: all free feeds, one feed, one company board, or a job search site. */
 export function quickSourceBodies(choice: string, boardToken: string): { kind: string; url?: string }[] {
