@@ -14,6 +14,7 @@ import { safeHref } from '../opportunities/opportunityModel'
 import { useShell } from '../shell/ShellContext'
 import { TrendsPanel } from '../trends/TrendsPage'
 import { AllSitesPanel } from './AllSitesPanel'
+import { NaukriPanel } from './NaukriPanel'
 import { BoardSearchPanel } from './BoardSearchPanel'
 import type { JobBoard } from './boardModel'
 
@@ -26,7 +27,7 @@ export function WellfoundPage() {
   const { workspace, advanced } = useShell()
   const ws = workspace === 'sales' ? 'Sales' : 'Candidate'
   const [params] = useSearchParams()
-  const [provider, setProvider] = useState<'all' | 'wellfound' | 'trends' | JobBoard>(params.get('tab') === 'trends' ? 'trends' : params.get('tab') === 'wellfound' ? 'wellfound' : 'all')
+  const [provider, setProvider] = useState<'all' | 'wellfound' | 'trends' | 'naukri' | JobBoard>(params.get('tab') === 'trends' ? 'trends' : params.get('tab') === 'wellfound' ? 'wellfound' : params.get('tab') === 'naukri' ? 'naukri' : 'all')
   const [keyword, setKeyword] = useState('')
   const [company, setCompany] = useState('')
   const [location, setLocation] = useState('')
@@ -123,6 +124,7 @@ export function WellfoundPage() {
     <button type="button" className={provider === 'all' ? 'active' : ''} aria-pressed={provider === 'all'} onClick={() => setProvider('all')}>All sites</button>
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
     {(['Indeed', 'LinkedIn', 'Seek'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
+    <button type="button" className={provider === 'naukri' ? 'active' : ''} aria-pressed={provider === 'naukri'} onClick={() => setProvider('naukri')}>Naukri</button>
   </div>
   const extraCount = [company, techStack, workMode, minSalary, fundingStage, industry, employmentType, postedWithinDays, jobState, equityOnly ? 'equity' : ''].filter(Boolean).length
 
@@ -134,7 +136,7 @@ export function WellfoundPage() {
         ? <button type="button" className="btn btn-secondary btn-sm" onClick={() => setProvider('all')}>Back to search</button>
         : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setProvider('trends')}><Icon name="trend" size={14} /> Market trends</button>} />
 
-    {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
+    {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider === 'naukri' ? <NaukriPanel workspace={workspace} tabs={tabs} /> : provider !== 'wellfound' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
     <RoleList />
     <form className="search-hero" aria-label="Search Wellfound" onSubmit={(e) => e.preventDefault()}>
