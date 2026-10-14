@@ -1,4 +1,4 @@
-export type JobBoard = 'Indeed' | 'LinkedIn' | 'Seek'
+export type JobBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri' | 'Instahyre'
 
 export type BoardJob = {
   providerJobId: string
@@ -50,6 +50,21 @@ type BoardInfo = {
 }
 
 export const BOARDS: Record<JobBoard, BoardInfo> = {
+  Naukri: {
+    name: 'Naukri',
+    searchUrl: (s) => {
+      const slug = (v: string) => v.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      const p = new URLSearchParams({ k: s.query })
+      if (s.location.trim()) p.set('l', s.location.trim())
+      return `https://www.naukri.com/${slug(s.query) || 'jobs'}-jobs${s.location.trim() ? `-in-${slug(s.location)}` : ''}?${p}`
+    },
+    boundary: 'Naukri has no public API and blocks direct reading; its postings come through Google for Jobs. Applying uses your desktop agent.',
+  },
+  Instahyre: {
+    name: 'Instahyre',
+    searchUrl: (s) => `https://www.instahyre.com/search-jobs/?${new URLSearchParams({ q: s.query, ...(s.location.trim() ? { l: s.location.trim() } : {}) })}`,
+    boundary: 'Instahyre has no public API; its postings come through Google for Jobs. Applying uses your desktop agent.',
+  },
   Indeed: {
     name: 'Indeed',
     searchUrl: (s) => {

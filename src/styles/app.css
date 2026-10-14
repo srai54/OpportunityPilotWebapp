@@ -2413,4 +2413,3 @@ html { scroll-padding-bottom: 96px; }
 .tone-neutral { stroke: var(--op-muted); background: var(--op-muted); }
 .tone-danger { stroke: var(--op-on-danger-tint); background: var(--op-on-danger-tint); }
 @media (prefers-reduced-motion: reduce) { .donut-arc { transition: none; } .live-pill i, .agent-dot.is-live, .donut-dot.is-live { animation: none; } }
-.naukri-cmd { margin: 0; padding: var(--op-space-2) var(--op-space-3); border-radius: var(--op-radius-control); background: var(--op-panel-head, var(--op-surface)); border: 1px solid var(--op-line); font-family: var(--op-font-mono, ui-monospace, monospace); font-size: var(--op-text-meta); white-space: pre-wrap; overflow-wrap: anywhere; }

@@ -23,6 +23,8 @@ export const PAID_SITES = [
   { id: 'LinkedIn', label: 'LinkedIn' },
   { id: 'Indeed', label: 'Indeed' },
   { id: 'Seek', label: 'SEEK' },
+  { id: 'Naukri', label: 'Naukri' },
+  { id: 'Instahyre', label: 'Instahyre' },
 ] as const
 
 /** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */

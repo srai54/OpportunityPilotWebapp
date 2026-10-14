@@ -14,7 +14,7 @@ import { useApi } from '../../lib/useApi'
 import { splitTags } from '../profiles/profileFields'
 import { useShell } from '../shell/ShellContext'
 import {
-  CADENCES, campaignPayload, firstRepeatAt, newDraft, parseBoardInput, quickSourceBodies, AGENT_BOARDS,
+  CADENCES, campaignPayload, firstRepeatAt, newDraft, parseBoardInput, quickSourceBodies,
   SEARCH_BOARDS, suggestedMode,
   type BoardKind, type SupportedMode,
 } from './campaignModel'
@@ -22,7 +22,7 @@ import {
 type FeedChoice = 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk' | 'TheMuse'
 type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Instahyre' | 'Naukri' | 'Greenhouse' | 'Lever' | 'FreeFeeds' | FeedChoice
 
-const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: AGENT_BOARDS.includes(b.value) ? b.label : `${b.label} job search` }))
+const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` }))
 /** The free public feeds: no key, no quota. Candidates only (a feed lists jobs, and a Sales campaign needs the hiring company). */
 const FEEDS: { value: FeedChoice; label: string }[] = [
   { value: 'Arbeitnow', label: 'Arbeitnow (Germany, Europe, remote)' },
@@ -109,12 +109,6 @@ export function QuickCampaign() {
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
       const hands = mode === 'Job' && opts.autoApprove > 0 ? { autoApproveMinScore: opts.autoApprove } : {}
       const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode), ...hands }) })
-      if ((AGENT_BOARDS as readonly string[]).includes(source)) {
-        // Naukri and Instahyre are read by the desktop agent, not the server: open the campaign on its sources step, where the
-        // agent's collect command for this campaign is ready to copy.
-        navigate(`/campaigns/${campaign.id}/edit?step=3&board=${source}`, { replace: true })
-        return
-      }
       const sourceBodies = quickSourceBodies(source, (board && 'token' in board ? board.token : undefined) ?? token.trim())
       try {
         await Promise.all(sourceBodies.map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))

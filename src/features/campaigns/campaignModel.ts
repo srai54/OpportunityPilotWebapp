@@ -376,15 +376,13 @@ export function quickSourceBodies(choice: string, boardToken: string): { kind: s
   return [{ kind: 'JobSearch', url: choice }]
 }
 
-export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Instahyre' | 'Naukri'
-/** Boards with no public search: the desktop agent reads them in the person's own logged-in browser. */
-export const AGENT_BOARDS: readonly SearchBoard[] = ['Instahyre', 'Naukri']
+export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri' | 'Instahyre'
 export const SEARCH_BOARDS: { value: SearchBoard; label: string }[] = [
   { value: 'Indeed', label: 'Indeed' },
   { value: 'LinkedIn', label: 'LinkedIn' },
   { value: 'Seek', label: 'SEEK (Australia / New Zealand)' },
-  { value: 'Instahyre', label: 'Instahyre (India, via your desktop agent)' },
-  { value: 'Naukri', label: 'Naukri (India, via your desktop agent)' },
+  { value: 'Naukri', label: 'Naukri (India)' },
+  { value: 'Instahyre', label: 'Instahyre (India)' },
 ]
 
 /** What a job board search will look for: Job → first 3 keywords; other modes → keywords, then buying signals. */
