@@ -108,6 +108,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 
 - Use SVG drawn from tokens (no chart library). Every chart has: a title, a one-line takeaway in text, labelled axes or direct value labels, an accessible name (`role="img"` + `aria-label` summarising the numbers) and a table or list fallback for the figures.
 - Bars for counts and comparisons, lines for change over time, funnel = horizontal bars with conversion %, progress = a bar with "n of m". Zero data → an empty state with the action that creates data, never an empty axis.
+- **Donut (2026-10-14, `components/charts/Donut`)** for parts of one whole (campaign states, message states): own SVG, slices draw in once, hover or focus a slice or its legend row to highlight it and show its number in the centre; the legend lists every value with its share and is the keyboard path; a pulsing legend dot marks work running now. Never more than five slices; the legend drops below the ring when narrow. Motion stops under reduced motion.
 - Label what the data is and how much of it: "sample of 25 postings", "last 14 days", "from your own records". Market data from a third party is labelled with its source.
 - Numbers: tabular figures, thousands separators, percentages rounded to whole numbers unless < 10%.
 - **Deltas (v4):** a change badge is shown only when there is a previous equal period; otherwise it is hidden, never `0%` or a guess. It carries an arrow and words for screen readers, not colour alone.

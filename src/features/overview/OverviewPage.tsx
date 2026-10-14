@@ -1,3 +1,4 @@
+import { AutomationProgress } from './AutomationProgress'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -186,6 +187,7 @@ function CandidateOverview({ a, overview, trend }: { a: AnalyticsOverview; overv
       <HomeHero a={a} workspace="candidate" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="candidate" />
+      <AutomationProgress workspace="candidate" />
       <div className="two">
         <div className="stack-4">
           {guided}
@@ -296,6 +298,7 @@ function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview:
       <HomeHero a={a} workspace="sales" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="sales" />
+      <AutomationProgress workspace="sales" />
       <div className="two">
         <div className="stack-4">
           {guided}

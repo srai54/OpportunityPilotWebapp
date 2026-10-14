@@ -2334,3 +2334,40 @@ html { scroll-padding-bottom: 96px; }
 .circle-name { display: flex; align-items: center; gap: var(--op-space-2); flex-wrap: wrap; }
 .circle-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--op-space-3); }
 @media (max-width: 760px) { .circle-form { grid-template-columns: minmax(0, 1fr); } }
+
+/* Your automation: interactive donuts, live pulse (own SVG, DESIGN.md §9) */
+.section-title { font-size: var(--op-text-screen, 16px); font-weight: 650; margin: 0; }
+.chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--op-space-4); }
+@media (max-width: 1500px) { .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chart-grid > :last-child { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .chart-grid { grid-template-columns: minmax(0, 1fr); } }
+.live-pill { display: inline-flex; align-items: center; gap: 6px; font-size: var(--op-text-meta); font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--op-primary-tint); color: var(--op-on-primary-tint); }
+.live-pill i, .agent-dot.is-live, .donut-dot.is-live { animation: prog-pulse 2s infinite; }
+.live-pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--op-primary); display: inline-block; }
+.agent-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--op-muted); display: inline-block; }
+.agent-dot.is-live { background: var(--op-on-green-tint); }
+/* The legend sits beside the donut when there is room and drops below it when there is not. */
+.donut { display: flex; flex-wrap: wrap; gap: var(--op-space-4); align-items: center; justify-content: center; }
+.donut-svg { flex: 0 0 140px; }
+.donut-legend { flex: 1 1 200px; }
+.donut-svg { width: 140px; height: 140px; overflow: visible; }
+.donut-track { fill: none; stroke: var(--op-chart-track); stroke-width: 16; }
+.donut-arc { fill: none; stroke-width: 16; transition: stroke-dasharray 1s cubic-bezier(.23, 1, .32, 1), opacity .2s ease, stroke-width .2s ease; cursor: pointer; }
+.donut-arc.is-dim { opacity: .3; }
+.donut-arc.is-on { stroke-width: 20; }
+.donut-value { font-size: 26px; font-weight: 650; fill: var(--op-ink); font-variant-numeric: tabular-nums; }
+.donut-caption { font-size: 10.5px; fill: var(--op-muted); }
+.donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; min-width: 0; }
+.donut-key { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; padding: 5px 8px; border: 0; border-radius: var(--op-radius-control); background: transparent; color: var(--op-ink); font: inherit; font-size: var(--op-text-meta); text-align: left; cursor: pointer; }
+.donut-key:hover, .donut-key.is-on { background: var(--op-panel-head, var(--op-primary-tint)); }
+.donut-label { min-width: 0; overflow-wrap: break-word; }
+.donut-num { font-weight: 650; white-space: nowrap; }
+.donut-num small { font-weight: 400; color: var(--op-muted); }
+.donut-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tone-primary { stroke: var(--op-primary); background: var(--op-primary); }
+.tone-success { stroke: var(--op-on-green-tint); background: var(--op-on-green-tint); }
+.tone-warning { stroke: var(--op-on-amber-tint); background: var(--op-on-amber-tint); }
+.tone-teal { stroke: var(--op-on-teal-tint); background: var(--op-on-teal-tint); }
+.tone-indigo { stroke: var(--op-on-indigo-tint); background: var(--op-on-indigo-tint); }
+.tone-neutral { stroke: var(--op-muted); background: var(--op-muted); }
+.tone-danger { stroke: var(--op-on-danger-tint); background: var(--op-on-danger-tint); }
+@media (prefers-reduced-motion: reduce) { .donut-arc { transition: none; } .live-pill i, .agent-dot.is-live, .donut-dot.is-live { animation: none; } }
