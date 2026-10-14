@@ -108,6 +108,32 @@ export function validTotp(input: string): boolean {
   return /^\d{6}$/.test(normalizeTotp(input))
 }
 
+/* ---- Hanko (main sign-in when VITE_HANKO_API_URL is set) ---- */
+
+/** The part of Hanko's session check the app uses (`hanko.validateSession()`). */
+export interface HankoSessionCheck {
+  is_valid: boolean
+  user_id?: string
+  claims?: { subject?: string; email?: { address?: string } }
+}
+
+export interface HankoUser {
+  id: string
+  email: string
+}
+
+/** The signed-in Hanko user from a session check, or null when there is no valid session. */
+export function hankoUserFrom(check: HankoSessionCheck | null | undefined): HankoUser | null {
+  if (!check?.is_valid) return null
+  const id = check.claims?.subject ?? check.user_id
+  if (!id) return null
+  return { id, email: check.claims?.email?.address || 'Signed in' }
+}
+
+/** Sign-in page query: `?with=classic` shows the older sign-in (Supabase, or the dev form) instead of Hanko. */
+export const CLASSIC_SIGNIN_PARAM = 'with'
+export const CLASSIC_SIGNIN_VALUE = 'classic'
+
 /** A name that never collides with a half-finished earlier setup (Supabase rejects duplicate friendly names). */
 export function factorName(now: Date): string {
   return `Authenticator ${now.toISOString().slice(0, 16).replace('T', ' ')}`

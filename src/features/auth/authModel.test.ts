@@ -5,7 +5,23 @@ import {
   formatCountdown,
   isAuthOnlyPath,
   passwordStrength,
-  resendSecondsLeft, factorName, needsMfa, normalizeTotp, validTotp } from './authModel'
+  resendSecondsLeft, factorName, needsMfa, normalizeTotp, validTotp, hankoUserFrom } from './authModel'
+
+describe('Hanko session', () => {
+  it('is signed out unless the check says the session is valid', () => {
+    expect(hankoUserFrom(null)).toBeNull()
+    expect(hankoUserFrom({ is_valid: false, user_id: 'u1' })).toBeNull()
+    expect(hankoUserFrom({ is_valid: true })).toBeNull()
+  })
+
+  it('takes the id from the claims, falling back to the user id, and the primary email when present', () => {
+    expect(hankoUserFrom({ is_valid: true, claims: { subject: 'u1', email: { address: 'a@example.test' } } })).toEqual({
+      id: 'u1',
+      email: 'a@example.test',
+    })
+    expect(hankoUserFrom({ is_valid: true, user_id: 'u2' })).toEqual({ id: 'u2', email: 'Signed in' })
+  })
+})
 
 describe('account screens', () => {
   it('maps URLs to screens; anything else is sign-in so deep links survive', () => {
