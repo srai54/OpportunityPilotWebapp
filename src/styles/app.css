@@ -2243,8 +2243,8 @@ html { scroll-padding-bottom: 96px; }
 .quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .quick-grid { grid-template-columns: minmax(0, 1fr); } }
 
-/* Opportunities table in Advanced has up to nine columns: tighten it before it ever needs a sideways scroll (window ≤ 1240px or zoomed in). */
-@media (max-width: 1240px) {
+/* Opportunities table in Advanced has up to nine columns: tighten it before it ever needs a sideways scroll (window ≤ 1320px, which includes 1280 with the rail, or zoomed in). */
+@media (max-width: 1320px) {
   .opp-table { min-width: 0; }
   .opp-table th, .opp-table td { padding-left: var(--op-space-2); padding-right: var(--op-space-2); }
   .opp-table .table-role { min-width: 160px; }
