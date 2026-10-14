@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Avatar, Card, CardGrid } from '../../components/cards'
 import { PageHeader } from '../../components/PageHeader'
 import { Badge } from '../../components/StatusBadge'
@@ -7,9 +7,9 @@ import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import type { Mailbox } from '../mail/mailModel'
 import { useShell } from '../shell/ShellContext'
-import { CATEGORIES, CONNECTORS, filterConnectors, readWants, toggleWant, writeWants, type Audience, type Connector, type ConnectorCategory, type ConnectorStatus } from './connectorsModel'
+import { CATEGORIES, CONNECTORS, connectorStatus, filterConnectors, readWants, toggleWant, writeWants, type Audience, type Connector, type ConnectorCategory, type ConnectorStatus } from './connectorsModel'
 import { IntegrationControl } from './IntegrationControl'
-import type { Integration, IntegrationKind } from './integrationsModel'
+import { oauthReturn, type Integration, type IntegrationKind } from './integrationsModel'
 
 const STATUS_TONE: Record<ConnectorStatus, 'success' | 'primary' | 'warning' | 'neutral'> = {
   'Connect now': 'success', 'Needs server setup': 'warning', 'File export': 'neutral', 'Next up': 'primary', Planned: 'neutral',
@@ -54,9 +54,21 @@ function ConnectorAction({ c, mailboxes, integrations, reload }: Readonly<{ c: C
  */
 export function ConnectorsPage() {
   const { workspace } = useShell()
+  const [params, setParams] = useSearchParams()
+  // Coming back from a service's sign-in screen: say how it went, and show every card so that service's card is on screen.
+  const [returned] = useState(() => oauthReturn(params))
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<ConnectorCategory | 'All'>('All')
-  const [audience, setAudience] = useState<Audience | 'All'>(workspace === 'sales' ? 'Sales' : 'Candidate')
+  const [audience, setAudience] = useState<Audience | 'All'>(returned ? 'All' : workspace === 'sales' ? 'Sales' : 'Candidate')
+  const [notice, setNotice] = useState(returned)
+  const noticeRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!returned) return
+    // The result is read once; the address is cleaned so a reload does not repeat it.
+    setParams({}, { replace: true })
+    noticeRef.current?.focus()
+  }, [returned, setParams])
   const [wants, setWants] = useState(readWants)
   const shown = filterConnectors(CONNECTORS, { query, category, audience })
   const mailboxes = useApi<Mailbox[]>('/api/v1/mailboxes').data
@@ -72,11 +84,17 @@ export function ConnectorsPage() {
     <div className="page page-wide stack-4">
       <PageHeader
         title="Connectors"
-        subtitle="Link your own apps. Connect now cards talk to the real service as soon as you paste the address or token it gives you."
+        subtitle="Link your own apps. Press Connect, allow access on the app’s own page, and you come back connected."
       />
+      {notice && (
+        <div ref={noticeRef} tabIndex={-1} className={`notice ${notice.ok ? 'notice-success' : 'notice-warning'}`} role={notice.ok ? 'status' : 'alert'}>
+          <span>{notice.text}</span>
+          <button type="button" className="btn btn-ghost btn-sm notice-action" onClick={() => setNotice(null)}>Dismiss<span className="sr-only"> this message</span></button>
+        </div>
+      )}
       <Card tone="muted">
         <p className="muted-small">
-          Each connection is checked with the service before it is saved, and the token is stored encrypted. Sign-in buttons for Outlook and Gmail need an app the server owner registers once (<a href="https://github.com/shr1-live/OpportunityPilotWebapp/blob/main/docs/MAIL_SETUP.md" target="_blank" rel="noopener noreferrer">setup guide</a>); the app-password card sends from the same mailboxes without it.
+          Nothing is saved until the app says yes, and what it gives back is stored encrypted. A card marked Needs server setup works once the app owner switches it on (<a href="https://github.com/shr1-live/OpportunityPilotWebapp/blob/main/docs/CONNECTOR_OAUTH_SETUP.md" target="_blank" rel="noopener noreferrer">setup guide<span className="sr-only"> (opens in a new tab)</span></a>, <a href="https://github.com/shr1-live/OpportunityPilotWebapp/blob/main/docs/MAIL_SETUP.md" target="_blank" rel="noopener noreferrer">email setup<span className="sr-only"> (opens in a new tab)</span></a>); until then you can use a token instead.
         </p>
       </Card>
 
@@ -104,7 +122,9 @@ export function ConnectorsPage() {
           {shown.map((c) => {
             const want = wants.includes(c.id)
             // A sign-in card works as soon as the server has the app registered.
-            const status: ConnectorStatus = c.action?.startsWith('mail-') && mailboxes?.find((m) => `mail-${m.provider}` === c.action)?.configured ? 'Connect now' : c.status
+            const kind = c.action?.startsWith('int-') ? c.action.slice(4) : null
+            const status: ConnectorStatus = c.action?.startsWith('mail-') && mailboxes?.find((m) => `mail-${m.provider}` === c.action)?.configured ? 'Connect now'
+              : connectorStatus(c, integrations.data?.find((x) => x.kind === kind)?.oauthConfigured)
             return (
               <li key={c.id} className="ccard connector-card">
                 <div className="connector-head">
