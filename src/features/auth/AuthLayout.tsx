@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { AUTH_PATHS } from './authModel'
+import { AUTH_PATHS, CLASSIC_SIGNIN_PARAM, CLASSIC_SIGNIN_VALUE } from './authModel'
+import { useAuth } from './AuthContext'
 import { MIN_PASSWORD, passwordStrength } from './authModel'
 
 export function BrandMark({ size = 22 }: { size?: number }) {
@@ -115,9 +116,12 @@ export function ProviderButtons({ verb, onGoogle, onMicrosoft, disabled }: { ver
 
 /** Sign in and Create account side by side, so a new visitor never has to look for the other one. */
 export function AuthTabs({ active }: { active: 'signin' | 'signup' }) {
+  // With Hanko on, these tabs belong to the older (Supabase) sign-in, so "Sign in" returns to that form.
+  const { hanko } = useAuth()
+  const signin = hanko ? `${AUTH_PATHS.signin}?${CLASSIC_SIGNIN_PARAM}=${CLASSIC_SIGNIN_VALUE}` : AUTH_PATHS.signin
   return (
     <nav className="auth-tabs" aria-label="Account">
-      <Link to={AUTH_PATHS.signin} aria-current={active === 'signin' ? 'page' : undefined}>Sign in</Link>
+      <Link to={signin} aria-current={active === 'signin' ? 'page' : undefined}>Sign in</Link>
       <Link to={AUTH_PATHS.signup} aria-current={active === 'signup' ? 'page' : undefined}>Create account</Link>
     </nav>
   )

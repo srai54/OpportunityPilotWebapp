@@ -68,6 +68,8 @@ export interface Capabilities {
   /** Demo mode: no database, data is kept in memory until the server restarts. */
   temporaryStorage: boolean
   items: Capability[]
+  /** Account sign-in systems the API accepts: "hanko" and/or "supabase"; empty in demo mode. Absent on older APIs. */
+  signInProviders?: string[]
 }
 
 export interface Overview {

@@ -1,19 +1,26 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { ApiError, ApiStillUnreachableError, ApiUnreachableError } from '../../lib/api'
 import { isWakingError, wakeRetryDelay } from '../../lib/wakeRetry'
 import { AuthCardHeader, AuthLayout, AuthTabs, Divider, PasswordField, ProviderButtons } from './AuthLayout'
-import { AUTH_PATHS, KEEP_SIGNED_IN_KEY, readFlag } from './authModel'
+import { AUTH_PATHS, CLASSIC_SIGNIN_PARAM, CLASSIC_SIGNIN_VALUE, KEEP_SIGNED_IN_KEY, readFlag } from './authModel'
+import { HankoAuthPanel } from './HankoElements'
 import { useAuth } from './AuthContext'
 
 const WAKE_NOTE =
   'The API sleeps when idle on free hosting. The first request after a quiet spell takes up to a minute — you will see “Starting the API service…”, not an error.'
 
-/** Design AuthSignIn: email + password, Google, keep signed in, forgot link, and "Continue as guest". */
+/**
+ * Design AuthSignIn: email + password, Google, keep signed in, forgot link, and "Continue as guest".
+ * With Hanko on, Hanko's sign-in leads and the form above becomes "the older sign-in" (`?with=classic`).
+ */
 export function SignInPage() {
-  const { mode, sessionExpired, devSignIn, guestSignIn, passwordSignIn, googleSignIn, microsoftSignIn } = useAuth()
+  const { mode, hanko, sessionExpired, devSignIn, guestSignIn, passwordSignIn, googleSignIn, microsoftSignIn } = useAuth()
+  const [params] = useSearchParams()
+  const classic = !hanko || (mode !== 'guest' && params.get(CLASSIC_SIGNIN_PARAM) === CLASSIC_SIGNIN_VALUE)
   const accounts = mode === 'supabase'
+  const anyAccounts = accounts || hanko
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [keep, setKeep] = useState(() => readFlag(KEEP_SIGNED_IN_KEY, true))
@@ -91,8 +98,12 @@ export function SignInPage() {
       asideItems={['Candidates looking for roles', 'Sales teams looking for customers']}
       footnote={WAKE_NOTE}
     >
-      {accounts && <AuthTabs active="signin" />}
-      <AuthCardHeader title="Sign in" subtitle="Welcome back." />
+      {accounts && classic && <AuthTabs active="signin" />}
+      {classic ? (
+        <AuthCardHeader title="Sign in" subtitle="Welcome back." />
+      ) : (
+        <AuthCardHeader title="Sign in or create an account" subtitle="Use a passkey, your password or a code sent to your email." />
+      )}
 
       {sessionExpired && (
         <p className="notice notice-warning" role="status">
@@ -100,7 +111,24 @@ export function SignInPage() {
         </p>
       )}
 
-      {mode === 'dev' ? (
+      {hanko && classic && (
+        <p className="auth-center">
+          <Link to={AUTH_PATHS.signin}>Back to sign-in with a passkey</Link>
+        </p>
+      )}
+
+      {!classic ? (
+        <>
+          <HankoAuthPanel />
+          {mode !== 'guest' && (
+            <p className="auth-center">
+              <Link to={`${AUTH_PATHS.signin}?${CLASSIC_SIGNIN_PARAM}=${CLASSIC_SIGNIN_VALUE}`}>
+                {mode === 'dev' ? 'Use the development sign-in' : 'Use the older sign-in (Supabase)'}
+              </Link>
+            </p>
+          )}
+        </>
+      ) : mode === 'dev' ? (
         <form onSubmit={submit} className="stack-3">
           <p className="notice notice-neutral">
             <strong>Development sign-in.</strong> Local only — any name creates a separate synthetic user.
@@ -165,10 +193,10 @@ export function SignInPage() {
 
       {mode !== 'dev' && (
         <div className="stack-2">
-          {accounts && <Divider label="No account needed" />}
+          {anyAccounts && <Divider label="No account needed" />}
           {guestError && <ErrorNotice error={guestError} />}
           <button
-            className={`btn ${accounts ? 'btn-secondary' : 'btn-primary'} auth-wide`}
+            className={`btn ${anyAccounts ? 'btn-secondary' : 'btn-primary'} auth-wide`}
             type="button"
             disabled={guestBusy}
             onClick={() => void continueAsGuest()}
@@ -176,7 +204,7 @@ export function SignInPage() {
             {guestBusy ? (waking ? 'Waking the server… this can take a minute' : 'Starting…') : 'Continue as guest'}
           </button>
           <p className="hint auth-center">
-            Guest data is saved but tied to this browser{accounts ? '' : ', and sign-in is guest-only on this deployment'}.
+            Guest data is saved but tied to this browser{anyAccounts ? '' : ', and sign-in is guest-only on this deployment'}.
           </p>
         </div>
       )}

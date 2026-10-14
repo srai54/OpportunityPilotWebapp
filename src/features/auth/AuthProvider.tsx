@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import type { Hanko } from '@teamhanko/hanko-elements'
 import { api, configureApiAuth } from '../../lib/api'
-import { config, supabaseConfigured } from '../../lib/config'
+import { config, hankoConfigured, supabaseConfigured } from '../../lib/config'
+import { loadHanko } from '../../lib/hanko'
 import { setSessionPersistence, supabase } from '../../lib/supabase'
-import { activeGuestToken, AUTH_PATHS, needsMfa, type StoredGuestSession } from './authModel'
+import { activeGuestToken, AUTH_PATHS, hankoUserFrom, needsMfa, type HankoUser, type StoredGuestSession } from './authModel'
 import { AuthContext } from './AuthContext'
 
 /**
+ * Hanko (when VITE_HANKO_API_URL is set) is the main sign-in and works next to any mode below; `hanko` says it is on.
  * supabase: real accounts (email + password, Google), with "Continue as guest" next to them when the API allows it.
  * dev: local development only. guest: demo mode — no accounts configured, the API issues random signed guest identities.
  */
@@ -14,10 +17,14 @@ export type AuthMode = 'supabase' | 'dev' | 'guest'
 
 export type SignUpResult = 'signed-in' | 'verify-email'
 
+export type SignedInWith = 'hanko' | 'supabase' | 'dev' | 'guest'
+
 export interface AuthState {
   mode: AuthMode
+  /** Hanko sign-in (passkeys, passwords, email codes, two-factor) is switched on and shown first. */
+  hanko: boolean
   ready: boolean
-  user: { id?: string; email: string; guest: boolean } | null
+  user: { id?: string; email: string; guest: boolean; provider: SignedInWith } | null
   sessionExpired: boolean
   /** The visitor opened a password-reset link: they are signed in only to choose a new password. */
   recovering: boolean
@@ -93,6 +100,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [recovering, setRecovering] = useState(false)
   const [mfaRequired, setMfaRequired] = useState(false)
   const refreshPromise = useRef<Promise<Session | null> | null>(null)
+  const [hankoUser, setHankoUser] = useState<HankoUser | null>(null)
+  const [hankoReady, setHankoReady] = useState(!hankoConfigured)
+  const hankoClient = useRef<Hanko | null>(null)
+  const hankoSignedIn = useRef(false)
+
+  useEffect(() => {
+    hankoSignedIn.current = hankoUser !== null
+  }, [hankoUser])
+
+  useEffect(() => {
+    if (!hankoConfigured) return
+    let live = true
+    const cleanups: (() => void)[] = []
+    const check = async (hanko: Hanko) => {
+      try {
+        const user = hankoUserFrom(await hanko.validateSession())
+        if (!live) return
+        setHankoUser(user)
+        if (user) setSessionExpired(false)
+      } catch {
+        if (live) setHankoUser(null)
+      }
+    }
+    void loadHanko()
+      .then(async (hanko) => {
+        if (!live) return
+        hankoClient.current = hanko
+        cleanups.push(
+          hanko.onSessionCreated(() => void check(hanko)),
+          hanko.onSessionExpired(() => {
+            if (hankoSignedIn.current) setSessionExpired(true)
+            setHankoUser(null)
+          }),
+          hanko.onUserLoggedOut(() => setHankoUser(null)),
+          hanko.onUserDeleted(() => setHankoUser(null)),
+        )
+        await check(hanko)
+      })
+      // Hanko could not load (offline, blocked): the sign-in page says so and the other options still work.
+      .catch(() => undefined)
+      .finally(() => {
+        if (live) setHankoReady(true)
+      })
+    return () => {
+      live = false
+      cleanups.forEach((stop) => stop())
+    }
+  }, [])
 
   useEffect(() => {
     if (!supabase) return
@@ -128,6 +183,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session])
 
   const signOut = useCallback(async () => {
+    if (hankoClient.current && hankoSignedIn.current) {
+      try {
+        await hankoClient.current.logout()
+      } catch {
+        /* the Hanko session is already gone; the local state below is cleared either way */
+      }
+    }
+    setHankoUser(null)
     if (supabase) await supabase.auth.signOut()
     write(DEV_USER_KEY, null)
     write(GUEST_TOKEN_KEY, null)
@@ -161,6 +224,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     configureApiAuth(
       async (): Promise<Record<string, string>> => {
+        if (hankoClient.current && hankoSignedIn.current) {
+          const token = hankoClient.current.getSessionToken()
+          if (token) return { Authorization: `Bearer ${token}` }
+        }
         if (supabase) {
           const token = await currentAccessToken()
           if (token) return { Authorization: `Bearer ${token}` }
@@ -176,20 +243,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     )
     return () => configureApiAuth(async () => ({}), () => {})
-  }, [currentAccessToken, devUser, guestToken, mode, signOut])
+  }, [currentAccessToken, devUser, guestToken, mode, signOut, hankoUser])
 
   const value = useMemo<AuthState>(() => {
-    const user = session
-      ? { id: session.user.id, email: session.user.email ?? 'Signed in', guest: false }
-      : mode === 'dev' && devUser
-        ? { email: devUser, guest: false }
-        : guestToken
-          ? { email: 'Guest', guest: true }
-          : null
+    const user: AuthState['user'] = hankoUser
+      ? { id: hankoUser.id, email: hankoUser.email, guest: false, provider: 'hanko' }
+      : session
+        ? { id: session.user.id, email: session.user.email ?? 'Signed in', guest: false, provider: 'supabase' }
+        : mode === 'dev' && devUser
+          ? { email: devUser, guest: false, provider: 'dev' }
+          : guestToken
+            ? { email: 'Guest', guest: true, provider: 'guest' }
+            : null
 
     return {
       mode,
-      ready,
+      hanko: hankoConfigured,
+      ready: ready && hankoReady,
       user,
       sessionExpired,
       recovering,
@@ -225,7 +295,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         if (error) throw new Error(error.message)
       },
-      mfaRequired: session ? mfaRequired : false,
+      // Hanko asks for its own second factor inside <hanko-auth>; this gate is for Supabase sessions only.
+      mfaRequired: session && !hankoUser ? mfaRequired : false,
       refreshMfa,
       signUp: async (name, email, password) => {
         const { data, error } = await requireSupabase().auth.signUp({
@@ -259,7 +330,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRecovering(false)
       },
     }
-  }, [mode, ready, session, devUser, guestToken, sessionExpired, recovering, signOut, mfaRequired, refreshMfa])
+  }, [mode, ready, hankoReady, hankoUser, session, devUser, guestToken, sessionExpired, recovering, signOut, mfaRequired, refreshMfa])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

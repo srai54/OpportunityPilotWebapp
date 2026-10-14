@@ -19,6 +19,9 @@ services:
         sync: false
       - key: VITE_SUPABASE_PUBLISHABLE_KEY
         sync: false
+      # Optional, main sign-in when set: Hanko project API URL (https://<id>.hanko.io). docs/AUTH_SETUP.md
+      - key: VITE_HANKO_API_URL
+        sync: false
     routes:
       # Client-side routing: every unknown path serves the SPA.
       - type: rewrite

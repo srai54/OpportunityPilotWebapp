@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { AuthCardHeader, AuthLayout, AuthTabs, Divider, PasswordField, ProviderButtons } from './AuthLayout'
 import { AUTH_PATHS, MIN_PASSWORD } from './authModel'
 import { useAuth } from './AuthContext'
 
 /** Design AuthSignUp: name, work email, password with strength, and consent stating what is stored. */
 export function SignUpPage() {
-  const { mode, signUp, googleSignIn, microsoftSignIn } = useAuth()
+  const { mode, hanko, signUp, googleSignIn, microsoftSignIn } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -14,6 +14,9 @@ export function SignUpPage() {
   const [agreed, setAgreed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Hanko's sign-in creates accounts too; without Supabase there is no separate sign-up form.
+  if (mode !== 'supabase' && hanko) return <Navigate to={AUTH_PATHS.signin} replace />
 
   if (mode !== 'supabase') {
     return (
