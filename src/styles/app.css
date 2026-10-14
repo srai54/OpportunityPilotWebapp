@@ -2318,3 +2318,4 @@ html { scroll-padding-bottom: 96px; }
 .prog-actions { display: flex; flex-wrap: wrap; gap: var(--op-space-2); align-items: center; }
 .prog-actions > * { flex: 0 0 auto; }
 .how-to-steps a { text-decoration: underline; }
+.inbox-subject { margin: 4px 0 0; font-size: var(--op-text-body); color: var(--op-ink); }
