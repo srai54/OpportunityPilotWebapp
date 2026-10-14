@@ -29,7 +29,7 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    const problem = webhook ? webhookProblem(kind, url) : !token.trim() ? `Paste the ${name} token.` : kind !== 'HubSpot' && !target.trim() ? `Paste the ${kind === 'Notion' ? 'database' : 'base'} link.` : null
+    const problem = webhook ? webhookProblem(kind, url) : !token.trim() ? `Paste the ${name} token.` : (kind === 'Notion' || kind === 'Airtable') && !target.trim() ? `Paste the ${kind === 'Notion' ? 'database' : 'base'} link.` : null
     if (problem) { setMessage(problem); return }
     setBusy(true); setMessage('')
     try {
@@ -47,7 +47,7 @@ function ConnectForm({ kind, onDone, onCancel }: Readonly<{ kind: IntegrationKin
           <input value={url} onChange={(e) => setUrl(e.target.value)} inputMode="url" autoComplete="off" spellCheck={false} />
         </label>
       ) : (
-        <label className="field"><span><strong>{kind === 'HubSpot' ? 'Access token' : kind === 'Notion' ? 'Integration secret' : 'Personal access token'}</strong></span>
+        <label className="field"><span><strong>{kind === 'HubSpot' ? 'Access token' : kind === 'Notion' ? 'Integration secret' : kind === 'Hunter' || kind === 'Apollo' ? 'API key' : 'Personal access token'}</strong></span>
           <input type="password" value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" spellCheck={false} />
         </label>
       )}

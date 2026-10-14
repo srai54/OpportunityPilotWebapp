@@ -1,7 +1,7 @@
 /** Services connected with a webhook address, a token or a private calendar link (API: /api/v1/integrations). */
 
-export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed'
-export type IntegrationEvent = 'sent' | 'leads' | 'digest'
+export type IntegrationKind = 'Slack' | 'Teams' | 'Webhook' | 'HubSpot' | 'Notion' | 'Airtable' | 'CalendarFeed' | 'Hunter' | 'Apollo'
+export type IntegrationEvent = 'sent' | 'leads' | 'replies' | 'digest'
 
 export interface Integration {
   kind: IntegrationKind
@@ -22,11 +22,12 @@ export const LEAD_TARGETS: IntegrationKind[] = ['HubSpot', 'Notion', 'Airtable']
 export const EVENT_LABELS: Record<IntegrationEvent, string> = {
   sent: 'An email is sent',
   leads: 'A search finds new leads',
+  replies: 'Someone replies to your email',
   digest: 'Daily summary (follow-ups due, messages waiting)',
 }
 
 export const KIND_NAMES: Record<IntegrationKind, string> = {
-  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar',
+  Slack: 'Slack', Teams: 'Microsoft Teams', Webhook: 'Webhook', HubSpot: 'HubSpot', Notion: 'Notion', Airtable: 'Airtable', CalendarFeed: 'Calendar', Hunter: 'Hunter', Apollo: 'Apollo',
 }
 
 /** The steps to get the address or token, written for someone who has never done it. */
@@ -53,6 +54,14 @@ export const HOW_TO: Record<IntegrationKind, { steps: string[]; link?: { href: s
   Airtable: {
     steps: ['Go to airtable.com/create/tokens → Create token with scopes data.records:read, data.records:write and schema.bases:read, and add your base.', 'Copy the token, and the link of the base or table from your browser.'],
     link: { href: 'https://airtable.com/developers/web/guides/personal-access-tokens', text: 'Airtable’s guide' },
+  },
+  Hunter: {
+    steps: ['Sign in at hunter.io → API (in the account menu) and copy your API key.', 'The free plan gives 25 searches a month; a search that finds nobody is not counted.'],
+    link: { href: 'https://hunter.io/api-keys', text: 'Hunter API keys' },
+  },
+  Apollo: {
+    steps: ['In Apollo: Settings → Integrations → API → Create new key, with access to People API Search and People Enrichment (or a master key).', 'Searching people is free; showing a work email uses 1 Apollo credit each time.'],
+    link: { href: 'https://developer.apollo.io/keys/', text: 'Apollo API keys' },
   },
   CalendarFeed: {
     steps: ['Google Calendar: Other calendars → + → From URL → paste the link.', 'Outlook: Add calendar → Subscribe from web → paste the link. Updates arrive on their own (Google checks every few hours).'],

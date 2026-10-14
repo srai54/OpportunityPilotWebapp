@@ -6,7 +6,7 @@ import { useApi } from '../../lib/useApi'
 import type { Integration } from '../connectors/integrationsModel'
 import { reachRoutes, referralNote, signOffName, type ReachRoute } from './reachPlan'
 
-interface FoundPerson { name: string; title: string | null; email: string | null; emailConfidence: number | null; linkedinUrl: string | null; note: string | null }
+interface FoundPerson { source?: string; name: string; title: string | null; email: string | null; emailConfidence: number | null; linkedinUrl: string | null; personId?: string | null; note: string | null }
 interface FoundPeople { source: string; people: FoundPerson[]; creditsNote?: string | null }
 interface FoundContacts { candidates: { kind: string; value: string; rank: number }[] }
 
@@ -24,6 +24,8 @@ export function ReachPlanner({ o, onError }: Readonly<{ o: OpportunityDetail; on
   const [found, setFound] = useState<FoundPeople>()
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState('')
+  // Hunter and Apollo search by the company's web domain; a job posting does not give one, so the person types it once.
+  const [website, setWebsite] = useState('')
   const routes = reachRoutes({ mode: o.mode, organization: o.organization, title: o.title, url: o.url, applyUrl: o.applyUrl, platform: o.platform, publishedEmail, finders, emailSearched })
 
   async function draft(channel: 'Email' | 'LinkedInMessage' | 'ContactForm', recipient: string | null = null, referral = false) {
@@ -50,10 +52,22 @@ export function ReachPlanner({ o, onError }: Readonly<{ o: OpportunityDetail; on
         if (best) { setPublishedEmail(best.value); setNote(`Found ${best.value}, published by the company. It is now the first way in.`) }
         else { setEmailSearched(true); setNote('No address is published. LinkedIn or a referral is the way in, or connect Hunter or Apollo to look one up.') }
       } else if (a.kind === 'people') {
-        setFound(await api<FoundPeople>(`/api/v1/opportunities/${o.id}/people/find`, { method: 'POST', body: JSON.stringify({ source: a.source }) }))
+        setFound(await api<FoundPeople>(`/api/v1/opportunities/${o.id}/people/find`, { method: 'POST', body: JSON.stringify({ source: a.source, website: website.trim() || undefined }) }))
       }
     } catch (e) { onError(e as Error) } finally { setBusy(null) }
   }
+
+  /** Apollo shows a work email only when asked, and each one uses one of the person's Apollo credits. */
+  async function reveal(p: FoundPerson) {
+    if (!p.personId || !found) return
+    setBusy(`reveal-${p.personId}`)
+    try {
+      const res = await api<{ person: FoundPerson; creditsNote?: string }>(`/api/v1/opportunities/${o.id}/people/reveal`, { method: 'POST', body: JSON.stringify({ source: 'Apollo', personId: p.personId }) })
+      setFound({ ...found, people: found.people.map((x) => (x.personId === p.personId ? { ...x, ...res.person } : x)) })
+      if (!res.person.email) setNote(`Apollo has no work email for ${p.name}.`)
+    } catch (e) { onError(e as Error) } finally { setBusy(null) }
+  }
+  const needsSite = o.mode === 'Job' && routes.some((r) => r.action.kind === 'people')
 
   return (
     <div className="stack-3">
@@ -68,6 +82,11 @@ export function ReachPlanner({ o, onError }: Readonly<{ o: OpportunityDetail; on
           </li>
         ))}
       </ol>
+      {needsSite && (
+        <label className="field"><span>Company website, for Hunter and Apollo</span>
+          <input value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://company.com" inputMode="url" autoComplete="off" />
+        </label>
+      )}
       {note && <p className="muted-small" role="status">{note}</p>}
       {found && (
         <div className="stack-2" role="status">
@@ -77,6 +96,7 @@ export function ReachPlanner({ o, onError }: Readonly<{ o: OpportunityDetail; on
               <li key={`${p.name}${p.email ?? p.linkedinUrl ?? ''}`}>
                 <strong>{p.name}</strong>{p.title ? `, ${p.title}` : ''}{p.email ? ` · ${p.email}${p.emailConfidence != null ? ` (${p.emailConfidence}% sure)` : ''}` : ''}{' '}
                 {p.email && <button type="button" className="btn-link" onClick={() => void draft('Email', p.email)}>Email them</button>}{' '}
+                {!p.email && p.personId && found.source === 'Apollo' && <button type="button" className="btn-link" disabled={busy !== null} onClick={() => void reveal(p)}>{busy === `reveal-${p.personId}` ? 'Asking Apollo…' : 'Show email (uses 1 Apollo credit)'}</button>}{' '}
                 {p.linkedinUrl && <a href={p.linkedinUrl} target="_blank" rel="noreferrer">LinkedIn ↗</a>}
               </li>
             ))}

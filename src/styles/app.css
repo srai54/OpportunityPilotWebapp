@@ -2317,3 +2317,4 @@ html { scroll-padding-bottom: 96px; }
 @media (prefers-reduced-motion: reduce) { .prog-live-dot, .prog-step.is-now .prog-dot, .prog-path.is-changed { animation: none; } .prog-fill { transition: none; } }
 .prog-actions { display: flex; flex-wrap: wrap; gap: var(--op-space-2); align-items: center; }
 .prog-actions > * { flex: 0 0 auto; }
+.how-to-steps a { text-decoration: underline; }

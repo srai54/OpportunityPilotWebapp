@@ -6,7 +6,7 @@ import type { IntegrationKind } from './integrationsModel'
  * "Next up" and "Planned" are not built.
  */
 
-export type ConnectorCategory = 'Email' | 'Calendar' | 'Docs & data' | 'CRM' | 'Chat' | 'Automation' | 'Sign-in & security'
+export type ConnectorCategory = 'Email' | 'Find people' | 'Calendar' | 'Docs & data' | 'CRM' | 'Chat' | 'Automation' | 'Sign-in & security'
 export type ConnectorStatus = 'Connect now' | 'Needs server setup' | 'File export' | 'Next up' | 'Planned'
 /** What the card's control does: connect a mailbox or a service, download a file, or open account settings. */
 export type ConnectorAction = 'smtp' | 'mail-Microsoft' | 'mail-Google' | `int-${IntegrationKind}` | 'csv' | 'account'
@@ -25,12 +25,14 @@ export interface Connector {
   action?: ConnectorAction
 }
 
-export const CATEGORIES: ConnectorCategory[] = ['Email', 'Calendar', 'Docs & data', 'CRM', 'Chat', 'Automation', 'Sign-in & security']
+export const CATEGORIES: ConnectorCategory[] = ['Email', 'Find people', 'Calendar', 'Docs & data', 'CRM', 'Chat', 'Automation', 'Sign-in & security']
 
 export const CONNECTORS: Connector[] = [
   { id: 'smtp', name: 'Your email (app password)', category: 'Email', status: 'Connect now', audience: 'Both', does: 'Send approved messages from your own Gmail, Outlook, Microsoft 365 or Yahoo address with one click, and find replies in your inbox (leads move to Responded, follow-ups stop).', needs: 'An app password from your email provider (a few clicks in your account security page).', action: 'smtp' },
   { id: 'outlook', name: 'Microsoft Outlook (sign-in)', category: 'Email', status: 'Needs server setup', audience: 'Both', does: 'Send approved messages from Outlook by signing in with Microsoft instead of an app password.', needs: 'A Microsoft Entra app registration from the server owner, then your one-time consent.', action: 'mail-Microsoft' },
   { id: 'gmail', name: 'Gmail (sign-in)', category: 'Email', status: 'Needs server setup', audience: 'Both', does: 'Send approved messages from Gmail by signing in with Google instead of an app password.', needs: 'A Google Cloud OAuth client from the server owner, then your one-time consent.', action: 'mail-Google' },
+  { id: 'hunter', name: 'Hunter.io', category: 'Find people', status: 'Connect now', audience: 'Both', does: 'Find the people and work emails at a company from its website domain, with how sure Hunter is about each address.', needs: 'Your own Hunter API key (free plan: 25 searches a month).', action: 'int-Hunter' },
+  { id: 'apollo', name: 'Apollo.io', category: 'Find people', status: 'Connect now', audience: 'Both', does: 'Find recruiters, hiring managers and decision makers at a company; show a work email when you choose (uses your Apollo credit).', needs: 'Your own Apollo API key with People Search and Enrichment.', action: 'int-Apollo' },
   { id: 'calendar', name: 'Google Calendar / Outlook Calendar', category: 'Calendar', status: 'Connect now', audience: 'Both', does: 'Your follow-ups and interviews appear in your calendar and stay up to date, through a private link your calendar subscribes to.', needs: 'Nothing: make the link here and paste it into your calendar once.', action: 'int-CalendarFeed' },
   { id: 'hubspot', name: 'HubSpot', category: 'CRM', status: 'Connect now', audience: 'Sales', does: 'Send leads to HubSpot as companies, with the contact and a note. A company already there is not added twice.', needs: 'A HubSpot private-app token (Settings → Integrations → Private Apps).', action: 'int-HubSpot' },
   { id: 'notion', name: 'Notion', category: 'Docs & data', status: 'Connect now', audience: 'Both', does: 'Add jobs or leads as pages in a Notion database you already use, filling the columns it has.', needs: 'A Notion integration secret, with your database shared to it.', action: 'int-Notion' },
