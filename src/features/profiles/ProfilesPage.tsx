@@ -21,6 +21,7 @@ import {
   createFields,
   emptyData,
   FIELDS,
+  confirmTyped,
   isFullyConfirmed,
   isTagField,
   isWideField,
@@ -372,16 +373,21 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
   const dirty = JSON.stringify({ name, data }) !== initial
   useUnsavedGuard(dirty, savedRef)
 
-  const setField = (key: string, value: string) =>
+  // Claims typed or changed in this edit: saving confirms them (the person just wrote them). A confirmation withdrawn with the chip stays withdrawn.
+  const [typed, setTyped] = useState<ReadonlySet<string>>(new Set())
+  const setField = (key: string, value: string) => {
+    setTyped((t) => t.has(key) ? t : new Set([...t, key]))
     setData((d) => ({
       fields: { ...d.fields, [key]: value },
       // Editing a claim clears its confirmation: the new wording has not been confirmed.
       confirmations: { ...d.confirmations, [key]: false },
     }))
+  }
   const setConfirmed = (key: string, value: boolean) => setData((d) => ({ ...d, confirmations: { ...d.confirmations, [key]: value } }))
 
   const fields = FIELDS[type]
-  const confirmed = isFullyConfirmed(type, data)
+  // What Save will store: claims typed in this edit count as confirmed.
+  const confirmed = isFullyConfirmed(type, confirmTyped(type, data, typed))
   const state = confirmationState(type, data)
   const ready = readiness(type, data)
   const summary = buildSummary(type, data)
@@ -392,10 +398,12 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
     setError(undefined)
     setFieldErrors({})
     try {
+      const payload = confirmTyped(type, cleanData(type, data), typed)
       const saved = await api<Profile>(`/api/v1/profiles/${existing.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name, data: cleanData(type, data), confirmed, expectedVersion: existing.version }),
+        body: JSON.stringify({ name, data: payload, confirmed: isFullyConfirmed(type, payload), expectedVersion: existing.version }),
       })
+      setTyped(new Set())
       savedRef.current = true
       setSaving(false)
       onSaved(saved)
@@ -500,8 +508,8 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
         {tab === 'claims' && (
           <section className="stack-3 profiles2-narrow">
             <p className="muted">
-              Claims are statements about you that a campaign may score or quote. Each must be confirmed by you; an
-              unconfirmed claim never raises a score. This version will be saved as{' '}
+              Claims are statements about you that a campaign may score or quote. Saving confirms what you typed is accurate;
+              withdraw a confirmation with its chip. An unconfirmed claim never raises a score. This version will be saved as{' '}
               <strong>{confirmed ? 'confirmed' : 'not confirmed'}</strong>.
             </p>
             {(() => {
@@ -560,7 +568,7 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
       </div>
 
       <div className="save-bar">
-        <span className="muted-small">ⓘ Saving writes version {existing.version + 1}. Editing a claim clears its confirmation.</span>
+        <span className="muted-small">ⓘ Saving writes version {existing.version + 1}. Saving confirms the claims you typed.</span>
         <div className="grow" />
         <button type="button" className="btn btn-secondary" onClick={discard} disabled={!dirty || saving}>
           Discard changes

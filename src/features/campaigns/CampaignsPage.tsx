@@ -1,3 +1,5 @@
+import { useShell } from '../shell/ShellContext'
+import { AgentStatusCard } from '../overview/AgentStatusCard'
 import { Card } from '../../components/cards'
 import { StopAllCard } from './StopAllCard'
 import { KpiBand, KpiCard } from '../../components/kpi/kpi'
@@ -22,6 +24,7 @@ const FLOW = [
 
 /** Design round 3 `Campaigns`: mode chips, one row per campaign with its latest run and next action. */
 export function CampaignsPage() {
+  const { workspace } = useShell()
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
   const schedules = useApi<{ campaignId: string; cadenceMinutes: number; nextRunAt: string; paused: boolean }[]>('/api/v1/schedules')
@@ -112,12 +115,12 @@ export function CampaignsPage() {
               <thead>
                 <tr>
                   <th scope="col">Campaign</th>
-                  <th scope="col">Mode</th>
+                  <th scope="col" className="col-opt">Mode</th>
                   <th scope="col" className="op-num">Sources</th>
                   <th scope="col" className="op-num">Found</th>
-                  <th scope="col">Suggest at</th>
+                  <th scope="col" className="col-opt">Suggest at</th>
                   <th scope="col">Last run</th>
-                  <th scope="col">Repeats</th>
+                  <th scope="col" className="col-opt2">Repeats</th>
                   <th scope="col">Status</th>
                   <th scope="col">
                     <span className="sr-only">Next step</span>
@@ -133,7 +136,7 @@ export function CampaignsPage() {
                         <Link to={`/campaigns/${c.id}/edit`}>{c.name}</Link>
                         {c.goal && <div className="muted-small clamp-2">{c.goal}</div>}
                       </td>
-                      <td>
+                      <td className="col-opt">
                         <Badge tone={c.mode === 'Job' ? 'success' : 'primary'}>{MODE_LABELS[c.mode] ?? c.mode}</Badge>
                       </td>
                       <td className="op-num">
@@ -148,7 +151,7 @@ export function CampaignsPage() {
                           <span className="sr-only"> opportunities in {c.name}</span>
                         </Link>
                       </td>
-                      <td className="muted-small">{c.mode === 'Job' ? (c.autoSuggestMinScore ?? 'off') : '—'}</td>
+                      <td className="muted-small col-opt">{c.mode === 'Job' ? (c.autoSuggestMinScore ?? 'off') : '—'}</td>
                       <td className="table-when muted-small">
                         {c.lastJob ? (
                           c.lastJob.finishedAt ? <time dateTime={c.lastJob.finishedAt}>{formatWhen(c.lastJob.finishedAt)}</time> : 'In progress'
@@ -156,7 +159,7 @@ export function CampaignsPage() {
                           'Never run'
                         )}
                       </td>
-                      <td className="muted-small">
+                      <td className="muted-small col-opt2">
                         <Link to={`/campaigns/${c.id}/edit?step=4`}>{repeatLabel(schedules.data?.find((x) => x.campaignId === c.id))}</Link>
                       </td>
                       <td>
@@ -180,6 +183,7 @@ export function CampaignsPage() {
 
       {campaigns.data && campaigns.data.length > 0 && (
         <div className="panel-grid-2">
+          {workspace !== 'sales' && <AgentStatusCard />}
           <Card title="Jobs campaigns feed Approvals">
 <div className="stack-3">
               <p className="muted-small">

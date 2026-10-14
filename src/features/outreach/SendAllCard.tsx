@@ -6,7 +6,7 @@ import { percentOf } from '../../components/percent'
 import { api } from '../../lib/api'
 import type { DraftListItem } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
-import { providerName, sendable, type Mailbox } from '../mail/mailModel'
+import { sendName, sendable, type Mailbox } from '../mail/mailModel'
 import { BATCH_SEND_MAX, sendAllCandidates, summarizeBatchSend, type BatchSendResult } from './sendAll'
 
 /**
@@ -23,7 +23,7 @@ export function SendAllCard({ items, onDone }: Readonly<{ items: DraftListItem[]
   const [results, setResults] = useState<BatchSendResult[]>()
 
   if (!box || (ready.length === 0 && !results)) return null
-  const name = providerName(box.provider)
+  const name = sendName(box.provider)
 
   async function run() {
     setBusy(true); setError(undefined)

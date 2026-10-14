@@ -1,4 +1,4 @@
-export type MailProvider = 'Microsoft' | 'Google'
+export type MailProvider = 'Microsoft' | 'Google' | 'Smtp'
 
 export interface Mailbox {
   provider: MailProvider
@@ -11,7 +11,12 @@ export interface Mailbox {
 }
 
 export function providerName(p: MailProvider): string {
-  return p === 'Microsoft' ? 'Outlook' : 'Gmail'
+  return p === 'Microsoft' ? 'Outlook' : p === 'Smtp' ? 'Email (app password)' : 'Gmail'
+}
+
+/** How a send button names the mailbox: "Send from your email" for an app-password mailbox, the provider otherwise. */
+export function sendName(p: MailProvider): string {
+  return p === 'Smtp' ? 'your email' : providerName(p)
 }
 
 /** What the Settings row says. "Not configured" is the server's state, not the person's. */
@@ -45,7 +50,26 @@ export function returnNotice(search: string): { tone: 'success' | 'warning'; tex
   const q = new URLSearchParams(search)
   const outcome = q.get('mailbox')
   const provider = q.get('provider')
-  if (!outcome || (provider !== 'Microsoft' && provider !== 'Google')) return null
+  if (!outcome || (provider !== 'Microsoft' && provider !== 'Google' && provider !== 'Smtp')) return null
   const m = RETURN_MESSAGES[outcome]
   return m ? { tone: m.tone, text: m.text(providerName(provider)) } : null
+}
+
+export interface SmtpPreset { value: string; label: string; help?: { href: string; text: string } }
+
+/** The email providers the app password form knows. "custom" asks for the mail server too. */
+export const SMTP_PRESETS: SmtpPreset[] = [
+  { value: 'gmail', label: 'Gmail', help: { href: 'https://myaccount.google.com/apppasswords', text: 'Create a Gmail app password' } },
+  { value: 'outlook', label: 'Outlook.com / Hotmail', help: { href: 'https://account.live.com/proofs/AppPassword', text: 'Create an Outlook app password' } },
+  { value: 'office365', label: 'Microsoft 365 (work or school)' },
+  { value: 'yahoo', label: 'Yahoo Mail', help: { href: 'https://login.yahoo.com/account/security', text: 'Create a Yahoo app password' } },
+  { value: 'custom', label: 'Another provider (SMTP server)' },
+]
+
+/** What the form must have before it is sent: the first thing missing, or null. */
+export function smtpFormProblem(f: { preset: string; host: string; username: string; password: string }): string | null {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.username.trim())) return 'Enter your full email address.'
+  if (!f.password.trim()) return 'Enter the app password.'
+  if (f.preset === 'custom' && !f.host.trim()) return 'Enter the mail server, like smtp.example.com.'
+  return null
 }

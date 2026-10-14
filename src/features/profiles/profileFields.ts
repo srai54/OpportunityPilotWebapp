@@ -167,6 +167,13 @@ export function confirmFilledClaims(type: ProfileType, data: ProfileData): Profi
   return { ...data, confirmations }
 }
 
+/** Confirms the filled claims the person typed or changed (keys in `typed`); other confirmations stay as they are. */
+export function confirmTyped(type: ProfileType, data: ProfileData, typed: ReadonlySet<string>): ProfileData {
+  const confirmations = { ...data.confirmations }
+  for (const f of FIELDS[type]) if (f.confirmable && typed.has(f.key) && data.fields[f.key]?.trim()) confirmations[f.key] = true
+  return { ...data, confirmations }
+}
+
 /** True when a draft failed only because the campaign's profile was never confirmed (the reason arrives as a field error). */
 export function needsProfileConfirm(error: (Error & { fieldErrors?: Record<string, string[]> }) | undefined): boolean {
   if (!error) return false

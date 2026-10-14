@@ -11,7 +11,7 @@ import { placeFor } from '../suggest/picks'
 import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
 import { SitePicker } from './SitePicker'
 import type { Workspace } from '../shell/shellModel'
-import { chosenSites, feedsPath, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, feedsPath, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
 import { boardJobsPath, campaignFromSearchPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
 const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
@@ -58,6 +58,10 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const merged = found ? mergeAll(feedOk?.jobs ?? [], found.boards.flatMap((b) => (b.result instanceof Error || b.result.status !== 'Ready') ? [] : [{ board: b.board, jobs: b.result.jobs }]), found.query) : []
   const lines = found ? siteLines(feedOk, found.boards) : []
   const shown = visaOnly ? merged.filter((m) => mentionsVisaOrRelocation(m.job)) : merged
+  // Sales looks for companies that are hiring, not for a job: one row per company with its open roles.
+  const companies = sales ? groupByCompany(shown) : []
+  const count = sales ? companies.length : shown.length
+  const noun = sales ? (count === 1 ? 'company hiring' : 'companies hiring') : (count === 1 ? 'job' : 'jobs')
 
   return <>
     <RoleList />
@@ -81,15 +85,42 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
     {busy && <LoadingState label="Searching every site…" rows={3} />}
     {!busy && found && <section className="stack-3" aria-label="Results from all sites">
       {found.feed instanceof Error && <ErrorNotice error={found.feed} what="the free job feeds" />}
-      <Card tone="muted" title={`${shown.length} ${shown.length === 1 ? 'job' : 'jobs'} for “${found.query}”${found.location ? ` in ${found.location}` : ''}`}
-        subtitle={visaOnly ? `Only postings whose text mentions visa sponsorship, a work permit or relocation (${merged.length - shown.length} hidden). Best title matches first.` : 'Best title matches first, then newest. The same job on two sites is shown once.'}
+      <Card tone="muted" title={`${count} ${noun} for “${found.query}”${found.location ? ` in ${found.location}` : ''}`}
+        subtitle={visaOnly ? `Only postings whose text mentions visa sponsorship, a work permit or relocation (${merged.length - shown.length} hidden). Best title matches first.`
+          : sales ? `From ${shown.length} postings, grouped by company; companies hiring for more of these roles first. Turn them into leads to score them and find who to contact.`
+          : 'Best title matches first, then newest. The same job on two sites is shown once.'}
         actions={shown.length > 0 ? <Link className="btn btn-primary btn-sm" data-coach="find-campaign" to={campaignFromSearchPath(workspace, { query: found.query, location: found.location }, 'LinkedIn', 'All sites')}>{sales ? 'Turn into leads' : 'Track these jobs'}</Link> : undefined}>
         <ul className="site-lines" aria-label="What each site returned">
           {lines.map((l) => <li key={l.name} className={l.ok ? 'is-ok' : 'is-off'}><span aria-hidden="true">{l.ok ? '✓' : '○'}</span> <strong>{l.name}</strong> {l.text}</li>)}
         </ul>
       </Card>
-      {shown.length === 0
-        ? <Card tone="muted"><p>No job matched on any site that answered. Try fewer words, a broader place, or turn off Remote only{visaOnly ? ' and the visa filter' : ''}.</p></Card>
+      {count === 0
+        ? <Card tone="muted"><p>{sales ? 'No hiring company matched' : 'No job matched'} on any site that answered. Try fewer words, a broader place, or turn off Remote only{visaOnly ? ' and the visa filter' : ''}.</p></Card>
+        : sales ? <CardList label="Companies hiring">
+          {companies.slice(0, 60).map((c) => {
+            const first = c.roles[0]
+            const href = safeHref(first.job.boardUrl) ?? undefined
+            const titles = [...new Set(c.roles.map((r) => r.job.title))]
+            return <li key={c.company} className="ccard lead-card result-lite">
+              <span aria-hidden="true" />
+              <Avatar name={c.company} />
+              <div className="lead-main">
+                <h3 className="lead-title">{c.company}</h3>
+                <p className="lead-meta">{c.roles.length} open role{c.roles.length === 1 ? '' : 's'}: {titles.slice(0, 3).join(', ')}{titles.length > 3 ? ` and ${titles.length - 3} more` : ''}</p>
+                <div className="lead-tags">
+                  {c.sites.map((site) => <span key={site} className="chip chip-site">{site}</span>)}
+                  {c.remote && <span className="chip">Remote</span>}
+                  {c.places.slice(0, 2).map((place) => <span key={place} className="chip">{place}</span>)}
+                  {c.newest && <span className="lead-note">Newest posting {new Date(c.newest).toLocaleDateString()}</span>}
+                </div>
+              </div>
+              <div className="lead-side">
+                <a className="btn btn-secondary btn-sm" href={href} target="_blank" rel="noopener noreferrer">Open a role ↗<span className="sr-only"> at {c.company}</span></a>
+                <a className="btn btn-ghost btn-sm" href={recruiterSearchUrl(c.company, found.query)} target="_blank" rel="noopener noreferrer">Recruiters ↗<span className="sr-only"> at {c.company}</span></a>
+              </div>
+            </li>
+          })}
+        </CardList>
         : <CardList label="Jobs from all sites">
           {shown.slice(0, 80).map(({ site, siteName, job }) => {
             const href = safeHref(job.boardUrl) ?? undefined

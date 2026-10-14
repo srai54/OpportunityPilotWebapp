@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { composerTarget, readyChecks, unresolvedPlaceholder, webComposeUrl } from './composer'
+import { composerTarget, endsWithoutName, readyChecks, unresolvedPlaceholder, webComposeUrl } from './composer'
 
 describe('composerTarget', () => {
   it('pre-fills an email in the mail app', () => {
@@ -67,5 +67,18 @@ describe('readyChecks', () => {
   it('does not ask a LinkedIn note for a recipient or subject', () => {
     expect(readyChecks('LinkedInMessage', { recipient: '', subject: '', body: 'Hi' }).every((c) => c.ok)).toBe(true)
     expect(readyChecks('LinkedInMessage', { recipient: '', subject: '', body: 'x'.repeat(301) }).filter((c) => !c.ok).map((c) => c.label)).toEqual(['Under 300 characters'])
+  })
+})
+
+describe('sign-off', () => {
+  it('blocks a message that ends on a sign-off with no name', () => {
+    for (const body of ['Hello team,\n\nWe can help.\n\nRegards,', 'Hi,\nThanks\n', 'Hello\nBest regards,\n  ']) expect(endsWithoutName(body)).toBe(true)
+    const checks = readyChecks('Email', { recipient: 'a@b.co', subject: 'Hi', body: 'Hello\n\nRegards,' })
+    expect(checks.find((c) => c.label === 'Signed with your name')?.ok).toBe(false)
+  })
+  it('lets a signed message through', () => {
+    expect(endsWithoutName('Hello\n\nRegards,\nAsha')).toBe(false)
+    expect(endsWithoutName('Thanks for the update, I will reply by Friday.')).toBe(false)
+    expect(readyChecks('Email', { recipient: 'a@b.co', subject: 'Hi', body: 'Hello\n\nRegards,\nAsha' }).every((c) => c.ok)).toBe(true)
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canConnectOne, mailboxState, returnNotice, sendable, type Mailbox } from './mailModel'
+import { canConnectOne, mailboxState, returnNotice, sendable, sendName, smtpFormProblem, type Mailbox } from './mailModel'
 
 const mb = (over: Partial<Mailbox>): Mailbox => ({ provider: 'Google', configured: true, connected: false, emailAddress: null, status: null, connectedAt: null, lastUsedAt: null, ...over })
 
@@ -29,5 +29,23 @@ describe('return notice', () => {
     expect(returnNotice('?mailbox=hacked&provider=Google')).toBeNull()
     expect(returnNotice('?mailbox=connected&provider=Evil')).toBeNull()
     expect(returnNotice('')).toBeNull()
+  })
+})
+
+describe('email with an app password', () => {
+  it('names the mailbox as your email on send buttons', () => {
+    expect(sendName('Smtp')).toBe('your email')
+    expect(sendName('Google')).toBe('Gmail')
+  })
+  it('says what is missing before the form is sent', () => {
+    const ok = { preset: 'gmail', host: '', username: 'me@gmail.com', password: 'abcd efgh' }
+    expect(smtpFormProblem(ok)).toBeNull()
+    expect(smtpFormProblem({ ...ok, username: 'me' })).toContain('email address')
+    expect(smtpFormProblem({ ...ok, password: ' ' })).toContain('app password')
+    expect(smtpFormProblem({ ...ok, preset: 'custom' })).toContain('mail server')
+    expect(smtpFormProblem({ ...ok, preset: 'custom', host: 'smtp.example.com' })).toBeNull()
+  })
+  it('knows the Smtp return notice provider', () => {
+    expect(returnNotice('?mailbox=connected&provider=Smtp')?.text).toContain('Email (app password) is connected')
   })
 })

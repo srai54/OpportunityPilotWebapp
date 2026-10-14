@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { chosenSites, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -74,7 +74,7 @@ describe('siteLines', () => {
 
 describe('site choice', () => {
   it('lists six free and three paid sites and searches all unless some are off', () => {
-    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas'])
+    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'TheMuse', 'Adzuna'])
     expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek'])
     expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek'] })
     expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek'] })
@@ -83,5 +83,21 @@ describe('site choice', () => {
   it('only names the free sites in the request when some are off', () => {
     expect(feedsPath({ query: 'react', location: '', remoteOnly: false, sites: FREE_SITES.map((s) => s.id) })).not.toContain('sites=')
     expect(feedsPath({ query: 'react', location: '', remoteOnly: false, sites: ['Himalayas', 'Jobicy'] })).toContain('sites=Himalayas%2CJobicy')
+  })
+})
+
+describe('groupByCompany', () => {
+  const job = (companyName: string, title: string, extra: Partial<BoardJob> = {}) => ({ site: 'Remotive', siteName: 'Remotive', job: { providerJobId: title + companyName, title, companyName, location: 'London', boardUrl: 'https://x.test', isRemote: false, postedAt: null, ...extra } as unknown as BoardJob })
+  it('puts every role of one company together, most roles first, and skips postings without a company', () => {
+    const groups = groupByCompany([
+      job('Acme Ltd', 'React developer'),
+      job('Globex', 'Frontend engineer'),
+      job('acme', 'Senior React developer', { isRemote: true, postedAt: '2026-10-10T00:00:00Z' } as Partial<BoardJob>),
+      job('', 'Anonymous role'),
+    ])
+    expect(groups.map((g) => g.company)).toEqual(['Acme Ltd', 'Globex'])
+    expect(groups[0].roles.map((r) => r.job.title)).toEqual(['React developer', 'Senior React developer'])
+    expect(groups[0].remote).toBe(true)
+    expect(groups[0].newest).toBe('2026-10-10T00:00:00Z')
   })
 })

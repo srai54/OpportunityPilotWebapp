@@ -16,6 +16,8 @@ export const FREE_SITES = [
   { id: 'Remotive', label: 'Remotive', note: 'Remote' },
   { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
   { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
+  { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
+  { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
 ] as const
 export const PAID_SITES = [
   { id: 'LinkedIn', label: 'LinkedIn' },
@@ -96,4 +98,32 @@ export function siteLines(feed: FeedSearchResult | undefined, boards: readonly {
     else lines.push({ name, ok: b.result.status === 'Ready', text: b.result.status === 'Ready' ? `${b.result.jobs.length} found` : (b.result.status === 'NotConfigured' ? 'not set up on this server' : (b.result.message ?? 'unavailable')) })
   }
   return lines
+}
+
+/** A company that is hiring: the sales view of a search, one row per company instead of one per posting. */
+export type HiringCompany = { company: string; roles: AllJob[]; sites: string[]; places: string[]; remote: boolean; newest: string | null }
+
+const companyKey = (name: string) => name.toLowerCase().replace(/\b(inc|ltd|llc|limited|gmbh|pvt|private|corp|corporation|co)\b\.?/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+
+/**
+ * Groups postings by company (names compared without case, punctuation or "Inc/Ltd/LLC"), keeping the order of best match.
+ * Companies hiring for more of these roles come first; postings without a company name are left out (nobody to contact).
+ */
+export function groupByCompany(jobs: readonly AllJob[]): HiringCompany[] {
+  const groups = new Map<string, HiringCompany>()
+  const firstSeen = new Map<HiringCompany, number>()
+  jobs.forEach((j, i) => {
+    const name = j.job.companyName?.trim()
+    if (!name) return
+    const key = companyKey(name) || name.toLowerCase()
+    let g = groups.get(key)
+    if (!g) { g = { company: name, roles: [], sites: [], places: [], remote: false, newest: null }; firstSeen.set(g, i) }
+    g.roles.push(j)
+    if (!g.sites.includes(j.siteName)) g.sites.push(j.siteName)
+    if (j.job.location && !g.places.includes(j.job.location)) g.places.push(j.job.location)
+    g.remote ||= Boolean(j.job.isRemote)
+    if (j.job.postedAt && (!g.newest || j.job.postedAt > g.newest)) g.newest = j.job.postedAt
+    groups.set(key, g)
+  })
+  return [...groups.values()].sort((a, b) => b.roles.length - a.roles.length || firstSeen.get(a)! - firstSeen.get(b)!)
 }

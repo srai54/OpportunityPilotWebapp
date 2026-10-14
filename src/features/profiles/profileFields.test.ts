@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness, simpleCreateFields, starterSearchTerm, confirmFilledClaims, needsProfileConfirm } from './profileFields'
+import { buildSummary, confirmationState, createFields, FIELDS as ALL_FIELDS, isFullyConfirmed, isWideField, joinTags, splitTags, readiness, simpleCreateFields, starterSearchTerm, confirmFilledClaims, confirmTyped, needsProfileConfirm } from './profileFields'
 
 describe('profile confirmation', () => {
   it('is not confirmed when no claims are filled in', () => {
@@ -92,5 +92,17 @@ describe('needsProfileConfirm', () => {
     expect(needsProfileConfirm(Object.assign(new Error('Validation failed'), { fieldErrors: { profile: ['Confirm the campaign profile before generating a cover note.'] } }))).toBe(true)
     expect(needsProfileConfirm(new Error('Validation failed'))).toBe(false)
     expect(needsProfileConfirm(undefined)).toBe(false)
+  })
+})
+
+describe('confirmTyped', () => {
+  it('confirms only the filled claims typed in this edit and keeps a withdrawn one withdrawn', () => {
+    const keys = ALL_FIELDS.Candidate.filter((f) => f.confirmable).map((f) => f.key)
+    const [typed, withdrawn, empty] = keys
+    const data = { fields: { [typed]: 'C#, .NET', [withdrawn]: 'Azure', [empty]: '' }, confirmations: { [typed]: false, [withdrawn]: false } }
+    const out = confirmTyped('Candidate', data, new Set([typed, empty]))
+    expect(out.confirmations[typed]).toBe(true)
+    expect(out.confirmations[withdrawn]).toBe(false)
+    expect(out.confirmations[empty]).toBeUndefined()
   })
 })

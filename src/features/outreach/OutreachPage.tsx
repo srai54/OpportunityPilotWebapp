@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { ContactFinder } from './ContactFinder'
+import { PrepareEmailsCard } from './PrepareEmailsCard'
+import { RewriteBox } from './RewriteBox'
 import { SendAllCard } from './SendAllCard'
 import { SendPanel } from './SendPanel'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -141,6 +143,16 @@ export function OutreachPage() {
     finally { setWorking(false) }
   }
 
+  /** Open the mail app (or the site) again for a message whose send is already started. Starts nothing new, so nothing can be recorded twice. */
+  async function openAgain() {
+    if (!selected) return
+    const target = composerTarget(selected.channel, { recipient: selected.recipient ?? recipient, subject: selected.subject ?? subject, body: selected.body }, mailApp)
+    if (target.copy) await navigator.clipboard.writeText(selected.body).catch(() => undefined)
+    if (target.kind === 'mailto' && target.url) window.location.href = target.url
+    else if (target.url) window.open(target.url, '_blank', 'noopener')
+    setNotice(`${target.label}. Press Send there, then come back and click "I pressed Send".`)
+  }
+
   /** A sent message cannot change, so "edit and send again" reopens it as a new editable version (the earlier send stays on record). */
   async function resendAsNew() {
     if (!selected) return
@@ -182,7 +194,7 @@ export function OutreachPage() {
         <KpiCard icon="outreach" tone="amber" label="To review" value={items.filter((d) => d.state === 'Draft').length} sub="drafts waiting for you" />
         <KpiCard icon="approvals" tone="green" label="Approved" value={items.filter((d) => d.state === 'Approved').length} sub="ready for you to send" />
         <KpiCard icon="mail" tone="indigo" label="Sent by you" value={items.filter((d) => d.state === 'Sent').length} sub="recorded as sent" />
-        <KpiCard icon="trend" tone="teal" label="Reply rate" value="—" sub="Replies are not read for you yet" to="/follow-ups" />
+        <KpiCard icon="trend" tone="teal" label="Reply rate" value="—" sub="Replies found in your inbox show on Follow-ups" to="/follow-ups" />
       </KpiBand>
     )}
     {notice && <p className="notice" role="status" aria-live="polite">{notice}</p>}
@@ -191,6 +203,7 @@ export function OutreachPage() {
       : <ErrorNotice error={error} />)}
     {drafts.error && <ErrorNotice error={drafts.error} onRetry={drafts.reload} what="outreach drafts" />}
     {drafts.loading && !drafts.data && <LoadingState label="Loading outreach drafts…" waking={drafts.waking} rows={4} />}
+    {sales && drafts.data && <PrepareEmailsCard onDone={drafts.reload} primary={drafts.data.items.length === 0} />}
     {drafts.data?.items.length === 0 && <EmptyState title="No messages yet" actions={<Link className="btn btn-primary" to="/opportunities">Choose who to contact</Link>}><p>Select one or several leads and press Draft messages, or open one and press Reach out.</p></EmptyState>}
 
     {drafts.data && drafts.data.items.length > 0 && <>
@@ -262,6 +275,9 @@ export function OutreachPage() {
               {selected.channel === 'Email' && selected.state !== 'Sent' && <ContactFinder opportunityId={selected.opportunityId} onUse={setRecipient} />}
               {selected.channel === 'Email' && <label className="field"><span>Subject</span><input id="out-subject" readOnly={selected.state === 'Sent'} value={subject} aria-invalid={tried && checks.some((c) => c.field === 'subject' && !c.ok) ? true : undefined} onChange={(e) => setSubject(e.target.value)} maxLength={300} /></label>}
               <label className="field" data-coach="out-editor"><span>Message</span><textarea id="out-body" rows={12} readOnly={selected.state === 'Sent'} value={body} aria-invalid={tried && checks.some((c) => c.field === 'body' && !c.ok) ? true : undefined} onChange={(e) => setBody(e.target.value)} maxLength={10000} /></label>
+              {selected.state === 'Draft' && <RewriteBox draftId={selected.id} version={selected.version}
+                dirty={body !== selected.body || recipient !== (selected.recipient ?? '') || subject !== (selected.subject ?? '')}
+                onUse={(x) => { setBody(x.body); if (x.subject) setSubject(x.subject); setNotice('Rewrite placed in the editor. Read it, then Save or Approve & send.') }} />}
               {selected.state !== 'Sent' && <ul className="ready-list" aria-label="Before you send" data-coach="out-checks">
                 {checks.map((c) => <li key={c.label}>{c.ok
                   ? <span className="ready-chip is-ok"><span aria-hidden="true">✓</span> {c.label}</span>
@@ -289,12 +305,12 @@ export function OutreachPage() {
                   <select value={mailApp} onChange={(e) => setMailApp(e.target.value as MailApp)}>{MAIL_APPS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</select>
                   <span className="hint">{MAIL_APPS.find((m) => m.value === mailApp)?.hint} You press Send there.</span></label>}
                 <div className="row wrap">
-                  {selected.state === 'Draft' && <button className="btn btn-primary btn-lg" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>{working ? 'Opening…' : 'Approve & send →'}</button>}
+                  <button className="btn btn-primary btn-lg" type="button" data-coach="out-send" disabled={working || !body.trim()} onClick={() => void approveAndSend()}>{working ? 'Opening…' : selected.state === 'Draft' ? 'Approve & send →' : 'Open to send →'}</button>
                   <button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save</button>
                   {selected.state === 'Approved' ? <button className="btn btn-ghost" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-ghost" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve only</button>}
                   <button className="btn btn-ghost" type="button" disabled={working} onClick={copyDraft}>Copy text</button>
                 </div>
-                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={appLabel}
+                <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={appLabel} onOpenAgain={() => void openAgain()}
                   onChange={() => { drafts.reload(); void open(selected) }}
                   onSent={() => { if (inQueue && position < queueIds.length - 1) setTimeout(nextInQueue, 600) }} />
               </Card>

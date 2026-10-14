@@ -63,12 +63,19 @@ async function send(path: string, init: RequestInit): Promise<Response> {
     }
     throw new ApiError(
       response.status,
-      problem.detail ?? problem.title ?? fallbackMessage(response.status),
+      // A validation failure says why per field; those reasons are the message, never just "Validation failed".
+      problem.detail ?? fieldReasons(problem.errors) ?? problem.title ?? fallbackMessage(response.status),
       problem.correlationId ?? response.headers.get('X-Correlation-ID') ?? undefined,
       problem.errors,
     )
   }
   return response
+}
+
+/** The field reasons of a validation failure as one sentence, or undefined when there are none. */
+export function fieldReasons(errors: Record<string, string[]> | undefined): string | undefined {
+  const reasons = Object.values(errors ?? {}).flat().filter(Boolean)
+  return reasons.length ? reasons.join(' ') : undefined
 }
 
 /** Plain message when the API sent no problem details (the rate limiter sends an empty 429). */

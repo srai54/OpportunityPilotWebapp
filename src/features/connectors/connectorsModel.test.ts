@@ -1,20 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { CATEGORIES, CONNECTORS, filterConnectors, followUpsIcs, toggleWant } from './connectorsModel'
+import { CATEGORIES, CONNECTORS, filterConnectors, toggleWant } from './connectorsModel'
+import { pushSummary, webhookProblem } from './integrationsModel'
 
 describe('catalog', () => {
   it('has unique ids, every category in use, and nothing claims to be live', () => {
     expect(new Set(CONNECTORS.map((c) => c.id)).size).toBe(CONNECTORS.length)
     for (const cat of CATEGORIES) expect(CONNECTORS.some((c) => c.category === cat)).toBe(true)
     for (const c of CONNECTORS) {
-      expect(['Works today', 'Next up', 'Planned']).toContain(c.status)
-      // Only a card with a real button may say it works today.
-      expect(c.status === 'Works today').toBe(Boolean(c.action) && c.action !== 'account')
+      expect(['Connect now', 'Needs server setup', 'File export', 'Next up', 'Planned']).toContain(c.status)
+      // Only a card whose control talks to the real service may say "Connect now"; a file download says so.
+      if (c.status === 'Connect now') expect(c.action === 'smtp' || c.action?.startsWith('int-')).toBe(true)
+      expect(c.status === 'File export').toBe(c.action === 'csv')
       expect(c.does.length).toBeGreaterThan(20)
       expect(c.needs.length).toBeGreaterThan(10)
     }
   })
-  it('Outlook and Gmail connect a mailbox today', () => {
-    expect(CONNECTORS.filter((c) => c.action?.startsWith('mail-')).map((c) => c.id)).toEqual(['outlook', 'gmail'])
+  it('Outlook and Gmail sign-in need the server owner; Slack, Teams, CRMs and the calendar connect now', () => {
+    expect(CONNECTORS.filter((c) => c.action?.startsWith('mail-')).map((c) => c.status)).toEqual(['Needs server setup', 'Needs server setup'])
+    for (const id of ['slack', 'teams', 'zapier', 'hubspot', 'notion', 'airtable', 'calendar']) expect(CONNECTORS.find((c) => c.id === id)?.status).toBe('Connect now')
   })
 })
 
@@ -26,7 +29,7 @@ describe('filterConnectors', () => {
     expect(filterConnectors(CONNECTORS, { ...all, query: 'authenticator' }).map((c) => c.id)).toContain('totp')
   })
   it('filters by category', () => {
-    expect(filterConnectors(CONNECTORS, { ...all, category: 'Email' }).map((c) => c.id)).toEqual(['outlook', 'gmail'])
+    expect(filterConnectors(CONNECTORS, { ...all, category: 'Email' }).map((c) => c.id)).toEqual(['smtp', 'outlook', 'gmail'])
   })
   it('shows Both-audience items to everyone and role-only items to that role', () => {
     const sales = filterConnectors(CONNECTORS, { ...all, audience: 'Sales' }).map((c) => c.id)
@@ -47,14 +50,25 @@ describe('toggleWant', () => {
   })
 })
 
-describe('followUpsIcs', () => {
-  it('writes one event per follow-up and escapes text', () => {
-    const ics = followUpsIcs([{ id: 'a1', opportunityTitle: 'Dev', organization: 'Acme, Inc', note: 'Ping; again', dueAt: '2026-10-18T09:00:00Z' }, { id: 'bad', opportunityTitle: 'x', organization: '', note: '', dueAt: 'nope' }], new Date('2026-10-13T10:00:00Z'))
-    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(1)
-    expect(ics).toContain('DTSTART:20261018T090000Z')
-    expect(ics).toContain('DTEND:20261018T093000Z')
-    expect(ics).toContain('SUMMARY:Follow up: Acme\\, Inc')
-    expect(ics).toContain('DESCRIPTION:Ping\\; again')
-    expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true)
+describe('webhookProblem', () => {
+  it('accepts each service on its own domain only', () => {
+    expect(webhookProblem('Slack', 'https://hooks.slack.com/services/T/B/x')).toBeNull()
+    expect(webhookProblem('Slack', 'https://hooks.slack.com.evil.test/x')).not.toBeNull()
+    expect(webhookProblem('Teams', 'https://prod-1.westus.logic.azure.com/workflows/a')).toBeNull()
+    expect(webhookProblem('Teams', 'https://hooks.slack.com/services/x')).not.toBeNull()
+    expect(webhookProblem('Webhook', 'https://hooks.zapier.com/hooks/catch/1/a/')).toBeNull()
+    expect(webhookProblem('Webhook', 'http://hooks.zapier.com/x')).not.toBeNull()
+    expect(webhookProblem('Webhook', 'https://example.com:8443/x')).not.toBeNull()
+    expect(webhookProblem('Webhook', '')).toBe('Paste the webhook address.')
+  })
+})
+
+describe('pushSummary', () => {
+  it('counts each outcome and gives the first failure reason', () => {
+    expect(pushSummary('HubSpot', [
+      { opportunityId: 'a', outcome: 'Added', reason: null, link: null },
+      { opportunityId: 'b', outcome: 'AlreadyThere', reason: 'x', link: null },
+      { opportunityId: 'c', outcome: 'Failed', reason: 'HubSpot refused the token.', link: null },
+    ])).toBe('1 added to HubSpot, 1 already there, 1 not sent: HubSpot refused the token.')
   })
 })

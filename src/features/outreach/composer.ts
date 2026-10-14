@@ -94,6 +94,13 @@ export interface ReadyCheck {
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const SIGN_OFF = /^(kind |warm |best |with |many )?(regards|thanks|thank you|sincerely|cheers|best wishes|best|yours sincerely|yours faithfully)[,.!]?$/i
+
+/** True when the last line of the message is a sign-off ("Regards,") with no name under it: the generated text had no name to use. */
+export function endsWithoutName(body: string): boolean {
+  const lines = body.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  return lines.length > 0 && SIGN_OFF.test(lines[lines.length - 1])
+}
 
 /** What must be true before a message can be approved and sent, so the person is told up front instead of by a server error. */
 export function readyChecks(channel: DraftChannel, d: { recipient: string; subject: string; body: string }): ReadyCheck[] {
@@ -103,6 +110,7 @@ export function readyChecks(channel: DraftChannel, d: { recipient: string; subje
     checks.push({ field: 'subject', label: 'Subject', ok: d.subject.trim().length > 0, fix: 'Add a subject line.' })
   }
   checks.push({ field: 'body', label: 'Message', ok: d.body.trim().length > 0, fix: 'Write the message.' })
+  if (d.body.trim()) checks.push({ field: 'body', label: 'Signed with your name', ok: !endsWithoutName(d.body), fix: 'Add your name under the sign-off (for example "Regards, Asha"). Saving your profile fills it in next time.' })
   const left = unresolvedPlaceholder(d.body, d.subject)
   checks.push({ field: 'body', label: 'No placeholders', ok: left === null, fix: left ? `Replace ${left} with your own words.` : '' })
   if (channel === 'LinkedInMessage') checks.push({ field: 'body', label: 'Under 300 characters', ok: d.body.length <= 300, fix: 'Shorten it — LinkedIn cuts connection notes at 300 characters.' })

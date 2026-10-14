@@ -1,3 +1,4 @@
+import { SendToCrm } from '../connectors/SendToCrm'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { BulkBar } from '../../components/cards'
@@ -394,6 +395,7 @@ function OpportunityTable({
             <button type="button" className={`btn btn-sm ${sales ? 'btn-primary' : 'btn-secondary'}`} disabled={busy !== null} onClick={() => setDrafting(true)}>Draft messages</button>
             <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Shortlisted')}>Approve</button>
             <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void bulk('Dismissed')}>Skip</button>
+            <SendToCrm ids={chosen.map((o) => o.id)} onDone={setAnnouncement} />
           </BulkBar>
         </>
       )}
@@ -412,6 +414,7 @@ function OpportunityTable({
           <button type="button" className="btn btn-secondary btn-sm" onClick={exportSelection}>
             Export selection
           </button>
+          <SendToCrm ids={chosen.map((o) => o.id)} onDone={setAnnouncement} />
           {!sales && <button type="button" className="btn btn-primary btn-sm" disabled={applicable.length === 0} onClick={() => setApplying(true)}>Apply to {applicable.length || 'approved'}</button>}
           <div className="grow" />
           <span className="muted-small">Approve a batch once. Applying opens each posting for you to submit, and each one is recorded separately.</span>
@@ -430,7 +433,7 @@ function OpportunityTable({
             Searching the {loaded.length} loaded {loaded.length === 1 ? 'row' : 'rows'}: {items.length} match “{search.trim()}”.
           </p>
         )}
-        <div className="table-scroll" role="region" aria-labelledby="opp-heading" tabIndex={0}>
+        <div className="table-scroll" role="region" aria-label={`${sales ? 'Leads' : 'Jobs'} table`} tabIndex={0}>
           <table className="table opp-table">
             <caption className="sr-only">
               Opportunities ordered: {sortLabel(filters.sort).toLowerCase()}. Showing {items.length} of {total}.
@@ -450,10 +453,10 @@ function OpportunityTable({
                 <th scope="col" data-coach="opps-match" aria-sort={filters.sort === 'score' ? 'descending' : undefined}>
                   Match
                 </th>
-                {advanced && <th scope="col">Evidence</th>}
+                {advanced && <th scope="col" className="col-evidence">Evidence</th>}
                 {advanced && <th scope="col">Outcome</th>}
                 <th scope="col">Status</th>
-                {advanced && <th scope="col" aria-sort={filters.sort === 'recent' ? 'descending' : undefined}>
+                {advanced && <th scope="col" className="table-when" aria-sort={filters.sort === 'recent' ? 'descending' : undefined}>
                   Updated
                 </th>}
                 <th scope="col">
@@ -494,7 +497,7 @@ function OpportunityTable({
                         </span>
                       )}
                     </td>
-                    {advanced && <td className="nowrap">
+                    {advanced && <td className="nowrap col-evidence">
                       <span className="meter" title={formatCoverage(o.coverage)}>
                         <span className={`meter-track meter-small ${o.coverage < 70 ? 'meter-amber' : ''}`}>
                           <i style={{ width: `${Math.min(100, Math.max(0, o.coverage))}%` }} />

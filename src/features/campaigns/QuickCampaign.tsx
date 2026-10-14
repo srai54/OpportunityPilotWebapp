@@ -156,7 +156,7 @@ export function QuickCampaign() {
           {CADENCES.map((c) => <option key={c.minutes} value={c.minutes}>{c.label}</option>)}
         </select></label>
       <div className="stack-3">
-        <button type="button" className="btn btn-ghost btn-sm" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Hide options' : 'More options: tech stack, work mode, experience, approval'}</button>
+        <button type="button" className="btn btn-ghost btn-sm btn-wrap" aria-expanded={more} onClick={() => setMore(!more)}>{more ? 'Hide options' : 'More options: tech stack, work mode, experience, approval'}</button>
         {more && <QuickOptionsPanel value={opts} onChange={setOpts} jobs={mode === 'Job'} />}
         {!more && optionsSummary(opts, mode) && <p className="muted-small">{optionsSummary(opts, mode)}</p>}
       </div>

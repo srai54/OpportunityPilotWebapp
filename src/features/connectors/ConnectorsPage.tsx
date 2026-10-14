@@ -4,14 +4,19 @@ import { Avatar, Card, CardGrid } from '../../components/cards'
 import { PageHeader } from '../../components/PageHeader'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
-import type { NextAction } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import type { Mailbox } from '../mail/mailModel'
 import { useShell } from '../shell/ShellContext'
-import { CATEGORIES, CONNECTORS, filterConnectors, followUpsIcs, readWants, toggleWant, writeWants, type Audience, type Connector, type ConnectorCategory } from './connectorsModel'
+import { CATEGORIES, CONNECTORS, filterConnectors, readWants, toggleWant, writeWants, type Audience, type Connector, type ConnectorCategory, type ConnectorStatus } from './connectorsModel'
+import { IntegrationControl } from './IntegrationControl'
+import type { Integration, IntegrationKind } from './integrationsModel'
 
-/** The button a card shows: connect a mailbox, download a file, or open the page that does it. Cards without one only save interest. */
-function ConnectorAction({ c, mailboxes }: Readonly<{ c: Connector; mailboxes: Mailbox[] | undefined }>) {
+const STATUS_TONE: Record<ConnectorStatus, 'success' | 'primary' | 'warning' | 'neutral'> = {
+  'Connect now': 'success', 'Needs server setup': 'warning', 'File export': 'neutral', 'Next up': 'primary', Planned: 'neutral',
+}
+
+/** The control a card shows: connect a mailbox or a service in place, export a file, or open the page that does it. Cards without one only save interest. */
+function ConnectorAction({ c, mailboxes, integrations, reload }: Readonly<{ c: Connector; mailboxes: Mailbox[] | undefined; integrations: Integration[] | undefined; reload: () => void }>) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   async function connect(provider: string) {
@@ -21,15 +26,6 @@ function ConnectorAction({ c, mailboxes }: Readonly<{ c: Connector; mailboxes: M
       window.location.assign(url)
     } catch (e) { setError((e as Error).message); setBusy(false) }
   }
-  async function downloadIcs() {
-    setBusy(true); setError('')
-    try {
-      const open = await api<NextAction[]>('/api/v1/next-actions?state=Open')
-      if (open.length === 0) { setError('No open follow-ups yet. They appear 5 days after you send a message.'); return }
-      const url = URL.createObjectURL(new Blob([followUpsIcs(open)], { type: 'text/calendar' }))
-      const a = document.createElement('a'); a.href = url; a.download = 'opportunitypilot-follow-ups.ics'; a.click(); URL.revokeObjectURL(url)
-    } catch (e) { setError((e as Error).message) } finally { setBusy(false) }
-  }
   const note = error && <span className="muted-small" role="alert">{error}</span>
   if (c.action?.startsWith('mail-')) {
     const provider = c.action.slice(5)
@@ -38,7 +34,15 @@ function ConnectorAction({ c, mailboxes }: Readonly<{ c: Connector; mailboxes: M
     if (box && !box.configured) return <span className="muted-small">The server owner has not switched this on yet — see the setup guide, then it connects here.</span>
     return <><button type="button" className="btn btn-primary btn-sm" disabled={busy || !box} onClick={() => void connect(provider)}>{busy ? 'Opening…' : `Connect ${c.name.replace('Microsoft ', '')}`}</button>{note}</>
   }
-  if (c.action === 'ics') return <><button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void downloadIcs()}>{busy ? 'Preparing…' : 'Download calendar file'}</button>{note}</>
+  if (c.action === 'smtp') {
+    const box = mailboxes?.find((m) => m.provider === 'Smtp')
+    if (box?.connected) return <><Badge tone="success">Connected{box.emailAddress ? ` as ${box.emailAddress}` : ''}</Badge><Link className="btn btn-ghost btn-sm" to="/settings">Manage</Link></>
+    return <Link className="btn btn-primary btn-sm" to="/settings">Connect with an app password</Link>
+  }
+  if (c.action?.startsWith('int-')) {
+    const kind = c.action.slice(4) as IntegrationKind
+    return <IntegrationControl kind={kind} row={integrations?.find((x) => x.kind === kind)} onChange={reload} />
+  }
   if (c.action === 'csv') return <Link className="btn btn-primary btn-sm" to="/opportunities">Open leads → Export CSV</Link>
   if (c.action === 'account') return <Link className="btn btn-secondary btn-sm" to="/settings">Open account settings</Link>
   return null
@@ -56,6 +60,7 @@ export function ConnectorsPage() {
   const [wants, setWants] = useState(readWants)
   const shown = filterConnectors(CONNECTORS, { query, category, audience })
   const mailboxes = useApi<Mailbox[]>('/api/v1/mailboxes').data
+  const integrations = useApi<Integration[]>('/api/v1/integrations')
 
   function toggle(id: string) {
     const next = toggleWant(wants, id)
@@ -67,11 +72,11 @@ export function ConnectorsPage() {
     <div className="page page-wide stack-4">
       <PageHeader
         title="Connectors"
-        subtitle="Link your own apps. Cards marked Works today have a button that does it now; the rest are planned."
+        subtitle="Link your own apps. Connect now cards talk to the real service as soon as you paste the address or token it gives you."
       />
       <Card tone="muted">
         <p className="muted-small">
-          Outlook and Gmail send for you once the server owner has registered the app (<a href="https://github.com/shr1-live/OpportunityPilotWebapp/blob/main/docs/MAIL_SETUP.md" target="_blank" rel="noopener noreferrer">setup guide</a>). Calendars and spreadsheets work today through files you download. Nothing else is connected.
+          Each connection is checked with the service before it is saved, and the token is stored encrypted. Sign-in buttons for Outlook and Gmail need an app the server owner registers once (<a href="https://github.com/shr1-live/OpportunityPilotWebapp/blob/main/docs/MAIL_SETUP.md" target="_blank" rel="noopener noreferrer">setup guide</a>); the app-password card sends from the same mailboxes without it.
         </p>
       </Card>
 
@@ -98,6 +103,8 @@ export function ConnectorsPage() {
         <CardGrid label="Connectors">
           {shown.map((c) => {
             const want = wants.includes(c.id)
+            // A sign-in card works as soon as the server has the app registered.
+            const status: ConnectorStatus = c.action?.startsWith('mail-') && mailboxes?.find((m) => `mail-${m.provider}` === c.action)?.configured ? 'Connect now' : c.status
             return (
               <li key={c.id} className="ccard connector-card">
                 <div className="connector-head">
@@ -106,13 +113,13 @@ export function ConnectorsPage() {
                     <h3 className="connector-name">{c.name}</h3>
                     <span className="muted-small">{c.category} · {c.audience === 'Both' ? 'Candidate and Sales' : c.audience}</span>
                   </div>
-                  <Badge tone={c.status === 'Works today' ? 'success' : c.status === 'Next up' ? 'primary' : 'neutral'}>{c.status}</Badge>
+                  <Badge tone={STATUS_TONE[status]}>{status}</Badge>
                 </div>
-                <p className="connector-does">{c.today ?? c.does}</p>
-                {c.action !== 'ics' && c.action !== 'csv' && <p className="muted-small"><strong>Needs:</strong> {c.needs}</p>}
-                <div className="row wrap">
-                  <ConnectorAction c={c} mailboxes={mailboxes} />
-                  {c.status !== 'Works today' && c.action !== 'account' && (
+                <p className="connector-does">{c.does}</p>
+                <p className="muted-small"><strong>Needs:</strong> {c.needs}</p>
+                <div className="row wrap connector-control">
+                  <ConnectorAction c={c} mailboxes={mailboxes} integrations={integrations.data} reload={integrations.reload} />
+                  {(c.status === 'Planned' || c.status === 'Next up') && c.action !== 'account' && (
                     <button type="button" className={`btn btn-sm ${want ? 'btn-primary' : 'btn-ghost'}`} aria-pressed={want} onClick={() => toggle(c.id)}>
                       {want ? '✓ You want this' : 'I want this'}<span className="sr-only"> ({c.name})</span>
                     </button>
