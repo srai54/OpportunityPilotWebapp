@@ -45,3 +45,56 @@ export function updateMailto(candidate: { name: string; email: string | null }, 
 export function shownSummary(show: readonly string[]): string {
   return show.length === 0 ? 'the stage only' : `the stage, plus ${show.map((s) => SHOW_OPTIONS.find((o) => o.key === s)?.label.toLowerCase() ?? s.toLowerCase()).join(', ')}`
 }
+
+export type StepState = 'done' | 'now' | 'todo' | 'stopped'
+export interface Journey {
+  steps: { label: string; state: StepState }[]
+  /** What the current stage means, in plain words for the candidate. */
+  meaning: string
+  /** What happens next, and who does it. */
+  next: string
+  stopped: boolean
+}
+
+const STEPS = ['Profile ready', 'Sent to the client', 'Interview', 'Decision', 'Offer'] as const
+
+/** Places a stage sentence from the server on the five-step path the candidate sees, with what it means and what comes next. */
+export function journey(stage: string): Journey {
+  const s = stage.toLowerCase()
+  const at = (now: number, meaning: string, next: string, stopped = false): Journey => ({
+    steps: STEPS.map((label, i) => ({ label, state: i < now ? 'done' : i === now ? (stopped ? 'stopped' : 'now') : 'todo' })),
+    meaning, next, stopped,
+  })
+  if (s.includes('accepted')) return { ...at(4, 'You accepted the offer. Congratulations!', 'Your recruiter will send the joining details and paperwork.'), steps: STEPS.map((label) => ({ label, state: 'done' })) }
+  if (s.includes('declined')) return at(4, 'The offer was declined.', 'Your recruiter will talk to you about other openings.', true)
+  if (s.includes('offer withdrawn')) return at(4, 'The client withdrew the offer.', 'Your recruiter will talk to you about other openings.', true)
+  if (s.includes('offer was made')) return at(4, 'The client made you an offer.', 'Your recruiter will go through it with you. Nothing is accepted without you.')
+  if (s.includes('waiting for the client')) return at(3, 'Your interview is done. The client is deciding.', 'This usually takes a few days. You will see the answer here as soon as it arrives.')
+  if (s.includes('interview scheduled')) return at(2, 'Your interview is booked.', 'Check the time and how to join below. Your recruiter can help you prepare.')
+  if (s.includes('asked for an interview')) return at(2, 'The client wants to interview you.', 'Your recruiter is agreeing a time with the client; it appears here once booked.')
+  if (s.includes('interview cancelled') || s.includes('interview closed')) return at(2, 'This interview will not go ahead.', 'Your recruiter will tell you if a new time is set.', true)
+  if (s.includes('sent to the client')) return at(1, 'Your profile is with the client.', 'The client reviews it and may ask for an interview.')
+  if (s.includes('withdrawn')) return at(1, 'This application was withdrawn.', 'Your recruiter will talk to you about other openings.', true)
+  return at(0, 'Your recruiter is preparing your profile for this role.', 'Once it is ready, it is sent to the client and this page moves on.')
+}
+
+/** "in 2 days", "in 3 h 20 min", "starting now", or null once it is more than an hour past. */
+export function countdown(startIso: string, now: Date = new Date()): string | null {
+  const ms = new Date(startIso).getTime() - now.getTime()
+  if (Number.isNaN(ms)) return null
+  if (ms < -60 * 60_000) return null
+  if (ms <= 5 * 60_000) return 'starting now'
+  const min = Math.round(ms / 60_000)
+  const days = Math.floor(min / 1440), hours = Math.floor((min % 1440) / 60), mins = min % 60
+  if (days >= 2) return `in ${days} days`
+  if (days === 1) return `in 1 day ${hours} h`
+  return hours > 0 ? `in ${hours} h ${mins} min` : `in ${mins} min`
+}
+
+/** "just now", "12 s ago", "3 min ago" for the live marker. */
+export function agoText(fromMs: number, nowMs: number): string {
+  const s = Math.max(0, Math.round((nowMs - fromMs) / 1000))
+  if (s < 5) return 'just now'
+  if (s < 60) return `${s} s ago`
+  return `${Math.floor(s / 60)} min ago`
+}
