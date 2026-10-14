@@ -4,10 +4,17 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { useAuth } from './AuthContext'
 import { validTotp } from './authModel'
+import { HankoSecurityCard } from './HankoElements'
 import { confirmTotp, listTotpFactors, removeTotp, startTotpSetup, type TotpFactor } from './mfa'
 
-/** Settings → Security: turn the authenticator-app code on or off. Only shown for real accounts (not guests). */
+/** Settings → Security: Hanko's own profile for Hanko accounts, the Supabase authenticator-app card for Supabase ones. */
 export function SecurityCard() {
+  const { user } = useAuth()
+  return user?.provider === 'hanko' ? <HankoSecurityCard /> : <SupabaseSecurityCard />
+}
+
+/** Turn the Supabase authenticator-app code on or off. Only shown for real Supabase accounts (not guests). */
+function SupabaseSecurityCard() {
   const { mode, user, refreshMfa } = useAuth()
   const [factors, setFactors] = useState<TotpFactor[] | null>(null)
   const [setup, setSetup] = useState<{ factorId: string; qrCode: string; secret: string } | null>(null)
@@ -15,7 +22,7 @@ export function SecurityCard() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
   const [done, setDone] = useState<string>()
-  const real = mode === 'supabase' && user && !user.guest
+  const real = mode === 'supabase' && user?.provider === 'supabase'
 
   const load = useCallback(async () => {
     try { setFactors(await listTotpFactors()) } catch (e) { setError(e as Error) }

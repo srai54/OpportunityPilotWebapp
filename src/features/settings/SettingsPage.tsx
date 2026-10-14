@@ -15,7 +15,12 @@ import { WORKSPACES, type Workspace } from '../shell/shellModel'
 import { ThemeChoiceGroup } from '../shell/ThemeToggle'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-const AUTH_LABEL = { supabase: 'Email & password / Google', dev: 'Development sign-in (local only)', guest: 'Guest (demo mode)' }
+const AUTH_LABEL = {
+  hanko: 'Hanko (passkey, password or email code)',
+  supabase: 'Email & password / Google',
+  dev: 'Development sign-in (local only)',
+  guest: 'Guest (demo mode)',
+}
 
 /** Rules that are product guarantees, not preferences — shown so nobody looks for a switch. */
 const FIXED_RULES = [
@@ -72,7 +77,7 @@ export function SettingsPage() {
               <div>
                 <dt>Sign-in method</dt>
                 <dd>
-                  <span className="badge">{AUTH_LABEL[mode]}</span>
+                  <span className="badge">{AUTH_LABEL[user?.provider ?? mode]}</span>
                   {mode === 'guest' && <div className="muted-small">Accounts appear once the Supabase sign-in keys are set.</div>}
                 </dd>
               </div>
