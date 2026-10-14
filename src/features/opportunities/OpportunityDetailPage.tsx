@@ -386,7 +386,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
         <div className="stack-4">
           {o.mode === 'Job' && <CoverNotePanel opportunityId={o.id} />}
           <div id="outreach" data-coach="opp-reach">
-            <OutreachActionsPanel opportunityId={o.id} />
+            <OutreachActionsPanel o={o} />
           </div>
 
           {details && <>
