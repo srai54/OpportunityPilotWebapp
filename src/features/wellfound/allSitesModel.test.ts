@@ -74,10 +74,10 @@ describe('siteLines', () => {
 
 describe('site choice', () => {
   it('lists the free sites and five search sites (with Naukri and Instahyre) and searches all unless some are off', () => {
-    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'TheMuse', 'Adzuna'])
-    expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek', 'Naukri', 'Instahyre'])
-    expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek', 'Naukri', 'Instahyre'] })
-    expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek', 'Naukri', 'Instahyre'] })
+    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'TheMuse', 'Instahyre', 'Adzuna'])
+    expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek', 'Naukri'])
+    expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek', 'Naukri'] })
+    expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek', 'Naukri'] })
     expect(chosenSites(new Set(), false).paid).toEqual([])
   })
   it('only names the free sites in the request when some are off', () => {

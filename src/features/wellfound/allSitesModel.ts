@@ -17,6 +17,7 @@ export const FREE_SITES = [
   { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
   { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
   { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
+  { id: 'Instahyre', label: 'Instahyre', note: 'India tech jobs' },
   { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
 ] as const
 export const PAID_SITES = [
@@ -24,7 +25,6 @@ export const PAID_SITES = [
   { id: 'Indeed', label: 'Indeed' },
   { id: 'Seek', label: 'SEEK' },
   { id: 'Naukri', label: 'Naukri' },
-  { id: 'Instahyre', label: 'Instahyre' },
 ] as const
 
 /** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */

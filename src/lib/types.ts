@@ -164,6 +164,7 @@ export type SourceKind =
   | 'Jobicy'
   | 'WeWorkRemotely'
   | 'TheMuse'
+  | 'Instahyre'
 export type SourceStatus = 'Pending' | 'Ok' | 'Failed' | 'Skipped'
 export type ResearchJobState = 'Queued' | 'Running' | 'Completed' | 'CompletedWithGaps' | 'Failed' | 'Cancelled'
 export type ResearchStage = 'Prepare' | 'Gather' | 'Extract' | 'Filter' | 'Score' | 'Complete'

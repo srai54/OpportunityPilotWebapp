@@ -122,7 +122,7 @@ export function WellfoundPage() {
   const tabs = <div className="segmented" role="group" aria-label="Job source" data-coach="find-tabs">
     <button type="button" className={provider === 'all' ? 'active' : ''} aria-pressed={provider === 'all'} onClick={() => setProvider('all')}>All sites</button>
     <button type="button" className={provider === 'wellfound' ? 'active' : ''} aria-pressed={provider === 'wellfound'} onClick={() => setProvider('wellfound')}>Wellfound</button>
-    {(['Indeed', 'LinkedIn', 'Seek', 'Naukri', 'Instahyre'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
+    {(['Indeed', 'LinkedIn', 'Seek', 'Naukri'] as const).map((board) => <button key={board} type="button" className={provider === board ? 'active' : ''} aria-pressed={provider === board} onClick={() => setProvider(board)}>{board === 'Seek' ? 'SEEK' : board}</button>)}
   </div>
   const extraCount = [company, techStack, workMode, minSalary, fundingStage, industry, employmentType, postedWithinDays, jobState, equityOnly ? 'equity' : ''].filter(Boolean).length
 

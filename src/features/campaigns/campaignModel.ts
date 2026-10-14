@@ -318,6 +318,7 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   Jobicy: 'Jobicy remote jobs',
   WeWorkRemotely: 'We Work Remotely jobs',
   TheMuse: 'The Muse jobs',
+  Instahyre: 'Instahyre jobs',
 }
 
 /** Open job sources the server fetches from documented public APIs. Job campaigns only. */
@@ -339,7 +340,7 @@ export type JobSourceKind = Extract<
   | 'WeWorkRemotely'
 >
 export type BoardKind = Extract<SourceKind, 'Greenhouse' | 'Lever' | 'Ashby' | 'SmartRecruiters' | 'Recruitee' | 'Workable'>
-export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk' | 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'TheMuse'>
+export type AggregateBoardKind = Extract<SourceKind, 'Remotive' | 'RemoteOk' | 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'TheMuse' | 'Instahyre'>
 
 export const JOB_SOURCE_CAPABILITY: Record<JobSourceKind, SourceCapabilityKey> = {
   Greenhouse: 'greenhouse',
@@ -366,7 +367,7 @@ export function sourceKindAllowed(kind: SourceKind, mode: OpportunityMode): bool
   return true
 }
 
-export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'TheMuse']
+export const FREE_FEED_KINDS: AggregateBoardKind[] = ['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'TheMuse', 'Instahyre']
 
 /** The sources the quick campaign adds for one choice: all free feeds, one feed, one company board, or a job search site. */
 export function quickSourceBodies(choice: string, boardToken: string): { kind: string; url?: string }[] {
@@ -376,13 +377,12 @@ export function quickSourceBodies(choice: string, boardToken: string): { kind: s
   return [{ kind: 'JobSearch', url: choice }]
 }
 
-export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri' | 'Instahyre'
+export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri'
 export const SEARCH_BOARDS: { value: SearchBoard; label: string }[] = [
   { value: 'Indeed', label: 'Indeed' },
   { value: 'LinkedIn', label: 'LinkedIn' },
   { value: 'Seek', label: 'SEEK (Australia / New Zealand)' },
   { value: 'Naukri', label: 'Naukri (India)' },
-  { value: 'Instahyre', label: 'Instahyre (India)' },
 ]
 
 /** What a job board search will look for: Job → first 3 keywords; other modes → keywords, then buying signals. */

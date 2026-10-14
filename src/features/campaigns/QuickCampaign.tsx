@@ -19,8 +19,8 @@ import {
   type BoardKind, type SupportedMode,
 } from './campaignModel'
 
-type FeedChoice = 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk' | 'TheMuse'
-type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Instahyre' | 'Naukri' | 'Greenhouse' | 'Lever' | 'FreeFeeds' | FeedChoice
+type FeedChoice = 'Arbeitnow' | 'Jobicy' | 'WeWorkRemotely' | 'Remotive' | 'RemoteOk' | 'TheMuse' | 'Instahyre'
+type SourceChoice = 'LinkedIn' | 'Indeed' | 'Seek' | 'Naukri' | 'Greenhouse' | 'Lever' | 'FreeFeeds' | FeedChoice
 
 const SEARCHES: { value: SourceChoice; label: string }[] = SEARCH_BOARDS.map((b) => ({ value: b.value as SourceChoice, label: `${b.label} job search` }))
 /** The free public feeds: no key, no quota. Candidates only (a feed lists jobs, and a Sales campaign needs the hiring company). */
@@ -31,6 +31,7 @@ const FEEDS: { value: FeedChoice; label: string }[] = [
   { value: 'Remotive', label: 'Remotive (remote)' },
   { value: 'RemoteOk', label: 'Remote OK' },
   { value: 'TheMuse', label: 'The Muse (US, worldwide)' },
+  { value: 'Instahyre', label: 'Instahyre (India tech jobs)' },
 ]
 const ALL_FREE: { value: SourceChoice; label: string }[] = [{ value: 'FreeFeeds', label: 'All free sites at once (no key needed)' }]
 const SITE_NAMES: Record<string, string> = { Seek: 'SEEK', FreeFeeds: 'free sites', WeWorkRemotely: 'We Work Remotely', RemoteOk: 'Remote OK' }
