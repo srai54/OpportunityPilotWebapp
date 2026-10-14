@@ -1502,7 +1502,7 @@ a.menu-item:hover { text-decoration: none; }
 .is-simple .page, .is-simple .page-wide { max-width: 1040px; }
 
 @media (max-width: 860px) {
-  .brand-name { display: none; }
+  .brand { display: none; }
   .topbar-wrap .topbar { gap: 8px; padding: 0 12px; }
   .journey { padding: 0 12px 8px; }
   .journey-step + .journey-step::before { width: 8px; margin-right: 2px; }
@@ -2157,7 +2157,7 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
 
 /* Priority hiding: the bar never wraps. Labels that name a control are visually hidden, never display:none. */
 @media (max-width: 1240px) { .ab-status { display: none; } }
-@media (max-width: 1100px) { .brand-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } .brand { position: relative; } }
+/* The "OP" badge was removed (user, 2026-10-14): the wordmark is the brand. Under 860px the bar keeps the menu instead (home is in it). */
 @media (max-width: 860px) {
   .top-switches { display: none; }
   .menu-switches { display: flex; }
