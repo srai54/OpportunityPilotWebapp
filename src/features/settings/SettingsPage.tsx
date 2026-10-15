@@ -13,6 +13,7 @@ import { MAIL_APPS, readMailApp, writeMailApp, type MailApp } from '../outreach/
 import { useShell } from '../shell/ShellContext'
 import { WORKSPACES, type Workspace } from '../shell/shellModel'
 import { ThemeChoiceGroup } from '../shell/ThemeToggle'
+import { SampleDataButton } from '../sample/SampleDataButton'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 const AUTH_LABEL = {
@@ -105,6 +106,11 @@ export function SettingsPage() {
               <div><dt>Your data</dt><dd className="row wrap"><button className="btn btn-secondary btn-sm" type="button" disabled={accountBusy} onClick={exportData}>Export JSON</button><button className="btn btn-ghost btn-sm text-danger" type="button" disabled={accountBusy} onClick={deleteData}>Delete all data</button></dd></div>
             </dl>
             {accountError && <ErrorNotice error={accountError} />}
+          </Card>
+
+          <Card title="Sample data">
+            <p className="muted-small">Fill this workspace with labelled sample candidates, deals and interviews to try things out.</p>
+            <SampleDataButton />
           </Card>
 
           <Card title="Display">

@@ -4,6 +4,8 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
+import { CallButton } from '../../components/CallButton'
+import { findPhone } from '../../lib/phone'
 import { api } from '../../lib/api'
 import type { DraftPage, NextAction, Suppression } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
@@ -75,7 +77,9 @@ export function FollowUpsPage() {
               <span className="followup-meta">{row.organization && row.organization !== row.opportunityTitle ? `${row.organization} · ` : ''}{new Date(row.dueAt).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
               {row.note && <span className="followup-note">{row.note}</span>}
             </div>
-            <div className="followup-actions"><Link className="btn btn-primary btn-sm" to={`/opportunities/${row.opportunityId}`}>Open</Link><button className="btn btn-secondary btn-sm" type="button" onClick={() => update(row.id, 'Done')}>Done</button><button className="btn btn-ghost btn-sm" type="button" onClick={() => update(row.id, 'Cancelled')}>Cancel</button></div>
+            <div className="followup-actions">{row.kind === 'Call' && <CallButton phone={findPhone(row.note)} who={row.organization || row.opportunityTitle} label="Call"
+              entityType="nextAction" entityId={row.id} context={{ opportunityId: row.opportunityId, context: row.opportunityTitle }} />}
+              <Link className={`btn btn-sm ${row.kind === 'Call' && findPhone(row.note) ? 'btn-secondary' : 'btn-primary'}`} to={`/opportunities/${row.opportunityId}`}>Open</Link><button className="btn btn-secondary btn-sm" type="button" onClick={() => update(row.id, 'Done')}>Done</button><button className="btn btn-ghost btn-sm" type="button" onClick={() => update(row.id, 'Cancelled')}>Cancel</button></div>
           </li>)}</CardList></div>}
       </section>
       <section className="panel" data-coach="follow-suppress"><header className="panel-head"><h2 className="eyebrow">Do not contact</h2></header><div className="panel-body stack-3">

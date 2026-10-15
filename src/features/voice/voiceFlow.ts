@@ -4,7 +4,8 @@ import type { BatchApproveDraftResult, Campaign, DraftPage, OpportunityPage, Pro
 import { campaignPayload, newDraft, quickSourceBodies, suggestedMode } from '../campaigns/campaignModel'
 import type { Mailbox } from '../mail/mailModel'
 import type { BatchSendResult } from '../outreach/sendAll'
-import { isYes, speak, type AssistantReply } from './assistantModel'
+import { isYes, speak, type AssistantAction, type AssistantReply } from './assistantModel'
+import { candidateInterviewBody, pickDealSlot, salesScheduleBody, scheduleLine, schedulePlan, scheduleProblem, scheduleQuestion, type SchedulePlan } from './scheduleModel'
 
 /**
  * Voice flows: what a confirmed voice command does, step by step, shown live in the voice pill. They run through the same API calls as
@@ -81,6 +82,7 @@ export async function runAction(action: NonNullable<AssistantReply['action']>, s
     else if (action.kind === 'outreach') await outreach(target)
     else if (action.kind === 'apply') await apply(target)
     else if (action.kind === 'review') review(sales, target)
+    else if (action.kind === 'schedule') await scheduleFlow(action, sales)
   } catch (e) {
     set({ phase: 'error', title: 'That did not work', detail: (e as Error).message })
   }
@@ -211,4 +213,41 @@ async function apply(campaignId: string | null = null): Promise<void> {
       },
     },
   })
+}
+
+/**
+ * Schedule an interview by voice. Asks first ("Interview R2 with Acme, Thu 3 pm, 45 min, Video — schedule it?") unless the person
+ * already said yes to that same line in the assistant sheet, then saves it through the same endpoints as the screens.
+ */
+export async function scheduleFlow(action: AssistantAction, sales: boolean, confirmed = false): Promise<void> {
+  const now = new Date()
+  const problem = scheduleProblem(action, now)
+  const plan = schedulePlan(action, sales)
+  if (problem || !plan) { setFlow({ phase: 'error', title: 'Not scheduled', detail: problem ?? 'Say the company and the time.', steps: [] }); return }
+  const labels = ['Your OK', 'Save the interview', 'In your interviews']
+  const run = () => saveInterview(plan, labels)
+  if (confirmed) { await run(); return }
+  setFlow({ phase: 'confirm', title: 'Schedule this interview?', detail: scheduleQuestion(plan, now), steps: steps(labels, 0), confirm: { yes: 'Yes, schedule', run } })
+}
+
+async function saveInterview(plan: SchedulePlan, labels: string[]): Promise<void> {
+  setFlow({ phase: 'running', title: 'Scheduling', detail: scheduleLine(plan, new Date()), steps: steps(labels, 1), progress: 50 })
+  let to = '/interviews'
+  if (plan.targetType === 'deal') {
+    const base = `/api/v1/staffing/deals/${plan.targetId}`
+    const work = await api<{ submissions: { id: string; state: string }[]; interviews: { id: string; submissionId: string; state: string; round: number; version: number }[] }>(`${base}/work`)
+    let slot = pickDealSlot(work, plan.round)
+    if (!slot) throw new Error('Send a candidate to the client on this deal first; interviews follow a sent submission.')
+    if ('submissionId' in slot) {
+      const created = await api<{ id: string; version: number }>(`${base}/interviews`, { method: 'POST', body: JSON.stringify({ submissionId: slot.submissionId }) })
+      slot = { interviewId: created.id, version: created.version }
+    }
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    await api(`${base}/interviews/${slot.interviewId}/schedule`, { method: 'POST', body: JSON.stringify(salesScheduleBody(plan, zone, slot.version)) })
+    to = '/staffing/interviews'
+  } else {
+    await api(`/api/v1/opportunities/${plan.targetId}/interviews`, { method: 'POST', body: JSON.stringify(candidateInterviewBody(plan)) })
+  }
+  setFlow({ phase: 'done', title: 'Interview scheduled', detail: scheduleLine(plan, new Date()), steps: steps(labels, 3), progress: 100, link: { to, label: 'See interviews' } })
+  announce("Done. It's in your interviews.")
 }

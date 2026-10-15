@@ -1,9 +1,33 @@
 /** What /api/v1/assistant answers: a spoken reply and at most one action the person confirms. */
 export interface AssistantReply {
   reply: string
-  action: { kind: 'launch' | 'open' | 'review' | 'outreach' | 'apply'; label: string; query: string | null; location: string | null; page: string | null; days?: number | null; campaignId?: string | null } | null
+  action: AssistantAction | null
   source: string
   fallbackReason: string | null
+}
+
+export type AssistantActionKind = 'launch' | 'open' | 'review' | 'outreach' | 'apply' | 'schedule'
+export type InterviewModeName = 'Video' | 'Phone' | 'Onsite'
+
+/** One proposed action. `schedule` carries the interview plan: the deal or opportunity it belongs to and the time (ISO, local). */
+export interface AssistantAction {
+  kind: AssistantActionKind
+  label: string
+  query: string | null
+  location: string | null
+  page: string | null
+  days?: number | null
+  campaignId?: string | null
+  /** schedule: the company, deal or job name the person said. */
+  target?: string | null
+  /** schedule: the deal (Sales) or opportunity (Candidate) id the server matched. */
+  targetId?: string | null
+  targetType?: 'deal' | 'opportunity' | null
+  round?: number | null
+  /** schedule: local date-time without a zone, e.g. 2026-10-17T15:00:00. */
+  when?: string | null
+  mode?: InterviewModeName | null
+  minutes?: number | null
 }
 
 /** "yes", "yeah, do it", "ok run it" confirm; anything else does not. */

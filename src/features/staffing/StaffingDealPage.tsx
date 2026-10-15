@@ -4,6 +4,8 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
+import { ContactCallCard } from '../calls/ContactCallCard'
+import { ScheduleInterviewDialog, type ScheduleTarget } from '../calls/ScheduleInterviewDialog'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ConversationPanel } from './ConversationPanel'
@@ -18,6 +20,7 @@ export function StaffingDealPage() {
   const accounts = useApi<StaffingAccount[]>('/api/v1/staffing/accounts?take=200')
   const [error, setError] = useState<Error>()
   const [busy, setBusy] = useState(false)
+  const [scheduling, setScheduling] = useState<ScheduleTarget | null>(null)
 
   if (deal.error) return <div className="page"><ErrorNotice error={deal.error} onRetry={deal.reload} what="the deal" /></div>
   if (!deal.data) return <div className="page"><LoadingState label="Loading deal…" waking={deal.waking} /></div>
@@ -42,6 +45,7 @@ export function StaffingDealPage() {
       subtitle={<>{account ? account.name : 'Client'}{contact ? ` · ${contact.name}${contact.title ? `, ${contact.title}` : ''}` : ''} · {money(d.estimatedValue, d.currency)}</>}
       actions={<Link className="btn btn-secondary" to="/staffing">All deals</Link>} />
     {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="that change" />}
+    {contact && <ContactCallCard key={`${contact.id}:${contact.version}`} contact={contact} client={account?.name ?? null} dealId={d.id} onSaved={accounts.reload} />}
 
     <section className="panel">
       <header className="panel-head"><h3 className="eyebrow">Stage</h3><span className="grow" />
@@ -72,10 +76,13 @@ export function StaffingDealPage() {
       : !work.data ? <LoadingState label="Loading submissions, interviews and offers…" waking={work.waking} />
       : <>
         <SubmissionsPanel base={base} work={work.data} busy={busy} act={act} />
-        <InterviewsPanel base={base} work={work.data} busy={busy} act={act} />
+        <InterviewsPanel base={base} work={work.data} busy={busy} act={act}
+          onSchedule={(interviewId) => setScheduling({ workspace: 'sales', dealId: d.id, interviewId, title: [account?.name, d.title].filter(Boolean).join(' · '), client: account?.name ?? null })} />
         <OffersPanel base={base} work={work.data} busy={busy} act={act} />
         <ProposalsPanel base={base} work={work.data} busy={busy} act={act} />
       </>}
+
+    {scheduling && <ScheduleInterviewDialog target={scheduling} onClose={() => setScheduling(null)} onDone={() => { setScheduling(null); deal.reload(); work.reload() }} />}
 
     <ActivityPanel deal={d} busy={busy} onNote={(detail) => act(`${base}/notes`, 'POST', { detail })} />
   </div>

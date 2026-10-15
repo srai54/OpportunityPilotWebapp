@@ -2591,3 +2591,83 @@ html { scroll-padding-bottom: 96px; }
   .va-orb { width: 60px; height: 60px; }
   .va-chat { max-height: 40vh; }
 }
+
+/* ---------- Calls and interview scheduling (2026-10-15, DESIGN.md §19) ---------- */
+.call-btn, .call-btn-icon { display: inline-flex; align-items: center; gap: 6px; }
+.call-btn-icon { width: 44px; height: 44px; min-height: 44px; padding: 0; justify-content: center; border-radius: 999px; }
+.contact-call { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.contact-call-main { display: grid; gap: 2px; min-width: 0; }
+.contact-call-line { overflow-wrap: anywhere; }
+.call-scrim { position: fixed; inset: 0; z-index: 55; background: var(--op-overlay); display: flex; align-items: flex-end; justify-content: center; overscroll-behavior: contain; }
+.call-sheet { width: min(600px, 100%); max-height: 92dvh; display: flex; flex-direction: column; background: var(--op-surface); color: var(--op-ink); border: 1px solid var(--op-line); border-radius: 20px 20px 0 0; box-shadow: var(--op-shadow-popover); overscroll-behavior: contain; }
+.call-sheet-grip { display: block; width: 40px; height: 4px; margin: 8px auto 0; border-radius: 999px; background: var(--op-line); }
+.call-sheet-head { display: flex; align-items: center; gap: 12px; padding: 12px 20px 14px; border-bottom: 1px solid var(--op-hair); }
+.call-sheet-titles { flex: 1 1 auto; min-width: 0; }
+.call-sheet-titles h2 { font-size: 20px; font-weight: 650; letter-spacing: -0.015em; outline: none; }
+.call-sheet-titles p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.call-sheet-close { width: 44px; height: 44px; padding: 0; justify-content: center; flex: 0 0 auto; }
+.call-sheet-body { padding: 16px 20px; overflow-y: auto; display: grid; gap: 16px; }
+.call-sheet-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--op-hair); }
+@media (min-width: 861px) {
+  .call-scrim { align-items: center; padding: 24px; }
+  .call-sheet { border-radius: var(--op-radius-card); }
+  .call-sheet-grip { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .call-sheet { animation: call-sheet-in 240ms var(--op-ease-out); }
+  @keyframes call-sheet-in { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+}
+.call-form { display: grid; gap: 16px; }
+.call-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.call-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 600px) { .call-grid-3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .call-grid-3 > :first-child { grid-column: 1 / -1; } }
+.field-label { font-weight: 500; font-size: var(--op-text-meta); }
+.call-static { display: flex; align-items: center; min-height: 40px; font-size: 16px; }
+.call-choice, .call-tell { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 8px; }
+.call-choice legend, .call-tell legend { font-weight: 600; font-size: var(--op-text-meta); padding: 0; margin-bottom: 8px; }
+.call-tell { padding: 14px; border: 1px solid var(--op-line); border-radius: var(--op-radius); background: var(--op-panel-head); }
+.call-choice-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.call-choice-btn { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 8px; border: 1px solid var(--op-field-border); border-radius: var(--op-radius); background: var(--op-surface); font-weight: 600; text-align: center; cursor: pointer; }
+.call-choice-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.call-choice-btn.is-on { background: var(--op-primary-tint); color: var(--op-on-primary-tint); border: 2px solid var(--op-primary); }
+.call-choice-btn:has(input:focus-visible) { outline: 2px solid var(--op-focus); outline-offset: 2px; }
+.call-inline { display: flex; gap: 12px; align-items: stretch; }
+.call-inline input { flex: 1 1 auto; min-width: 0; }
+.call-tell-text { margin: 0; padding: 12px 14px; border: 1px solid var(--op-line); border-radius: var(--op-radius-control); background: var(--op-surface); overflow-wrap: anywhere; }
+.call-wide { width: 100%; justify-content: center; }
+.call-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.call-note { display: flex; gap: 12px; align-items: flex-start; }
+.call-note textarea { flex: 1 1 auto; min-width: 0; }
+.call-mic { width: 48px; height: 48px; padding: 0; justify-content: center; border-radius: 999px; flex: 0 0 auto; }
+.next-iv { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 18px 22px; }
+.next-iv-icon { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: var(--op-radius); background: var(--op-primary); color: var(--op-on-primary); flex: 0 0 auto; }
+.next-iv-main { flex: 1 1 220px; min-width: 0; }
+.next-iv-title { font-size: 18px; font-weight: 650; color: var(--op-on-primary-tint); }
+.next-iv-detail { margin: 2px 0 0; overflow-wrap: anywhere; }
+.next-iv-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+/* Load sample data (2026-10-15): the button, then one short line saying what was added. */
+.sample-data { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--op-space-2); min-width: 0; }
+.sample-data-note:empty { display: none; }
+.sample-data-note .notice { display: inline-block; margin: 0; padding: var(--op-space-1) var(--op-space-2); }
+
+/* Autopilot controls (2026-10-15): next runs and the runs of today side by side, then one card per campaign with its repeat and auto-approve. */
+.auto-two { display: grid; gap: var(--op-space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.auto-runs { list-style: none; margin: 0; padding: 0; display: grid; }
+.auto-runs li { display: flex; align-items: center; justify-content: space-between; gap: var(--op-space-3); padding: var(--op-space-2) 0; border-bottom: 1px solid var(--op-line); min-width: 0; }
+.auto-runs li:last-child { border-bottom: 0; }
+.auto-run-name { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.auto-card { display: grid; gap: var(--op-space-3); padding: var(--op-space-4); align-content: start; }
+.auto-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--op-space-2); min-width: 0; }
+.auto-card-title { margin: 0; font-size: var(--op-text-screen); font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.auto-card > .muted-small { margin: 0; }
+.auto-card-controls { display: grid; gap: var(--op-space-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.auto-card-controls .field { margin: 0; min-width: 0; }
+.auto-card-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--op-space-2); }
+@media (max-width: 860px) { .auto-two { grid-template-columns: minmax(0, 1fr); } }
+
+/* Progress page (2026-10-15): the next interview first, as the tinted signature card, with its countdown and Join / Add to calendar. */
+.prog-next { display: grid; gap: var(--op-space-2); padding: var(--op-space-5); }
+.prog-next-head { display: flex; align-items: center; justify-content: space-between; gap: var(--op-space-3); flex-wrap: wrap; }
+.prog-next-title { margin: 0; font-size: var(--op-text-screen); font-weight: 600; }
+.prog-next-when { margin: 0; font-size: var(--op-text-screen); overflow-wrap: anywhere; }
+.prog-next > .muted-small { margin: 0; overflow-wrap: anywhere; }

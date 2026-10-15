@@ -225,3 +225,9 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 - **Footer:** every screen ends with API status, workspace, the approval promise, How it works and Settings.
 - **Voice:** say a command → see what it understood → "Yes, run it". Nothing runs without that tap. Browser speech now; Whisper server transcription is planned in `docs/NEXT_BATCH.md`.
 - **Less text:** one sentence per screen header at most; numbers and bars before paragraphs.
+
+## 19. Calls and interview scheduling (2026-10-15)
+- **Call button** (`components/CallButton`): a `tel:` link styled as a button (phone icon + "Call Priya", or round icon-only 44px with "Call Priya on +91 …" as its name). Hidden when there is no usable number (`lib/phone.ts`; a 10-digit Indian mobile gets +91). Calls use the person's own phone; nothing is paid for or recorded automatically.
+- **After the call** (`features/calls/CallDoneSheet`): a bottom sheet on phones, a centred dialog on wide screens (`Sheet`, `.call-sheet`), opened when the page is visible again within 3 h of a Call tap. Outcome = four big radio buttons (`.call-choice-btn`, selected = primary tint + 2px primary border), a note with an optional mic, then one primary "Schedule interview" and two secondary buttons. Saved only with the existing deal/job endpoints.
+- **Schedule interview** (`ScheduleInterviewDialog`): round · date · time, zone · length (45 min default), How (Video / Phone / Onsite) as the same choice buttons, then only the field that mode needs. "Tell the candidate" (Sales) shows the exact text; WhatsApp and email open with it and the person presses Send. The interview is marked "told" only after they tap "I sent it".
+- **Overview**: the "Interview in N min" card is the tinted signature card (Call / Join / Snooze) and shows only when one starts within 2 h; "Calls today" lists open Call next actions with "n of m done". Both are absent when empty.

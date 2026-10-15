@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
+import { SampleDataButton } from '../sample/SampleDataButton'
 import { Badge } from '../../components/StatusBadge'
 import { Card } from '../../components/cards'
 import { api } from '../../lib/api'
@@ -61,7 +62,7 @@ export function StaffingDealsPage() {
       </header>
       {deals.error ? <ErrorNotice error={deals.error} onRetry={deals.reload} what="deals" />
         : !deals.data ? <LoadingState label="Loading deals…" waking={deals.waking} />
-        : deals.data.length === 0 ? <EmptyState title="No staffing deals yet">Create a deal for a client requirement, then add candidates, submissions and interviews to it.</EmptyState>
+        : deals.data.length === 0 ? <EmptyState title="No staffing deals yet" actions={<SampleDataButton workspace="Sales" onLoaded={deals.reload} />}>Create a deal for a client requirement, then add candidates, submissions and interviews to it.</EmptyState>
         : <div className="table-scroll"><table className="table">
           <thead><tr><th>Deal</th><th>Client</th><th>Stage</th><th>Source</th><th className="num">Value</th><th>Next action</th></tr></thead>
           <tbody>{visible.map((d) => {

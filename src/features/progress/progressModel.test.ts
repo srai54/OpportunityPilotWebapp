@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { agoText, countdown, journey, progressUrl, shownSummary, stagePercent, updateMailto } from './progressModel'
+import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, progressUrl, shownSummary, stagePercent, updateMailto } from './progressModel'
 
 describe('progress link helpers', () => {
   it('builds the link from the site address and token', () => {
@@ -53,5 +53,33 @@ describe('countdown and live marker', () => {
     expect(agoText(0, 3000)).toBe('just now')
     expect(agoText(0, 42_000)).toBe('42 s ago')
     expect(agoText(0, 180_000)).toBe('3 min ago')
+  })
+})
+
+describe('next interview, join link and calendar file', () => {
+  const now = new Date('2026-10-15T10:00:00Z')
+  const item = (client: string, at: string, location: string | null = null) => ({
+    client, role: 'Java Lead', stage: 'Interview scheduled', updatedAt: at,
+    interview: { round: 2, scheduledAt: at, timeZone: 'Asia/Kolkata', mode: 'Video', location, minutes: 45, notes: null },
+  })
+  it('picks the soonest interview that has not passed', () => {
+    const items = [item('Late', '2026-10-20T10:00:00Z'), item('Past', '2026-10-14T10:00:00Z'), item('Soon', '2026-10-16T10:00:00Z'), { ...item('None', ''), interview: null }]
+    expect(nextInterview(items, now)?.client).toBe('Soon')
+    expect(nextInterview([], now)).toBeNull()
+  })
+  it('only treats web links as a join link', () => {
+    expect(joinUrl('https://meet.example.com/abc')).toBe('https://meet.example.com/abc')
+    expect(joinUrl('Office, 3rd floor')).toBeNull()
+    expect(joinUrl('javascript:alert(1)')).toBeNull()
+    expect(joinUrl(null)).toBeNull()
+  })
+  it('builds a calendar event with the time, length, title and join link', () => {
+    const ics = interviewIcs(item('Acme, Inc', '2026-10-16T09:30:00Z', 'https://meet.example.com/abc'), now)
+    expect(ics).toContain('DTSTART:20261016T093000Z')
+    expect(ics).toContain('DTEND:20261016T101500Z')
+    expect(ics).toContain('SUMMARY:Interview round 2 with Acme\\, Inc')
+    expect(ics).toContain('URL:https://meet.example.com/abc')
+    expect(ics).toContain('DTSTAMP:20261015T100000Z')
+    expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
   })
 })

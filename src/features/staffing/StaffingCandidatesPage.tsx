@@ -2,17 +2,22 @@ import { useState, type FormEvent } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
+import { SampleDataButton } from '../sample/SampleDataButton'
 import { Badge } from '../../components/StatusBadge'
+import { CallButton } from '../../components/CallButton'
 import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ProgressShare } from '../progress/ProgressShare'
 import { ResumeTailorPanel } from '../resume/ResumeTailorPanel'
 import { CANDIDATE_FIELDS, money } from './staffingModel'
-import type { Availability, CandidateField, Consent, RateUnit, StaffingCandidate } from './staffingTypes'
+import { latestDealFor } from '../calls/scheduleModel'
+import type { Availability, CandidateField, Consent, InterviewBoardRow, RateUnit, StaffingCandidate } from './staffingTypes'
 
 export function StaffingCandidatesPage() {
   const list = useApi<StaffingCandidate[]>('/api/v1/staffing/candidates')
+  // Which deal a call is about (the candidate's latest interview), so "After the call" can save it there.
+  const board = useApi<InterviewBoardRow[]>('/api/v1/staffing/interviews?take=500')
   const [editing, setEditing] = useState<StaffingCandidate | 'new' | null>(null)
   const [consentFor, setConsentFor] = useState<StaffingCandidate | null>(null)
   const [sharing, setSharing] = useState<StaffingCandidate | null>(null)
@@ -37,7 +42,7 @@ export function StaffingCandidatesPage() {
     <section className="panel">
       {list.error ? <ErrorNotice error={list.error} onRetry={list.reload} what="candidates" />
         : !list.data ? <LoadingState label="Loading candidates…" waking={list.waking} />
-        : list.data.length === 0 ? <EmptyState title="No candidates yet">Add the people you can place, then record what each agreed to share.</EmptyState>
+        : list.data.length === 0 ? <EmptyState title="No candidates yet" actions={<SampleDataButton workspace="Sales" onLoaded={list.reload} />}>Add the people you can place, then record what each agreed to share.</EmptyState>
         : <div className="table-scroll"><table className="table">
           <thead><tr><th>Candidate</th><th>Availability</th><th className="num">Rate</th><th>Consent</th><th>May be shared</th><th /></tr></thead>
           <tbody>{list.data.map((c) => <tr key={c.id}>
@@ -47,7 +52,8 @@ export function StaffingCandidatesPage() {
             <td><Badge tone={c.consent === 'Granted' ? 'success' : c.consent === 'Withdrawn' ? 'danger' : 'warning'}>{c.consent}</Badge>
               {c.consentEvidence && <div className="muted-small">{c.consentEvidence}</div>}</td>
             <td className="small">{c.shareableFields.length ? c.shareableFields.join(', ') : '—'}</td>
-            <td className="row"><button className="btn btn-secondary btn-sm" type="button" onClick={() => setEditing(c)}>Edit</button>
+            <td className="row"><CallButton phone={c.phone} who={c.name} entityType="candidate" entityId={c.id} context={latestDealFor(c.id, board.data ?? [])} />
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setEditing(c)}>Edit</button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setConsentFor(c)}>Consent</button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSharing(c)}>Share progress</button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setFitFor(c)}>Resume fit</button></td>

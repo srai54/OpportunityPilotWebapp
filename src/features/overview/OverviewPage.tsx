@@ -5,6 +5,7 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { CommandBar } from '../command/CommandBar'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
+import { SampleDataButton } from '../sample/SampleDataButton'
 import type { AnalyticsOverview, AnalyticsTrend, Overview } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { CardList, StepCard } from '../../components/cards'
@@ -26,6 +27,7 @@ import {
 import { SampleRunCard } from './SampleRunCard'
 import { StopAllCard } from '../campaigns/StopAllCard'
 import { BestMatches, HomeHero, HomeKpis, HomeSide } from './HomeSections'
+import { TodayCalls } from '../calls/TodayCalls'
 
 /**
  * Design round 3: OverviewFirstRun (nothing set up), Main (Candidate) and OverviewSales.
@@ -40,7 +42,7 @@ export function OverviewPage() {
 
   if (overview.error) return <div className="page"><ErrorNotice error={overview.error} onRetry={overview.reload} what="your overview" /></div>
   if (!overview.data) return <div className="page"><LoadingState label="Loading your overview…" waking={overview.waking} stats={5} rows={4} /></div>
-  if (isFirstRun(overview.data)) return <FirstRun overview={overview.data} />
+  if (isFirstRun(overview.data)) return <FirstRun overview={overview.data} onSample={overview.reload} />
 
   const a = analytics.data
   return (
@@ -68,6 +70,7 @@ export function OverviewPage() {
           </>
         }
       />
+      <TodayCalls key={workspace} workspace={workspace} />
       {analytics.error && <ErrorNotice error={analytics.error} onRetry={analytics.reload} what="the analytics" />}
       {!a && !analytics.error && <LoadingState label="Computing the figures…" waking={analytics.waking} stats={5} rows={5} />}
       {a && a.activeResearch && (
@@ -284,6 +287,7 @@ function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview:
             <Link className="btn btn-secondary btn-sm" to="/profiles/new">
               Write a Product or Services profile
             </Link>
+            <SampleDataButton workspace="Sales" />
           </>
         }
       >
@@ -388,13 +392,14 @@ function GuidedStart({ overview, workspace }: { overview: Overview; workspace: W
 }
 
 /** First visit: pick a side, follow three steps, or watch the sample run on real public job boards. */
-function FirstRun({ overview }: { overview: Overview }) {
+function FirstRun({ overview, onSample }: { overview: Overview; onSample: () => void }) {
   const { workspace } = useShell()
   return (
     <div className="page stack-4">
       <PageHeader title="Welcome to OpportunityPilot" subtitle="Pick a workspace, then say what to find." />
       <CommandBar />
       <GuidedStart overview={overview} workspace={workspace} />
+      <SampleDataButton workspace={workspace === 'sales' ? 'Sales' : 'Candidate'} onLoaded={onSample} />
       {workspace === 'candidate' && <SampleRunCard />}
     </div>
   )

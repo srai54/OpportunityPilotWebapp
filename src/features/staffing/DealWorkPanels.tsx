@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge } from '../../components/StatusBadge'
+import { CallButton } from '../../components/CallButton'
+import { displayPhone, findPhone } from '../../lib/phone'
 import { useApi } from '../../lib/useApi'
 import { CANDIDATE_FIELDS, inZone, money, submittableFields, zonedToUtc } from './staffingModel'
 import type {
@@ -91,12 +93,21 @@ function SubmissionCard({ s, base, busy, act }: { s: Submission; base: string; b
   </article>
 }
 
-export function InterviewsPanel({ base, work, busy, act }: PanelProps) {
+/** `onSchedule` opens the full "Schedule interview" form (null = a new round); without it the inline form is shown as before. */
+export function InterviewsPanel({ base, work, busy, act, onSchedule }: PanelProps & { onSchedule?: (interviewId: string | null) => void }) {
   const sent = work.submissions.filter((s) => s.state === 'Sent')
   const name = (id: string) => work.submissions.find((s) => s.id === id)?.candidateName ?? 'Candidate'
+  const candidates = useApi<StaffingCandidate[]>('/api/v1/staffing/candidates')
+  /** Phone mode: the number written with the interview, else the candidate's own number. */
+  const phoneFor = (submissionId: string, location: string | null) => {
+    const candidateId = work.submissions.find((s) => s.id === submissionId)?.candidateId
+    return findPhone(location) || candidates.data?.find((c) => c.id === candidateId)?.phone || ''
+  }
+  const dealId = base.split('/').pop() ?? ''
   const [feedbackFor, setFeedbackFor] = useState<{ submissionId: string; interviewId: string | null } | null>(null)
   return <section className="panel">
-    <header className="panel-head"><h3 className="eyebrow">Interviews and feedback</h3></header>
+    <header className="panel-head"><h3 className="eyebrow">Interviews and feedback</h3>{onSchedule && sent.length > 0 && <><span className="grow" />
+      <button type="button" className="btn btn-primary btn-sm" onClick={() => onSchedule(null)}>+ Schedule interview</button></>}</header>
     <div className="panel-body stack-3">
       {sent.length === 0 ? <p className="muted-small">Interviews follow a submission that was sent to the client.</p>
         : <div className="row wrap">{sent.map((s) => <button key={s.id} type="button" className="btn btn-secondary btn-sm" disabled={busy}
@@ -106,9 +117,16 @@ export function InterviewsPanel({ base, work, busy, act }: PanelProps) {
           {i.state === 'Scheduled' && <Badge tone={i.candidateNotification === 'NotNotified' ? 'warning' : 'success'}>{i.candidateNotification === 'NotNotified' ? 'Candidate not told yet' : 'Candidate told'}</Badge>}
         </div>
         {i.scheduledAt && <p className="small">{inZone(i.scheduledAt, i.timeZone)} · {i.durationMinutes} min · {i.mode}{i.location ? ` · ${i.location}` : ''}</p>}
+        {i.mode === 'Phone' && (i.state === 'Requested' || i.state === 'Scheduled') && phoneFor(i.submissionId, i.location) && <div className="row wrap">
+          <span className="small">Number <strong className="op-numeric">{displayPhone(phoneFor(i.submissionId, i.location))}</strong></span>
+          <CallButton phone={phoneFor(i.submissionId, i.location)} who={name(i.submissionId)} entityType="interview" entityId={i.id}
+            context={{ dealId, submissionId: i.submissionId, context: `Round ${i.round}` }} />
+        </div>}
         {i.candidateNotes && <p className="muted-small">Candidate sees: {i.candidateNotes}</p>}
         {i.internalNotes && <p className="muted-small">Internal only: {i.internalNotes}</p>}
-        {(i.state === 'Requested' || i.state === 'Scheduled') && <ScheduleForm busy={busy} onSchedule={(body) => void act(`${base}/interviews/${i.id}/schedule`, 'POST', { ...body, expectedVersion: i.version })} rescheduling={i.state === 'Scheduled'} />}
+        {(i.state === 'Requested' || i.state === 'Scheduled') && onSchedule && <div><button type="button" className="btn btn-secondary btn-sm" onClick={() => onSchedule(i.id)}>
+          {i.state === 'Scheduled' ? 'Reschedule' : 'Schedule'}<span className="sr-only"> round {i.round} for {name(i.submissionId)}</span></button></div>}
+        {(i.state === 'Requested' || i.state === 'Scheduled') && !onSchedule && <ScheduleForm busy={busy} onSchedule={(body) => void act(`${base}/interviews/${i.id}/schedule`, 'POST', { ...body, expectedVersion: i.version })} rescheduling={i.state === 'Scheduled'} />}
         <div className="row wrap">
           {i.state === 'Scheduled' && i.candidateNotification === 'NotNotified' &&
             <button className="btn btn-secondary btn-sm" type="button" disabled={busy} onClick={() => void act(`${base}/interviews/${i.id}/notified`, 'POST', { status: 'NotifiedManually', expectedVersion: i.version })}>I told the candidate</button>}

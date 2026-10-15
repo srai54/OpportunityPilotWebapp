@@ -10,6 +10,8 @@ export type AccountSource = 'Manual' | 'Import' | 'LinkedInAssisted' | 'Upwork' 
 export type StaffingContact = {
   id: string; accountId: string; name: string; title: string | null; email: string | null; emailVerified: boolean
   linkedInUrl: string | null; evidence: string | null; version: number
+  /** Optional: older API versions do not send it. */
+  phone?: string | null
 }
 export type StaffingAccount = {
   id: string; name: string; domain: string | null; industry: string | null; location: string | null; source: AccountSource

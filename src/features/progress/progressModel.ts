@@ -98,3 +98,32 @@ export function agoText(fromMs: number, nowMs: number): string {
   if (s < 60) return `${s} s ago`
   return `${Math.floor(s / 60)} min ago`
 }
+
+/** A meeting link the candidate can open (only http/https); anything else stays a plain "where" line. */
+export function joinUrl(location: string | null | undefined): string | null {
+  return location && /^https?:\/\/\S+$/i.test(location.trim()) ? location.trim() : null
+}
+
+/** The soonest interview that has not ended (or started less than an hour ago) across all applications, or null. */
+export function nextInterview(items: readonly ProgressItem[], now: Date = new Date()): ProgressItem | null {
+  const upcoming = items.filter((i) => i.interview && countdown(i.interview.scheduledAt, now) !== null)
+  upcoming.sort((a, b) => new Date(a.interview!.scheduledAt).getTime() - new Date(b.interview!.scheduledAt).getTime())
+  return upcoming[0] ?? null
+}
+
+/** One interview as a calendar file (.ics) for Google, Outlook or Apple Calendar. Built in the browser; no pay or internal notes. */
+export function interviewIcs(item: ProgressItem, now: Date = new Date()): string {
+  const iv = item.interview!
+  const stamp = (d: Date) => d.toISOString().replaceAll('-', '').replaceAll(':', '').replace(/\.\d{3}/, '')
+  const start = new Date(iv.scheduledAt)
+  const end = new Date(start.getTime() + (iv.minutes ?? 60) * 60_000)
+  const text = (t: string) => t.replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;')
+  const join = joinUrl(iv.location)
+  const uidPart = (item.client ?? item.role ?? 'x').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OpportunityPilot//Progress//EN', 'BEGIN:VEVENT', `UID:${stamp(start)}-${iv.round}-${uidPart}@opportunitypilot`,
+    `DTSTAMP:${stamp(now)}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
+    `SUMMARY:${text(`Interview round ${iv.round}${item.client ? ` with ${item.client}` : ''}`)}`,
+    ...(iv.location ? [`LOCATION:${text(iv.location)}`] : []),
+    ...(join ? [`URL:${join}`, `DESCRIPTION:${text(`Join: ${join}`)}`] : []),
+    'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n'
+}

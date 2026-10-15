@@ -7,7 +7,8 @@ import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
 import { api } from '../../lib/api'
 import { isYes, speak, stopSpeaking, type AssistantReply } from './assistantModel'
-import { addTurn, flowContext, getFlow, runAction, setFlow, useTurns } from './voiceFlow'
+import { addTurn, flowContext, getFlow, runAction, scheduleFlow, setFlow, useTurns } from './voiceFlow'
+import { schedulePlan, scheduleQuestion } from './scheduleModel'
 
 /**
  * Voice assistant and launch from anywhere. What you say goes to the assistant, which answers aloud from your own numbers and may
@@ -36,6 +37,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [thinking, setThinking] = useState(false)
   const [startWhenReady, setStartWhenReady] = useState(false)
   const turns = useTurns()
+  const scheduling = reply?.action?.kind === 'schedule' ? schedulePlan(reply.action, ws === 'sales') : null
   const chatEnd = useRef<HTMLDivElement>(null)
   useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'end' }) }, [turns.length, thinking, plan])
 
@@ -79,6 +81,8 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   }
   function run(r: AssistantReply | null, launch: ParsedCommand | null) {
     const action = r?.action
+    // The sheet already showed the interview plan and the person said yes to it: save it without asking again.
+    if (action?.kind === 'schedule') { close(); void scheduleFlow(action, ws === 'sales', true).catch((e: Error) => setFlow({ phase: 'error', title: 'Not scheduled', detail: e.message, steps: [] })); return }
     // Multi-step commands run in the voice pill, which shows each step and stays across screens.
     if (action && action.kind !== 'open') { close(); void runAction(launch && action.kind === 'launch' ? { ...action, query: launch.query, location: launch.location || action.location, days: action.days ?? launch.days ?? null } : action, ws === 'sales'); return }
     if (launch) { close(); navigate(commandPath(launch, ws)); return }
@@ -156,9 +160,9 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
               {tried && !plan && !reply && <div className="va-msg is-ai is-warn"><span>Add a role or skill, e.g. “react developer in Berlin”.</span></div>}
               {(plan || (reply?.action && reply.action.kind !== 'launch')) && (
                 <div className="va-action">
-                  <p>{plan ? describeCommand(plan, ws) : reply?.action?.label}</p>
+                  <p>{plan ? describeCommand(plan, ws) : scheduling ? scheduleQuestion(scheduling, new Date()) : reply?.action?.label}</p>
                   <div className="va-action-btns">
-                    <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>{plan ? 'Yes, run it' : 'Yes, do it'}</button>
+                    <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>{plan ? 'Yes, run it' : scheduling ? 'Yes, schedule' : 'Yes, do it'}</button>
                     <button type="button" className="btn btn-ghost" onClick={() => understand('not now')}>Not now</button>
                   </div>
                   <span className="va-say">or just say “yes”</span>

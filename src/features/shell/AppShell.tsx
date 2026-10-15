@@ -10,6 +10,7 @@ import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { ShellContext } from './ShellContext'
 import { CoachHost } from '../../components/CoachHost'
+import { CallHost } from '../calls/CallHost'
 import { COACH_FLOW_IDS } from '../coach/coachFlows'
 import { flowIdForPath, resetAllTips, setTipsOff, tipsOff } from '../coach/coachModel'
 import { JourneyBar } from '../journey/JourneyBar'
@@ -467,6 +468,7 @@ export function AppShell() {
           </>
         )}
         <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />
+        <CallHost />
       </div>
     </ShellContext.Provider>
   )

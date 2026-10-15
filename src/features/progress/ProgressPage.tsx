@@ -5,25 +5,12 @@ import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
-import { agoText, countdown, journey, type ProgressItem, type ProgressView } from './progressModel'
+import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressView } from './progressModel'
 
 const REFRESH_MS = 30_000
 
 const when = (iso: string, zone?: string | null) => {
   try { return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', ...(zone ? { timeZone: zone } : {}) }) } catch { return new Date(iso).toLocaleString() }
-}
-
-/** One interview as a calendar file the candidate can open in Google, Outlook or Apple Calendar. */
-function interviewIcs(item: ProgressItem): string {
-  const iv = item.interview!
-  const stamp = (d: Date) => d.toISOString().replaceAll('-', '').replaceAll(':', '').replace(/\.\d{3}/, '')
-  const start = new Date(iv.scheduledAt)
-  const end = new Date(start.getTime() + (iv.minutes ?? 60) * 60_000)
-  const text = (t: string) => t.replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll(',', '\\,').replaceAll(';', '\\;')
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OpportunityPilot//Progress//EN', 'BEGIN:VEVENT', `UID:${stamp(start)}-${iv.round}@opportunitypilot`,
-    `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`,
-    `SUMMARY:${text(`Interview round ${iv.round}${item.client ? ` with ${item.client}` : ''}`)}`,
-    ...(iv.location ? [`LOCATION:${text(iv.location)}`] : []), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n'
 }
 
 function addToCalendar(item: ProgressItem) {
@@ -74,7 +61,10 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
   useEffect(() => {
     const poll = setInterval(() => { if (document.visibilityState === 'visible') reload() }, REFRESH_MS)
     const tick = setInterval(() => setNow(Date.now()), 1000)
-    return () => { clearInterval(poll); clearInterval(tick) }
+    // Coming back to the tab fetches at once, so a change made by the sales team while it was hidden shows straight away.
+    const back = () => { if (document.visibilityState === 'visible') reload() }
+    document.addEventListener('visibilitychange', back)
+    return () => { clearInterval(poll); clearInterval(tick); document.removeEventListener('visibilitychange', back) }
   }, [reload])
 
   useEffect(() => {
@@ -109,10 +99,31 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
         {view.data && view.data.items.length === 0 && (
           <Card tone="muted" level={2} title="Nothing to show yet"><p>When your profile is sent to a client, it appears here and this page updates on its own.</p></Card>
         )}
+        {view.data && (() => {
+          const next = nextInterview(view.data.items, new Date(now))
+          if (!next?.interview) return null
+          const iv = next.interview
+          const join = joinUrl(iv.location)
+          const left = countdown(iv.scheduledAt, new Date(now))
+          return (
+            <section className="ccard ccard-signature prog-next" aria-labelledby="prog-next-title">
+              <div className="prog-next-head">
+                <h2 id="prog-next-title" className="prog-next-title">Next interview</h2>
+                {left && <span className="prog-countdown op-numeric">{left}</span>}
+              </div>
+              <p className="prog-next-when"><strong>{when(iv.scheduledAt, iv.timeZone)}</strong></p>
+              <p className="muted-small">{[`Round ${iv.round}`, next.client, iv.mode, iv.minutes ? `${iv.minutes} min` : null].filter(Boolean).join(' · ')}</p>
+              <div className="prog-actions">
+                {join && <a className="btn btn-primary btn-sm" href={join} target="_blank" rel="noopener noreferrer">Join<span className="sr-only"> the interview (opens in a new tab)</span></a>}
+                <button type="button" className={`btn btn-sm ${join ? 'btn-secondary' : 'btn-primary'}`} onClick={() => addToCalendar(next)}>Add to calendar</button>
+              </div>
+            </section>
+          )
+        })()}
         {view.data?.items.map((item, i) => {
           const iv = item.interview
           const left = iv ? countdown(iv.scheduledAt, new Date(now)) : null
-          const join = iv?.location && /^https?:\/\//.test(iv.location) ? iv.location : null
+          const join = joinUrl(iv?.location)
           return (
             <Card level={2} key={`${item.client ?? ''}-${item.role ?? ''}-${i}`} title={item.role ?? 'Your application'} subtitle={item.client ?? undefined}
               actions={<Badge tone={journey(item.stage).stopped ? 'neutral' : item.stage.toLowerCase().includes('accepted') ? 'success' : 'primary'}>{item.stage}</Badge>}>

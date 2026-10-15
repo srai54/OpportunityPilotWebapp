@@ -5,7 +5,11 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
+import { SampleDataButton } from '../sample/SampleDataButton'
 import { Badge } from '../../components/StatusBadge'
+import { CallButton } from '../../components/CallButton'
+import { findPhone } from '../../lib/phone'
+import { ScheduleInterviewDialog, type ScheduleTarget } from '../calls/ScheduleInterviewDialog'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import {
@@ -13,7 +17,7 @@ import {
   type SalesAction,
 } from '../interviews/interviewsModel'
 import { ProgressShare } from '../progress/ProgressShare'
-import type { InterviewBoardRow } from './staffingTypes'
+import type { InterviewBoardRow, StaffingCandidate } from './staffingTypes'
 
 const PAST_SHOWN = 30
 
@@ -23,12 +27,14 @@ const PAST_SHOWN = 30
  */
 export function StaffingInterviewsPage() {
   const board = useApi<InterviewBoardRow[]>('/api/v1/staffing/interviews?take=500')
+  const candidates = useApi<StaffingCandidate[]>('/api/v1/staffing/candidates')
   const [now] = useState(() => new Date())
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<Error>()
   const [said, setSaid] = useState('')
   const [sharing, setSharing] = useState<InterviewBoardRow | null>(null)
   const [allPast, setAllPast] = useState(false)
+  const [scheduling, setScheduling] = useState<ScheduleTarget | null>(null)
 
   const rows = board.data ?? []
   const { upcoming, past } = splitBoard(rows, now)
@@ -57,6 +63,12 @@ export function StaffingInterviewsPage() {
         <span className="followup-note">{progressLabel(r)}</span>
       </div>
       <div className="followup-actions">
+        {i.mode === 'Phone' && (i.state === 'Requested' || i.state === 'Scheduled') &&
+          <CallButton phone={findPhone(i.location) || candidates.data?.find((c) => c.id === r.candidateId)?.phone} who={r.candidateName}
+            entityType="interview" entityId={i.id} context={{ dealId: i.dealId, submissionId: i.submissionId, context: [r.client, r.dealTitle].filter(Boolean).join(' · ') }} />}
+        {(i.state === 'Requested' || i.state === 'Scheduled') && <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null}
+          onClick={() => setScheduling({ workspace: 'sales', dealId: i.dealId, interviewId: i.id, title: [r.client, r.dealTitle].filter(Boolean).join(' · '), client: r.client, candidateName: r.candidateName })}>
+          {i.state === 'Scheduled' ? 'Reschedule' : 'Schedule'}<span className="sr-only"> {r.candidateName}, round {i.round}</span></button>}
         {actions.map((a) => <button key={a} type="button" className={`btn btn-sm ${a === 'cancel' ? 'btn-ghost' : 'btn-secondary'}`} disabled={busy !== null}
           onClick={() => void run(r, a)}>{SALES_ACTION_LABELS[a]}<span className="sr-only"> for {r.candidateName}, round {i.round}</span></button>)}
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSharing(r)}>Share progress<span className="sr-only"> with {r.candidateName}</span></button>
@@ -70,13 +82,14 @@ export function StaffingInterviewsPage() {
     <PageHeader title="Interviews" subtitle="Every interview across your deals." />
     <span className="sr-only" role="status" aria-live="polite">{said}</span>
     {error && <ErrorNotice error={error} />}
+    {scheduling && <ScheduleInterviewDialog target={scheduling} onClose={() => setScheduling(null)} onDone={() => { setScheduling(null); board.reload() }} />}
     {sharing && <ProgressShare key={sharing.candidateId} candidate={{ id: sharing.candidateId, name: sharing.candidateName, email: sharing.candidateEmail }}
       onClose={() => { setSharing(null); board.reload() }} />}
 
     {board.error && !board.data ? <ErrorNotice error={board.error} onRetry={board.reload} what="interviews" />
       : !board.data ? <LoadingState label="Loading interviews…" waking={board.waking} stats={4} />
       : rows.length === 0 ? <EmptyState title="No interviews yet"
-          actions={<Link className="btn btn-primary btn-sm" to="/staffing">Open your deals</Link>}>
+          actions={<><Link className="btn btn-primary btn-sm" to="/staffing">Open your deals</Link><SampleDataButton workspace="Sales" onLoaded={board.reload} /></>}>
           <p>Ask for an interview on a deal once a submission is sent.</p>
         </EmptyState>
       : <>

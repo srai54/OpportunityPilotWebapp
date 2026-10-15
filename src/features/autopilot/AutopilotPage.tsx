@@ -1,17 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '../../components/cards'
+import { Card, CardGrid } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
-import type { CampaignSummary } from '../../lib/types'
+import type { Campaign, CampaignSummary, ResearchJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { StopAllCard } from '../campaigns/StopAllCard'
 import { repeatLabel, type RepeatSchedule } from '../campaigns/campaignModel'
 import type { Integration } from '../connectors/integrationsModel'
 import type { Mailbox } from '../mail/mailModel'
+import { AUTO_APPROVE_CHOICES, autoApproveBody, nextRuns, ranToday, repeatBody, repeatChoice, runWhen, type RepeatChoice } from './autopilotModel'
 
 interface Rule { id: string; title: string; detail: string; on: boolean; manage?: { to: string; label: string }; toggle?: () => Promise<void> }
 
@@ -26,6 +27,18 @@ export function AutopilotPage() {
   const mailboxes = useApi<Mailbox[]>('/api/v1/mailboxes')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<Error>()
+  const [jobs, setJobs] = useState<Record<string, ResearchJob>>({})
+  const [now] = useState(() => new Date())
+  const today = campaigns.data ? ranToday(campaigns.data, now).slice(0, 6) : []
+  const todayKey = today.map((c) => `${c.lastJob!.id}:${c.lastJob!.state}`).join(',')
+  // Found / good counts for today's runs (one small request each, at most six).
+  useEffect(() => {
+    if (!todayKey) return
+    let live = true
+    void Promise.all(todayKey.split(',').map((k) => api<ResearchJob>(`/api/v1/research-jobs/${k.split(':')[0]}`).catch(() => null)))
+      .then((list) => { if (live) setJobs(Object.fromEntries(list.filter((j): j is ResearchJob => j !== null).map((j) => [j.id, j]))) })
+    return () => { live = false }
+  }, [todayKey])
 
   if (!campaigns.data || !schedules.data) return <div className="page page-wide"><LoadingState label="Loading what runs on its own…" rows={3} /></div>
 
@@ -56,6 +69,23 @@ export function AutopilotPage() {
     { id: 'digest', title: 'Daily summary and alerts', detail: hooks.length ? `To ${hooks.map((h) => h.label ?? h.kind).join(', ')}: ${[...new Set(hooks.flatMap((h) => h.events))].join(', ') || 'no events chosen'}.` : 'Connect Slack, Teams or a webhook to get a daily summary and alerts.', on: hooks.length > 0, manage: { to: '/connectors', label: hooks.length ? 'Change' : 'Connect' } },
   ]
 
+  async function save(id: string, work: () => Promise<void>) {
+    setBusy(id); setError(undefined)
+    try { await work() } catch (e) { setError(e as Error) } finally { setBusy(null) }
+  }
+  const setRepeat = (c: CampaignSummary, choice: Exclude<RepeatChoice, 'custom'>) => save(`repeat-${c.id}`, async () => {
+    const body = repeatBody(choice, schedules.data!.find((x) => x.campaignId === c.id), new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
+    if (!body) return
+    await api(`/api/v1/campaigns/${c.id}/schedule`, { method: 'PUT', body: JSON.stringify(body) })
+    schedules.reload()
+  })
+  const setAutoApprove = (c: CampaignSummary, score: number | null) => save(`approve-${c.id}`, async () => {
+    const full = await api<Campaign>(`/api/v1/campaigns/${c.id}`)
+    await api(`/api/v1/campaigns/${c.id}`, { method: 'PUT', body: JSON.stringify(autoApproveBody(full, score)) })
+    campaigns.reload()
+  })
+  const upcoming = nextRuns(schedules.data, campaigns.data)
+
   async function run(rule: Rule) {
     if (!rule.toggle) return
     setBusy(rule.id); setError(undefined)
@@ -84,7 +114,70 @@ export function AutopilotPage() {
       <PageHeader title="Autopilot" subtitle="What runs on its own. Sending always waits for you." />
       {error && <ErrorNotice error={error} />}
       <StopAllCard />
-      {section('Repeating searches', searchRules, 'No campaigns yet. Create one and set it to repeat.')}
+      <div className="auto-two">
+        <Card title="Next runs">
+          {upcoming.length === 0 ? <p className="muted-small">Nothing repeats yet. Pick Daily or Weekly below.</p> : (
+            <ol className="auto-runs">{upcoming.slice(0, 8).map((r) => (
+              <li key={r.campaignId}><span className="auto-run-name">{r.name}</span><span className="muted-small op-numeric">{runWhen(r.at, now)}</span></li>
+            ))}</ol>
+          )}
+        </Card>
+        <Card title="Ran today">
+          {today.length === 0 ? <p className="muted-small">No searches ran today.</p> : (
+            <ol className="auto-runs">{today.map((c) => {
+              const j = jobs[c.lastJob!.id]
+              const running = c.lastJob!.state === 'Queued' || c.lastJob!.state === 'Running'
+              return (
+                <li key={c.id}>
+                  <Link className="auto-run-name" to={`/research/${c.lastJob!.id}`}>{c.name}</Link>
+                  {running ? <Badge tone="primary">Running</Badge>
+                    : j ? <span className="muted-small op-numeric">{j.counts.candidates.toLocaleString()} found · {j.counts.qualified.toLocaleString()} good</span>
+                      : <span className="muted-small">—</span>}
+                </li>
+              )
+            })}</ol>
+          )}
+        </Card>
+      </div>
+      {campaigns.data.length === 0 ? section('Repeating searches', searchRules, 'No campaigns yet. Create one and set it to repeat.') : (
+        <section className="stack-2" aria-labelledby="auto-campaigns">
+          <h3 id="auto-campaigns" className="eyebrow">Repeating searches</h3>
+          <CardGrid label="Campaigns">{campaigns.data.map((c) => {
+            const s = schedules.data!.find((x) => x.campaignId === c.id)
+            const choice = repeatChoice(s)
+            const rule = searchRules.find((r) => r.id === `run-${c.id}`)!
+            return (
+              <li key={c.id} className="ccard auto-card">
+                <div className="auto-card-head">
+                  <h4 className="auto-card-title">{c.name}</h4>
+                  <Badge tone={rule.on ? 'success' : 'neutral'}>{rule.on ? 'On' : 'Off'}</Badge>
+                </div>
+                <p className="muted-small">{rule.detail}</p>
+                <div className="auto-card-controls">
+                  <label className="field"><span>Repeat</span>
+                    <select value={choice} disabled={busy !== null} onChange={(e) => void setRepeat(c, e.target.value as Exclude<RepeatChoice, 'custom'>)}>
+                      <option value="off">Off</option><option value="daily">Daily</option><option value="weekly">Weekly</option>
+                      {choice === 'custom' && <option value="custom" disabled>{repeatLabel(s).split(' · ')[0]}</option>}
+                    </select>
+                  </label>
+                  {c.mode === 'Job' && (
+                    <label className="field"><span>Auto-approve</span>
+                      <select value={c.autoApproveMinScore ?? ''} disabled={busy !== null} onChange={(e) => void setAutoApprove(c, e.target.value ? Number(e.target.value) : null)}>
+                        {AUTO_APPROVE_CHOICES.map((v) => <option key={v ?? 'off'} value={v ?? ''}>{v == null ? 'Off' : `Fit ${v}+`}</option>)}
+                        {c.autoApproveMinScore != null && !(AUTO_APPROVE_CHOICES as readonly (number | null)[]).includes(c.autoApproveMinScore) && <option value={c.autoApproveMinScore}>Fit {c.autoApproveMinScore}+</option>}
+                      </select>
+                    </label>
+                  )}
+                </div>
+                <div className="auto-card-foot">
+                  {busy === `repeat-${c.id}` || busy === `approve-${c.id}` ? <span className="muted-small" role="status">Saving…</span> : <span />}
+                  <Link className="btn btn-ghost btn-sm" to={`/campaigns/${c.id}/edit?step=4`}>More<span className="sr-only"> settings for {c.name}</span></Link>
+                </div>
+              </li>
+            )
+          })}</CardGrid>
+        </section>
+      )}
       {section('Approval thresholds', thresholdRules, 'No thresholds set. Every lead waits for you.')}
       {section('In the background', background, '')}
       <Card title="Always on" subtitle="These cannot be switched off.">
