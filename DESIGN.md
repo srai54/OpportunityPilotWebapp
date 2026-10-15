@@ -1,6 +1,6 @@
 # DESIGN.md — OpportunityPilot design rules (v4: card-first, one-line app bar, KPI band)
 
-**Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/UI_REVAMP_PLAN.md` and `docs/WORKFLOW_GUIDE_PLAN.md`.
+**Mandatory.** Read this before changing any screen, component, colour, copy or chart. If a rule here conflicts with a habit or a guess, this file wins. If a case is not covered, extend this file in the same change — do not invent a one-off style. Values come from `src/styles/tokens.css` (single source) and the decisions recorded in `docs/archive/UI_REVAMP_PLAN.md` and `docs/archive/WORKFLOW_GUIDE_PLAN.md`.
 
 ## 1. Principles
 
@@ -215,3 +215,11 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 | T9 | Green/amber used as text on white failed axe contrast | Text uses `--op-on-green-tint` / `--op-on-amber-tint`, never `--op-c3` / `--op-c2` |
 | T10 | A page fetched a paged API as a list and crashed at run time (type check did not catch it) | Open every new screen in a browser with real data before calling it done |
 
+
+## 18. v5 — colour, header, footer, progress and voice (2026-10-15)
+- **Colour:** primary is the industry SaaS blue `#2563eb` (5.2:1 on white; hover `#1d4ed8`), dark mode `#60a5fa`. Progress fills run blue → teal. Status colours keep words or icons beside them.
+- **Header:** one 52px bar. A mic button (`voice-launch`) sits before help; on phones a round 56px mic button floats bottom-right.
+- **Progress tracker:** the journey bar shows the five steps plus an animated progress bar and `n/5`. KPI numbers count up once on first view (`AnimatedValue`, 0.7s ease-out, instant with reduced motion; screen readers get the final value).
+- **Footer:** every screen ends with API status, workspace, the approval promise, How it works and Settings.
+- **Voice:** say a command → see what it understood → "Yes, run it". Nothing runs without that tap. Browser speech now; Whisper server transcription is planned in `docs/NEXT_BATCH.md`.
+- **Less text:** one sentence per screen header at most; numbers and bars before paragraphs.

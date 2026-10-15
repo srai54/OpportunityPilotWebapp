@@ -3,6 +3,7 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ProgressShare } from '../progress/ProgressShare'
@@ -18,13 +19,20 @@ export function StaffingCandidatesPage() {
   const [fitFor, setFitFor] = useState<StaffingCandidate | null>(null)
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Candidates" subtitle="Your bench. A candidate can be submitted to a client only with recorded consent, and only the fields they allow."
+    <PageHeader title="Candidates" subtitle="Your bench. Submitted only with consent."
       actions={<button className="btn btn-primary" type="button" onClick={() => setEditing('new')}>+ Add candidate</button>} />
     {editing && <CandidateForm key={editing === 'new' ? 'new' : editing.id} candidate={editing === 'new' ? null : editing}
       onDone={() => { setEditing(null); list.reload() }} />}
     {fitFor && <div className="stack-2"><div className="row"><span className="grow" /><button className="btn btn-secondary btn-sm" type="button" onClick={() => setFitFor(null)}>Close</button></div><ResumeTailorPanel key={fitFor.id} editableJob jobTitle="" jobText="" candidate={{ name: fitFor.name, email: fitFor.email }} /></div>}
     {sharing && <ProgressShare key={sharing.id} candidate={sharing} onClose={() => setSharing(null)} />}
     {consentFor && <ConsentForm key={consentFor.id} candidate={consentFor} onDone={() => { setConsentFor(null); list.reload() }} />}
+
+    {list.data && list.data.length > 0 && <KpiBand label="Bench">
+      <KpiCard icon="people" tone="blue" label="On the bench" value={list.data.length} sub="candidates" />
+      <KpiCard icon="check" tone="green" label="Available now" value={list.data.filter((c) => c.availability === 'Immediate').length} sub="can start" />
+      <KpiCard icon="check" tone="teal" label="Consent given" value={list.data.filter((c) => c.consent === 'Granted').length} sub="may be submitted" />
+      <KpiCard icon="calendar" tone="amber" label="Need consent" value={list.data.filter((c) => c.consent !== 'Granted').length} sub="ask before submitting" />
+    </KpiBand>}
 
     <section className="panel">
       {list.error ? <ErrorNotice error={list.error} onRetry={list.reload} what="candidates" />

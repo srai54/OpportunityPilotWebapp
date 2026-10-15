@@ -52,7 +52,7 @@ export function SchedulePanel({ campaignId }: { campaignId: string }) {
         <label className="field"><span>{current ? 'Move next run to' : 'First run'}</span><input type="datetime-local" value={first} onChange={(e) => setFirst(e.target.value)} /></label>
         <label className="field"><span>Time zone</span><input value={tz} onChange={(e) => setZone(e.target.value)} /></label>
       </div>
-      <p className="hint">On free hosting the server sleeps when idle, so a run happens at the first check after it wakes. Each run is queued once, like pressing Run now.</p>
+      <details className="more-info"><summary>Details</summary><p className="hint">On free hosting the server sleeps when idle, so a run happens at the first check after it wakes. Each run is queued once, like pressing Run now.</p></details>
       {error && <ErrorNotice error={error} />}
       <div className="row wrap">
         <button className="btn btn-primary btn-sm" type="button" disabled={busy || (!current && !firstUtc) || (first !== '' && !firstUtc)}

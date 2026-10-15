@@ -1,0 +1,97 @@
+/* ===== Redesign v5 — deep chrome + front page restyle. Loaded after app.css; tokens in tokens.css. ===== */
+:root { --v5-nav: #0b1220; --v5-nav-2: #111a2e; --v5-nav-ink: #e7ecf5; --v5-nav-muted: #9aa6bd; --v5-nav-line: rgb(255 255 255 / 0.08); --v5-accent: #14b8a6; }
+/* Cooler page background in light mode only; system dark mode keeps the dark token. */
+:root[data-theme="light"] { --op-bg: #f4f6fb; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --op-bg: #f4f6fb; } }
+
+/* Header: dark navy app bar, white type, glass controls */
+.chrome { background: var(--op-surface); border-bottom: 1px solid var(--op-line); box-shadow: 0 1px 0 rgb(15 23 42 / 0.03); }
+.appbar { height: 60px; background: linear-gradient(90deg, var(--v5-nav), var(--v5-nav-2)); color: var(--v5-nav-ink); padding: 0 18px; }
+.appbar .brand { color: #fff; gap: 10px; }
+.appbar .brand::before { content: ""; width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto; background: linear-gradient(135deg, #3b82f6, #14b8a6); box-shadow: 0 4px 14px rgb(59 130 246 / 0.45); -webkit-mask: none; }
+.appbar .brand-name { color: #fff; font-weight: 750; letter-spacing: -0.02em; font-size: 16px; }
+.appbar .ab-burger, .appbar .help-btn, .appbar .theme-toggle { color: var(--v5-nav-ink); background: transparent; border-color: var(--v5-nav-line); }
+.appbar .ab-burger:hover, .appbar .help-btn:hover, .appbar .theme-toggle:hover { background: rgb(255 255 255 / 0.08); color: #fff; }
+.appbar .ab-sep { background: var(--v5-nav-line); }
+.appbar .ws-seg-top { background: rgb(255 255 255 / 0.06); border: 1px solid var(--v5-nav-line); }
+.appbar .ws-seg-top .ws-seg-btn { color: var(--v5-nav-muted); }
+.appbar .ws-seg-top .ws-seg-btn:hover { color: #fff; background: rgb(255 255 255 / 0.06); }
+.appbar .ws-seg-top .ws-seg-btn[aria-pressed="true"] { background: #fff; color: #0b1220; box-shadow: 0 2px 8px rgb(0 0 0 / 0.25); }
+.appbar .crumb, .appbar .crumb-page { color: #fff; }
+.appbar .crumb-sec { color: var(--v5-nav-muted); }
+.appbar .top-switch { color: var(--v5-nav-muted); }
+.appbar .top-switch:hover, .appbar .top-switch[aria-checked="true"] { color: #fff; background: rgb(255 255 255 / 0.06); }
+.appbar .top-switch-track { background: rgb(255 255 255 / 0.22); }
+.appbar .pill { background: rgb(255 255 255 / 0.08); color: var(--v5-nav-ink); border-color: var(--v5-nav-line); }
+.appbar .avatar-initials { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; border: 0; }
+.appbar .voice-btn { background: rgb(255 255 255 / 0.1); color: #fff; border-color: var(--v5-nav-line); }
+
+/* Command pill in the header (opens the voice / command sheet) */
+.cmd-pill { display: none; align-items: center; gap: 10px; height: 38px; min-width: 0; width: clamp(220px, 30vw, 420px); padding: 0 6px 0 14px; border-radius: 999px; border: 1px solid var(--v5-nav-line); background: rgb(255 255 255 / 0.07); color: var(--v5-nav-muted); font: inherit; font-size: 13.5px; cursor: pointer; transition: background 0.15s cubic-bezier(.23,1,.32,1), border-color 0.15s; }
+.cmd-pill:hover { background: rgb(255 255 255 / 0.12); border-color: rgb(255 255 255 / 0.18); color: #fff; }
+.cmd-pill span { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd-pill i { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: linear-gradient(135deg, #3b82f6, #14b8a6); color: #fff; font-style: normal; }
+@media (min-width: 1180px) { .cmd-pill { display: inline-flex; } .appbar .voice-btn { display: none; } }
+
+/* Progress tracker: a real stepper with a filled connector */
+.journey { background: var(--op-surface); padding: 10px 24px 12px; gap: 18px; justify-content: center; }
+.journey-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; width: min(860px, 100%); overflow: visible; }
+.journey-step { position: relative; justify-content: center; }
+.journey-step + .journey-step::before { content: ""; position: absolute; top: 15px; right: calc(50% + 18px); width: calc(100% - 36px); height: 2px; margin: 0; background: var(--op-line); border-radius: 2px; }
+.journey-step.is-done + .journey-step::before, .journey-step.is-done + .journey-step.is-here::before { background: linear-gradient(90deg, var(--op-primary), var(--v5-accent)); }
+.journey-link { flex-direction: column; gap: 4px; min-height: 0; padding: 0 4px; border: 0; background: none !important; font-size: 12.5px; }
+.journey-num { width: 30px; height: 30px; font-size: 13px; border: 2px solid var(--op-line); background: var(--op-surface); position: relative; z-index: 1; transition: transform 0.2s cubic-bezier(.23,1,.32,1); }
+.journey-step.is-done .journey-num { background: var(--op-primary); border-color: var(--op-primary); color: #fff; }
+.journey-step.is-here .journey-num { border-color: var(--op-primary); color: var(--op-primary); box-shadow: 0 0 0 5px var(--op-primary-tint); transform: scale(1.06); }
+.journey-step.is-here .journey-link { color: var(--op-ink); font-weight: 700; border: 0; }
+.journey-label { white-space: nowrap; }
+.journey-badge { position: absolute; top: -6px; left: calc(50% + 8px); z-index: 2; }
+.journey-next { position: absolute; top: -8px; right: calc(50% - 46px); z-index: 2; font-size: 9.5px; }
+.journey-progress { width: 140px; height: 8px; }
+.journey-pct { font-size: 13px; color: var(--op-ink); }
+@media (max-width: 860px) {
+  .journey { padding: 8px 12px 10px; gap: 10px; }
+  .journey-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .journey-step.is-here .journey-label { position: static; width: auto; height: auto; clip: auto; font-size: 11.5px; }
+  .journey-step + .journey-step::before { top: 13px; }
+  .journey-num { width: 26px; height: 26px; font-size: 12px; }
+  .journey-next, .journey-badge { display: none; }
+}
+
+/* Front page hero: colour banner with the weekly goal ring in white */
+.hero2 { background: radial-gradient(1200px 300px at 0% 0%, #1d4ed8 0%, #1e3a8a 45%, #0f766e 100%); color: #fff; border: 0; padding: 28px 30px; box-shadow: 0 18px 40px -18px rgb(30 58 138 / 0.55); }
+.hero2::before { display: none; }
+.hero2 h2 { color: #fff; font-size: 30px; letter-spacing: -0.03em; }
+.hero2 .date { color: rgb(255 255 255 / 0.75); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11.5px; }
+.hero2 .lead { color: rgb(255 255 255 / 0.9); font-size: 15px; max-width: 56ch; }
+.hero2 .btn-primary { background: #fff; color: #1e3a8a; border-color: #fff; }
+.hero2 .btn-primary:hover { background: #eef3ff; }
+.hero2 .btn-secondary { background: rgb(255 255 255 / 0.12); color: #fff; border-color: rgb(255 255 255 / 0.3); }
+.hero2 .btn-secondary:hover { background: rgb(255 255 255 / 0.2); }
+.hero2 .goal .gr { background: conic-gradient(#5eead4 calc(var(--p) * 1%), rgb(255 255 255 / 0.18) 0); }
+.hero2 .goal .gr::after { background: #1e3a8a; }
+.hero2 .goal .gr b, .hero2 .goal .gt b { color: #fff; }
+.hero2 .goal .gr b small, .hero2 .goal .gt p { color: rgb(255 255 255 / 0.75); }
+
+/* KPI cards: lift, accent edge on hover, bigger numbers */
+.kpi { transition: transform 0.18s cubic-bezier(.23,1,.32,1), box-shadow 0.18s; border-radius: 14px; }
+.kpi:hover { transform: translateY(-2px); box-shadow: 0 12px 28px -14px rgb(30 58 138 / 0.35); }
+.kpi .kv b { font-size: 28px; letter-spacing: -0.03em; }
+.ccard { border-radius: 14px; }
+
+/* Left rail (Advanced): navy to match the header */
+.rail:not(.drawer) { background: var(--op-surface); }
+.rail-link.active { background: var(--op-primary-tint); color: var(--op-on-primary-tint); font-weight: 650; }
+
+/* Page title: bigger, tighter */
+.page-title { font-size: 26px; letter-spacing: -0.025em; font-weight: 750; }
+
+@media (prefers-reduced-motion: reduce) { .kpi, .journey-num, .cmd-pill { transition: none; } .kpi:hover { transform: none; } }
+:root[data-theme="dark"] .hero2 { background: radial-gradient(1200px 300px at 0% 0%, #1e3a8a 0%, #172554 50%, #134e4a 100%); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hero2 { background: radial-gradient(1200px 300px at 0% 0%, #1e3a8a 0%, #172554 50%, #134e4a 100%); } }
+.appbar .top-switches { background: transparent; border-color: var(--v5-nav-line); box-shadow: none; }
+.appbar .brand::before { content: "OP"; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 0.02em; }
+.journey-step.is-here .journey-num { background: var(--op-primary); color: #fff; }
+.hero2 p, .hero2 .lead { color: rgb(255 255 255 / 0.92); }
+.hero2 { margin-bottom: 4px; }
+.ccard.hero2 p.lead, .ccard.hero2 .lead, section.hero2 p { color: rgb(255 255 255 / 0.92); }

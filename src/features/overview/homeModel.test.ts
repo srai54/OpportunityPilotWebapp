@@ -31,3 +31,9 @@ describe('strongCount and lastWeek', () => {
     expect(lastWeek(pts, 'sent')).toBe(7)
   })
 })
+
+import { averageFromBands } from './homeModel'
+describe('averageFromBands', () => {
+  it('weights band midpoints by count', () => { expect(averageFromBands([{ from: 0, to: 50, count: 1 }, { from: 50, to: 100, count: 3 }])).toBe(63) })
+  it('is null with nothing scored', () => { expect(averageFromBands([{ from: 0, to: 50, count: 0 }])).toBeNull() })
+})

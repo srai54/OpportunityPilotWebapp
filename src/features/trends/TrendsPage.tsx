@@ -7,6 +7,8 @@ import { Badge } from '../../components/StatusBadge'
 import { Link } from 'react-router-dom'
 import type { Profile, ProfileSummary, WellfoundJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { KpiBand, KpiCard, type KpiTone } from '../../components/kpi/kpi'
+import type { IconName } from '../../components/icons'
 import { useShell } from '../shell/ShellContext'
 import { splitTags } from '../profiles/profileFields'
 import { COUNTRIES } from '../wellfound/boardModel'
@@ -27,8 +29,9 @@ function Bars({ title, rows, empty }: Readonly<{ title: string; rows: TrendCount
 </Card>
 }
 
-function Stat({ label, value, sub }: Readonly<{ label: string; value: string | number; sub: string }>) {
-  return <div className="kpi"><span className="kpi-label">{label}</span><strong className="kpi-value op-numeric">{value}</strong><span className="muted-small">{sub}</span></div>
+/** One trend figure on the shared animated KPI card (DESIGN.md: KPI bands everywhere). */
+function Stat({ label, value, sub, icon, tone }: Readonly<{ label: string; value: string | number; sub: string; icon: IconName; tone: KpiTone }>) {
+  return <KpiCard icon={icon} tone={tone} label={label} value={value} sub={sub} />
 }
 
 /** How the person's own profile skills compare with what the sample asks for. Uses data already on screen; no extra search. */
@@ -48,7 +51,7 @@ function SkillGapPanel({ skills }: Readonly<{ skills: TrendCount[] }>) {
         <p><strong className="op-numeric">{gap.coveragePercent}%</strong> of what these postings ask for is on your profile ({mine.name}).</p>
         <div><span className="eyebrow">You have</span><div className="row wrap">{gap.have.length ? gap.have.map((s) => <span key={s.name} className="skill-chip skill-have">{s.name} · {s.sharePercent}%</span>) : <span className="muted-small">None of the listed skills yet.</span>}</div></div>
         <div><span className="eyebrow">In demand, not on your profile</span><div className="row wrap">{gap.missing.length ? gap.missing.map((s) => <span key={s.name} className="skill-chip skill-missing">{s.name} · {s.sharePercent}%</span>) : <span className="muted-small">Nothing missing — you cover every skill listed.</span>}</div></div>
-        <p className="muted-small">Percentages are the share of the sampled postings that mention the skill. Add a skill to your profile only if you really have it — the app never adds one for you.</p>
+        <details className="more-info"><summary>Details</summary><p className="muted-small">Percentages are the share of the sampled postings that mention the skill. Add a skill to your profile only if you really have it — the app never adds one for you.</p></details>
       </div>
   return <Card title="How you compare">
 <div className="stack-3">{body}</div>
@@ -63,12 +66,12 @@ function Report({ r }: Readonly<{ r: TrendReport }>) {
   const f = r.freshness
   const day = f.last24Hours
   return <div className="stack-4">
-    <div className="kpi-strip">
-      <Stat label="Postings sampled" value={r.sampled} sub={`${r.pages} search${r.pages === 1 ? '' : 'es'}${r.fromCache ? ' (cached)' : ''}`} />
-      <Stat label="Remote" value={`${r.remotePercent}%`} sub="marked remote" />
-      <Stat label="Pay shown" value={`${r.payListedPercent}%`} sub="of the postings" />
-      <Stat label="Posted in the last day" value={day} sub={`${day + f.last3Days} in 3 days · ${day + f.last3Days + f.lastWeek} in a week`} />
-    </div>
+    <KpiBand label="Market sample">
+      <Stat icon="search" tone="blue" label="Postings sampled" value={r.sampled} sub={`${r.pages} search${r.pages === 1 ? '' : 'es'}${r.fromCache ? ' (cached)' : ''}`} />
+      <Stat icon="place" tone="teal" label="Remote" value={`${r.remotePercent}%`} sub="marked remote" />
+      <Stat icon="pay" tone="green" label="Pay shown" value={`${r.payListedPercent}%`} sub="of the postings" />
+      <Stat icon="pulse" tone="amber" label="Posted in the last day" value={day} sub={`${day + f.last3Days} in 3 days · ${day + f.last3Days + f.lastWeek} in a week`} />
+    </KpiBand>
     <ul className="headline-list">{headlines(r).map((h) => <li key={h}>{h}</li>)}</ul>
     <div className="panel-grid-2">
       <Bars title="Skills asked for" rows={r.topSkills} empty="No listed skill appears in these postings." />
@@ -94,13 +97,13 @@ function Startups({ workspace }: Readonly<{ workspace: 'candidate' | 'sales' }>)
   if (!t) return <LoadingState label="Reading stored Wellfound listings…" waking={jobs.waking} rows={2} />
   if (t.sampled === 0) return <p className="muted-small">No Wellfound listings are stored yet. Open Find jobs and refresh the Wellfound tab first.</p>
   return <div className="stack-4">
-    <div className="kpi-strip kpi-strip-5">
-      <Stat label="Startup jobs" value={t.sampled} sub="stored public listings" />
-      <Stat label="Remote" value={`${t.remotePercent}%`} sub="remote-friendly" />
-      <Stat label="Salary shown" value={`${t.withSalaryPercent}%`} sub="of the listings" />
-      <Stat label="Equity offered" value={`${t.withEquityPercent}%`} sub="of the listings" />
-      <Stat label="Top stage" value={t.stages[0]?.name ?? '—'} sub={t.stages[0] ? `${t.stages[0].sharePercent}% of listings` : 'not given'} />
-    </div>
+    <KpiBand label="Startup listings">
+      <Stat icon="projects" tone="blue" label="Startup jobs" value={t.sampled} sub="stored public listings" />
+      <Stat icon="place" tone="teal" label="Remote" value={`${t.remotePercent}%`} sub="remote-friendly" />
+      <Stat icon="pay" tone="green" label="Salary shown" value={`${t.withSalaryPercent}%`} sub="of the listings" />
+      <Stat icon="trend" tone="indigo" label="Equity offered" value={`${t.withEquityPercent}%`} sub="of the listings" />
+      <Stat icon="sparkles" tone="amber" label="Top stage" value={t.stages[0]?.name ?? '—'} sub={t.stages[0] ? `${t.stages[0].sharePercent}% of listings` : 'not given'} />
+    </KpiBand>
     <div className="panel-grid-2">
       <Bars title="Where startups are hiring" rows={t.topPlaces} empty="No places listed." />
       <Bars title="Startups hiring" rows={t.topCompanies} empty="No companies." />

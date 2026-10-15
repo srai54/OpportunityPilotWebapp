@@ -38,7 +38,7 @@ export function CampaignsPage() {
     <div className="page page-wide stack-4">
       <PageHeader
         title="Campaigns"
-        subtitle="A campaign is one search: a mode, the criteria it scores against, and the sources it reads."
+        subtitle="One search: mode, criteria, sources."
         actions={
           campaigns.data && campaigns.data.length > 0 ? (
             <div className="chips" role="group" aria-label="Show campaigns by mode">

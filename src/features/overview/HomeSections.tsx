@@ -13,7 +13,7 @@ import { leadChips } from '../../components/cardModel'
 import { foundLabel, platformLabel, STATUS_LABELS } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
 import { percent } from './analyticsModel'
-import { greeting, heroFor, lastWeek, strongCount } from './homeModel'
+import { averageFromBands, greeting, heroFor, lastWeek, strongCount } from './homeModel'
 
 const dateText = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 
@@ -53,7 +53,7 @@ export function HomeKpis({ a, trend, workspace }: Readonly<{ a: AnalyticsOvervie
       <KpiCard icon="check" tone="green" label="Strong, 75+" value={strongCount(a.fitHistogram.bands)} sub="scoring 75 or more" to="/opportunities" />
       <KpiCard icon="outreach" tone="indigo" label={sales ? 'Contacted' : 'Applied'} value={sales ? (k.contacted ?? 0) : (k.applied ?? 0)} change={trend && { current: trend.current.reached, previous: trend.previous.reached }} series={series('reached')} to={sales ? '/outreach' : '/opportunities'} />
       <KpiCard icon="mail" tone="teal" label="Reply rate" value={k.respondedRate === null ? '—' : percent(k.respondedRate)} sub={k.respondedRate === null ? 'No replies recorded yet' : `${k.responded ?? 0} replied`} to="/follow-ups" />
-      <KpiCard icon="trend" tone="neutral" label="Average match" value="—" sub="Not measured yet" />
+      <KpiCard icon="trend" tone="neutral" label="Average match" value={averageFromBands(a.fitHistogram.bands) ?? '—'} sub={averageFromBands(a.fitHistogram.bands) === null ? 'Nothing scored yet' : 'estimated from score bands'} to="/opportunities" />
     </KpiBand>
   )
 }

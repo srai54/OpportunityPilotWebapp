@@ -59,7 +59,7 @@ export function ResumeTailorPanel({ jobTitle, jobText, editableJob = false, cand
     : null
 
   return (
-    <Card title={editableJob ? 'Resume fit for a job' : 'Tailor your resume to this job'} subtitle="Paste your resume. It says what to change and makes only the safe changes. It never adds a skill you did not write.">
+    <Card title={editableJob ? 'Resume fit for a job' : 'Tailor your resume to this job'} subtitle="Paste your resume. Safe edits only, never invented skills.">
       <div className="stack-3">
         {editableJob && (
           <>

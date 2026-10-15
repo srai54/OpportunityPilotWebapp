@@ -83,7 +83,7 @@ export function MailboxesCard() {
   return (
     <Card title="Send from your own mailbox">
       <div className="stack-3">
-        <p className="muted-small">Connect your email and an approved message goes out with one click. You still approve every message. The quickest way is an app password; Outlook and Gmail sign-in also work once the server owner has set them up. The app only sends, it never reads your mail.</p>
+        <details className="more-info"><summary>Details</summary><p className="muted-small">Connect your email and an approved message goes out with one click. You still approve every message. The quickest way is an app password; Outlook and Gmail sign-in also work once the server owner has set them up. The app only sends, it never reads your mail.</p></details>
         {notice && <p className={`notice notice-${notice.tone}`} role="status">{notice.text}</p>}
         {(boxes.error || error) && <ErrorNotice error={(boxes.error ?? error)!} onRetry={boxes.reload} what="your mailboxes" />}
         <ul className="plain-list mailbox-list">

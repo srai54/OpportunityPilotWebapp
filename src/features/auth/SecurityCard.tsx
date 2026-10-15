@@ -57,7 +57,7 @@ function SupabaseSecurityCard() {
   return (
     <Card title="Security">
       <div className="stack-3">
-        <p className="muted-small">Add a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password) on top of your password or provider sign-in. Free, and nothing to install on our side.</p>
+        <details className="more-info"><summary>Details</summary><p className="muted-small">Add a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password) on top of your password or provider sign-in. Free, and nothing to install on our side.</p></details>
         {done && <p className="notice notice-success" role="status">{done}</p>}
         {error && <ErrorNotice error={error} />}
         {factors?.length ? (

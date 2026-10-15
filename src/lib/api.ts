@@ -52,7 +52,7 @@ async function send(path: string, init: RequestInit): Promise<Response> {
       ...init,
       headers: {
         Accept: 'application/json',
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(init.body && !(init.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
         ...requestAuthHeaders,
         ...init.headers,
       },

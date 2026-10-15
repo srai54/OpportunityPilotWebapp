@@ -114,7 +114,7 @@ export function JdCircle({ o }: Readonly<{ o: OpportunityDetail }>) {
             </div>
           </form>
         ) : <div className="row wrap"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setAdding(true)}>Add someone you know there</button></div>}
-        <p className="muted-small">A note goes out only after you approve it. With the desktop agent, LinkedIn notes are sent from your own account (a dry run unless you switch sending on).</p>
+        <details className="more-info"><summary>Details</summary><p className="muted-small">A note goes out only after you approve it. With the desktop agent, LinkedIn notes are sent from your own account (a dry run unless you switch sending on).</p></details>
       </div>
     </Card>
   )

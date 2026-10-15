@@ -82,8 +82,8 @@ function OpportunityList({ tabs }: Readonly<{ tabs: ReactNode }>) {
       <PageHeader
         title={sales ? 'Leads' : 'Opportunities'}
         subtitle={sales
-          ? 'Companies your searches found, best match first. Approve the ones worth contacting, then open one to reach out. The score is a ranking out of 100, not a chance of success.'
-          : 'Everything your campaigns found, best match first. The match score is a ranking out of 100, not a chance of success.'}
+          ? 'Best match first. Score = ranking out of 100.'
+          : 'Best match first. Score = ranking out of 100.'}
       />
       {tabs}
       <NextHint sales={sales} />
@@ -579,7 +579,7 @@ export function OpportunitiesPage() {
   if (view === 'approvals') {
     return (
       <div className="page page-wide stack-4">
-        <PageHeader title={sales ? 'Leads' : 'Opportunities'} subtitle={sales ? 'Approve the companies worth contacting in one click, or reject the rest.' : 'Approve the jobs worth your time in one click, or reject the rest.'} />
+        <PageHeader title={sales ? 'Leads' : 'Opportunities'} subtitle={sales ? 'Approve or reject in one click.' : 'Approve or reject in one click.'} />
         {tabs}
         <NextHint sales={sales} />
         <ApprovalQueuePage embedded />

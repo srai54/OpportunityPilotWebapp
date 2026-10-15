@@ -14,6 +14,8 @@ import { COACH_FLOW_IDS } from '../coach/coachFlows'
 import { flowIdForPath, resetAllTips, setTipsOff, tipsOff } from '../coach/coachModel'
 import { JourneyBar } from '../journey/JourneyBar'
 import { NextBar } from '../journey/NextBar'
+import { VoiceLaunch } from '../voice/VoiceLaunch'
+import { AppFooter } from './AppFooter'
 import { ThemeToggle } from './ThemeToggle'
 import {
   aiModeLabel,
@@ -377,6 +379,7 @@ export function AppShell() {
                 <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" testId="toggle-guide" />
                 <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
+              <VoiceLaunch workspace={workspace} />
               <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
                 <Icon name="help" size={17} />
               </button>
@@ -426,7 +429,7 @@ export function AppShell() {
             {apiStatus === 'waking' && (
               <div className="banner" role="status">
                 <Icon name="alert" size={15} className="banner-icon" />
-                <span><strong>Starting the API service…</strong> The host sleeps when idle; the first request can take up to a minute.</span>
+                <span><strong>Waking the server…</strong> up to a minute.</span>
               </div>
             )}
             {(caps?.temporaryStorage || caps?.guestSignIn) && !demoHidden && (
@@ -434,8 +437,7 @@ export function AppShell() {
                 <Icon name="alert" size={15} className="banner-icon" />
                 <span>
                   <strong>Demo mode.</strong>{' '}
-                  {caps.temporaryStorage ? 'Your data is temporary and is cleared when the server restarts.' : 'Data is stored, but sign-in is guest-only.'}{' '}
-                  {caps.guestSignIn && 'You are signed in as a private guest.'}
+                  {caps.temporaryStorage ? 'Data clears on restart.' : 'Private guest session.'}
                 </span>
                 <button type="button" className="btn btn-ghost btn-sm banner-close" aria-label="Dismiss this message" onClick={() => { setDemoHidden(true); try { sessionStorage.setItem('op-demo-hidden', '1') } catch { /* shown again next time */ } }}>✕</button>
               </div>
@@ -450,6 +452,7 @@ export function AppShell() {
             <main id="main" className="content" tabIndex={-1} inert={drawerOpen}>
               <Outlet />
             </main>
+            <AppFooter apiStatus={apiStatus} workspace={workspace} />
           </div>
         </div>
 

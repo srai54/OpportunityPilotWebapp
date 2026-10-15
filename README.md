@@ -2,6 +2,15 @@
 
 React 19 + TypeScript + Vite SPA for OpportunityPilot. Two users share one pipeline: a **Candidate** applying to roles, and a **Sales team** using the app as a sales assistant. All data comes from the API in `../OpportunityPilotWebApi`; Supabase is used for sign-in only (guest demo mode when it is not configured).
 
+## What it does
+
+| Workspace | Find | Review | Act | Track |
+|---|---|---|---|---|
+| Candidate | Jobs from 20+ sites (free feeds, company boards, LinkedIn/Indeed, Naukri, Instahyre) | Score out of 100 with quoted evidence; approve or reject | Apply link or desktop agent; tailored resume | Follow-ups, replies, interview status |
+| Sales | Companies hiring for your skills | Lead score with hiring signals | Drafted emails, approve, send from your mailbox | Deals, submissions, shared candidate progress |
+
+**v5 (Oct 2026):** voice launch from any screen (phone mic button; Whisper fallback), animated progress tracker and KPIs, footer status, automatic follow-up drafts, one-line page text. Nothing is sent or applied without your approval.
+
 ## Run locally
 
 1. Start the API (`dotnet run --project src/OpportunityPilot.Api` in the API repo, port 5051).

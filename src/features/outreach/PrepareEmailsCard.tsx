@@ -33,7 +33,7 @@ export function PrepareEmailsCard({ onDone, primary }: Readonly<{ onDone: () => 
 
   const skipped = result?.items.filter((i) => i.outcome === 'Skipped') ?? []
   return (
-    <Card title="Write emails for your approved leads" subtitle="One email per approved lead, to the address the company published. You check them, then send them all at once.">
+    <Card title="Write emails for your approved leads" subtitle="One email per approved lead. Check, then send all.">
       <div className="row wrap">
         {list.length > 1 && (
           <label className="field"><span>Campaign</span>

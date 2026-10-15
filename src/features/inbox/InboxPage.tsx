@@ -8,6 +8,7 @@ import { Badge } from '../../components/StatusBadge'
 import { api } from '../../lib/api'
 import type { OutreachDraft } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import { ReplyCheck } from '../mail/ReplyCheck'
 import type { Mailbox } from '../mail/mailModel'
 import { parseReply, replySubject, type Reply, type ReplyActivity } from './inboxModel'
@@ -24,6 +25,7 @@ export function InboxPage() {
   const mailboxes = useApi<Mailbox[]>('/api/v1/mailboxes')
   const navigate = useNavigate()
   const [busy, setBusy] = useState<string | null>(null)
+  const [openedAt] = useState(() => Date.now())
   const [error, setError] = useState<Error>()
   const connected = mailboxes.data?.some((m) => m.provider === 'Smtp' && m.connected && m.status !== 'NeedsReconnect')
   const replies: Reply[] = [...(candidate.data ?? []), ...(sales.data ?? [])].map(parseReply).sort((a, b) => b.at.localeCompare(a.at))
@@ -43,7 +45,15 @@ export function InboxPage() {
 
   return (
     <div className="page page-wide stack-4">
-      <PageHeader title="Inbox" subtitle="Replies to what you sent, newest first. A reply moves the lead to Responded and stops its follow-ups." />
+      <PageHeader title="Inbox" subtitle="Replies, newest first. A reply stops follow-ups." />
+      {!loading && (
+        <KpiBand label="Replies">
+          <KpiCard icon="mail" tone="indigo" label="Replies" value={replies.length} sub="last 100 per workspace" />
+          <KpiCard icon="calendar" tone="teal" label="This week" value={replies.filter((r) => openedAt - new Date(r.at).getTime() < 7 * 864e5).length} sub="last 7 days" />
+          <KpiCard icon="candidate" tone="blue" label="Candidate" value={candidate.data?.length ?? 0} sub="recruiters and employers" />
+          <KpiCard icon="sales" tone="amber" label="Sales" value={sales.data?.length ?? 0} sub="leads and clients" />
+        </KpiBand>
+      )}
       {connected ? <Card tone="muted"><ReplyCheck onDone={reload} /></Card>
         : mailboxes.data && <Card tone="muted"><p>Replies are found in your own email. <Link to="/settings">Connect your email with an app password</Link> and they appear here every 30 minutes. Only the sender, subject and date are read.</p></Card>}
       {error && <ErrorNotice error={error} />}

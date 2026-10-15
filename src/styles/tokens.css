@@ -36,13 +36,13 @@
   --op-field-bg: #ffffff;
 
   /* action */
-  --op-primary: #006dd0;        /* 5.1:1 on white, 4.9:1 on the page; white text on it passes */
+  --op-primary: #2563eb;        /* v5: industry SaaS blue, 5.2:1 on white; white text on it passes */
   --op-on-primary: #ffffff;
-  --op-primary-hover: #005bab;
-  --op-primary-tint: #e8f2fc;
-  --op-primary-tint-border: #b9d8f5;
-  --op-on-primary-tint: #005bab;
-  --op-focus: #0075de;
+  --op-primary-hover: #1d4ed8;
+  --op-primary-tint: #eef3ff;
+  --op-primary-tint-border: #c7d7fe;
+  --op-on-primary-tint: #1d4ed8;
+  --op-focus: #2563eb;
 
   /* status — always paired with words, never colour alone */
   --op-neutral-tint: #f1f0ee;  --op-on-neutral-tint: #4a4743;
@@ -145,13 +145,13 @@
   --op-field-border: #454340;
   --op-field-bg: #1b1b1b;
 
-  --op-primary: #4da3f5;        /* 6.6:1 on surface */
+  --op-primary: #60a5fa;        /* 6.6:1 on surface */
   --op-on-primary: #04213f;     /* dark ink on a bright button, not white */
-  --op-primary-hover: #74b8f8;
-  --op-primary-tint: #16293f;
-  --op-primary-tint-border: #24476b;
-  --op-on-primary-tint: #9fcdfa;
-  --op-focus: #74b8f8;
+  --op-primary-hover: #93c5fd;
+  --op-primary-tint: #15233f;
+  --op-primary-tint-border: #23417a;
+  --op-on-primary-tint: #bfdbfe;
+  --op-focus: #93c5fd;
 
   --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
   --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;
@@ -212,13 +212,13 @@
     --op-field-border: #454340;
     --op-field-bg: #1b1b1b;
 
-    --op-primary: #4da3f5;
+    --op-primary: #60a5fa;
     --op-on-primary: #04213f;
-    --op-primary-hover: #74b8f8;
-    --op-primary-tint: #16293f;
-    --op-primary-tint-border: #24476b;
-    --op-on-primary-tint: #9fcdfa;
-    --op-focus: #74b8f8;
+    --op-primary-hover: #93c5fd;
+    --op-primary-tint: #15233f;
+    --op-primary-tint-border: #23417a;
+    --op-on-primary-tint: #bfdbfe;
+    --op-focus: #93c5fd;
 
     --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
     --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;

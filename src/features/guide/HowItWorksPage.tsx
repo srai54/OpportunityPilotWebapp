@@ -10,7 +10,7 @@ export function HowItWorksPage() {
   const sales = useShell().workspace === 'sales'
   return (
     <div className="page page-wide stack-4">
-      <PageHeader title="How it works" subtitle="Five steps. The bar at the top of the app shows where you are." />
+      <PageHeader title="How it works" subtitle="Five steps. The top bar shows where you are." />
       <ol className="hwf-cards plain-list" aria-label="The five steps">
         {FLOW_STEPS.map((s, i) => (
           <li key={s.title} className="ccard hwf-card">

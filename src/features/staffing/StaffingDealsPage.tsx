@@ -8,11 +8,8 @@ import { Card } from '../../components/cards'
 import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { FORWARD, isClosed, money, percent, SOURCE_LABELS, STAGE_LABELS } from './staffingModel'
+import { KpiBand, KpiCard } from '../../components/kpi/kpi'
 import type { DealSource, DealStage, StaffingAccount, StaffingDeal, StaffingKpis } from './staffingTypes'
-
-function Kpi({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
-  return <div className="kpi"><span className="kpi-label">{label}</span><strong className="kpi-value op-numeric">{value}</strong>{sub && <span className="muted-small">{sub}</span>}</div>
-}
 
 export function StaffingDealsPage() {
   const deals = useApi<StaffingDeal[]>('/api/v1/staffing/deals?take=200')
@@ -29,7 +26,7 @@ export function StaffingDealsPage() {
   function reload() { deals.reload(); accounts.reload(); kpis.reload() }
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Staffing deals" subtitle="Client requirements from first contact to a signed placement. Stages move when you act or when a recorded step proves it."
+    <PageHeader title="Staffing deals" subtitle="Requirement to signed placement."
       actions={<button className="btn btn-primary" type="button" onClick={() => setCreating((v) => !v)}>{creating ? 'Close' : '+ New deal'}</button>} />
 
     {deals.data && deals.data.length > 0 && (
@@ -82,16 +79,15 @@ export function StaffingDealsPage() {
     </section>
 
     {kpis.error ? <ErrorNotice error={kpis.error} onRetry={kpis.reload} what="staffing KPIs" /> : k && <section className="panel">
-      <header className="panel-head"><h3 className="eyebrow">Funnel</h3><span className="grow" /><span className="muted-small">Counted from stored deals and records; nothing is estimated.</span></header>
-      <div className="kpi-strip kpi-strip-7">
-        <Kpi label="Open deals" value={k.openDeals} sub={k.overdueNextActions ? `${k.overdueNextActions} next actions overdue` : 'none overdue'} />
-        <Kpi label="Outreach" value={k.messagesAwaitingSend} sub={`to send · ${k.repliesToClassify} replies to read · ${k.meetingsUpcoming} meetings`} />
-        <Kpi label="Pipeline value" value={k.openPipelineValue.map((m) => money(m.amount, m.currency)).join(' · ') || '—'} sub="open deals with a value" />
-        <Kpi label="Submitted" value={k.submissionsSent} sub={`${k.submissionsApproved} approved, ${k.submissionsDraft} drafts`} />
-        <Kpi label="Interviews" value={k.interviewsUpcoming} sub={`upcoming · ${k.interviewsNotNotified} candidate not told`} />
-        <Kpi label="Offers" value={k.offersExtended + k.offersAccepted} sub={`${k.offersAccepted} accepted`} />
-        <Kpi label="Placements" value={k.placements} sub={k.placementValue.map((m) => money(m.amount, m.currency)).join(' · ') || `${k.contractsSigned} contracts signed`} />
-      </div>
+      <header className="panel-head"><h3 className="eyebrow">Funnel</h3><span className="grow" /><span className="muted-small">From stored records</span></header>
+      <KpiBand six label="Staffing funnel">
+        <KpiCard icon="projects" tone="blue" label="Open deals" value={k.openDeals} sub={k.overdueNextActions ? `${k.overdueNextActions} overdue` : 'none overdue'} />
+        <KpiCard icon="outreach" tone="indigo" label="To send" value={k.messagesAwaitingSend} sub={`${k.repliesToClassify} replies · ${k.meetingsUpcoming} meetings`} to="/outreach" />
+        <KpiCard icon="pay" tone="teal" label="Pipeline" value={k.openPipelineValue.map((m) => money(m.amount, m.currency)).join(' · ') || '—'} sub="open deals with a value" />
+        <KpiCard icon="people" tone="amber" label="Submitted" value={k.submissionsSent} sub={`${k.submissionsApproved} approved · ${k.submissionsDraft} drafts`} />
+        <KpiCard icon="calendar" tone="green" label="Interviews" value={k.interviewsUpcoming} sub={`upcoming · ${k.interviewsNotNotified} not told`} />
+        <KpiCard icon="check" tone="neutral" label="Placements" value={k.placements} sub={`${k.offersExtended + k.offersAccepted} offers (${k.offersAccepted} accepted) · ${k.placementValue.map((m) => money(m.amount, m.currency)).join(' · ') || `${k.contractsSigned} signed`}`} />
+      </KpiBand>
       <div className="panel-body">
         <details className="how-it-works"><summary>Stage-to-stage conversion</summary>
         <div className="table-scroll"><table className="table">

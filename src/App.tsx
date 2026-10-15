@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { lazyPage } from './lib/lazyPage'
 import { RouteError } from './components/RouteError'
 import { createBrowserRouter, Link, Navigate, RouterProvider, useLocation, useNavigate } from 'react-router-dom'
@@ -52,6 +52,16 @@ function AuthGate() {
   const location = useLocation()
   const navigate = useNavigate()
   const [onboarded, setOnboarded] = useState(() => readFlag(ONBOARDED_KEY, false))
+  // After signing in (from any account screen or deep link) everyone lands on Overview, in every workspace and mode.
+  const signedOutSeen = useRef(false)
+  useEffect(() => {
+    if (!ready) return
+    if (!user) { signedOutSeen.current = true; return }
+    if (!mfaRequired && signedOutSeen.current) {
+      signedOutSeen.current = false
+      if (location.pathname !== '/') navigate('/', { replace: true })
+    }
+  }, [ready, user, mfaRequired, location.pathname, navigate])
   // A candidate's private progress link works without an account.
   const progressToken = /^\/progress\/([^/]+)$/.exec(location.pathname)?.[1]
   if (progressToken) return <Suspense fallback={<div className="boot" role="status">Loading…</div>}><ProgressPage token={decodeURIComponent(progressToken)} /></Suspense>
@@ -66,9 +76,9 @@ function AuthGate() {
   if (!onboarded)
     return (
       <OnboardingPage
-        onDone={(path) => {
+        onDone={() => {
           setOnboarded(true)
-          navigate(path)
+          navigate('/')
         }}
       />
     )

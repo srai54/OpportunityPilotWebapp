@@ -35,3 +35,10 @@ export function strongCount(bands: readonly { from: number; count: number }[]): 
 export function lastWeek(points: readonly TrendPoint[], key: 'reached' | 'sent'): number {
   return points.slice(-7).reduce((n, p) => n + p[key], 0)
 }
+
+/** Average match estimated from the score bands (band midpoints weighted by count); null when nothing is scored. */
+export function averageFromBands(bands: readonly { from: number; to: number; count: number }[]): number | null {
+  const n = bands.reduce((a, b) => a + b.count, 0)
+  if (!n) return null
+  return Math.round(bands.reduce((a, b) => a + ((b.from + b.to) / 2) * b.count, 0) / n)
+}

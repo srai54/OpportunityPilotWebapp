@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon, type IconName } from '../icons'
 import { formatDelta, sparkPoints, type Delta } from './deltaModel'
+import { formatCount, splitNumber, useCountUp } from './countUp'
 
 export type KpiTone = 'blue' | 'teal' | 'indigo' | 'amber' | 'green' | 'danger' | 'neutral'
 
@@ -30,6 +31,14 @@ export interface KpiCardProps {
   to?: string
 }
 
+/** A number that counts up when it first appears; anything that is not a plain number is shown as it is. */
+export function AnimatedValue({ value }: Readonly<{ value: ReactNode }>) {
+  const parts = typeof value === 'number' || typeof value === 'string' ? splitNumber(String(value)) : null
+  const shown = useCountUp(parts ? parts.value : null)
+  if (!parts || shown === null) return <>{value}</>
+  return <><span aria-hidden="true">{parts.prefix}{formatCount(shown, parts.decimals)}{parts.suffix}</span><span className="sr-only">{String(value)}</span></>
+}
+
 /** One figure: an icon chip, the label, the value, how it changed, a sentence, and an optional line of the last days. */
 export function KpiCard({ icon, tone = 'blue', label, value, change, sub, series, to }: Readonly<KpiCardProps>) {
   const delta = change ? formatDelta(change.current, change.previous) : null
@@ -37,7 +46,7 @@ export function KpiCard({ icon, tone = 'blue', label, value, change, sub, series
   const body = (
     <>
       <span className="kh"><span className={`ichip t-${tone}`}><Icon name={icon} size={15} /></span>{label}</span>
-      <span className="kv"><b className="op-numeric">{value}</b><DeltaBadge delta={delta} /></span>
+      <span className="kv"><b className="op-numeric"><AnimatedValue value={value} /></b><DeltaBadge delta={delta} /></span>
       {sub && <span className="ks">{sub}</span>}
       {points && (
         <svg className="sp" viewBox="0 0 100 26" preserveAspectRatio="none" role="img" aria-label={`${label} over the last ${series!.length} days: ${series!.join(', ')}`}>

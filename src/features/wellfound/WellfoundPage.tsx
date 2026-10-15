@@ -128,8 +128,8 @@ export function WellfoundPage() {
 
   return <div className="page page-wide stack-4">
     <PageHeader title={workspace === 'sales' ? 'Find companies' : 'Find jobs'} subtitle={workspace === 'sales'
-      ? 'See which companies are hiring right now. One search covers every site we can read, with live hiring signals.'
-      : 'One search over every site we can read, each job linked to its original posting.'}
+      ? 'Who is hiring now, across every site.'
+      : 'One search, every site, linked to the original.'}
       actions={provider === 'trends'
         ? <button type="button" className="btn btn-secondary btn-sm" onClick={() => setProvider('all')}>Back to search</button>
         : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setProvider('trends')}><Icon name="trend" size={14} /> Market trends</button>} />

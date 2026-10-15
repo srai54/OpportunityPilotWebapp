@@ -46,7 +46,7 @@ export function HankoSecurityCard() {
   return (
     <Card
       title="Security"
-      subtitle="Your sign-in methods: passkeys, password, email addresses and two-step sign-in (authenticator app or security key)."
+      subtitle="Passkeys, password, email and two-step sign-in."
     >
       {state === 'failed' ? (
         <ErrorNotice error={new Error('Your sign-in settings could not load. Check your connection and reload the page.')} />

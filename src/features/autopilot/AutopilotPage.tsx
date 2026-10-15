@@ -81,7 +81,7 @@ export function AutopilotPage() {
 
   return (
     <div className="page page-wide stack-4">
-      <PageHeader title="Autopilot" subtitle="Everything that runs on its own, in one place. Searching and scoring can repeat; writing, approving and sending always wait for you." />
+      <PageHeader title="Autopilot" subtitle="What runs on its own. Sending always waits for you." />
       {error && <ErrorNotice error={error} />}
       <StopAllCard />
       {section('Repeating searches', searchRules, 'No campaigns yet. Create one and set it to repeat.')}
@@ -89,7 +89,7 @@ export function AutopilotPage() {
       {section('In the background', background, '')}
       <Card title="Always on" subtitle="These cannot be switched off.">
         <ul className="auto-rules">
-          {['Nothing is sent or applied without your approval of that exact text.', 'A reply stops the follow-ups for that lead.', 'An opt-out goes on the do-not-contact list and is never contacted again.', 'A message is recorded as sent once, even if you press Send twice.'].map((t) => (
+          {['Nothing is sent or applied without your approval of that exact text.', 'A reply stops the follow-ups for that lead.', 'An opt-out goes on the do-not-contact list and is never contacted again.', 'A message is recorded as sent once, even if you press Send twice.', 'When a follow-up is due and nobody replied, a follow-up draft is written for you to approve.'].map((t) => (
             <li key={t} className="auto-rule"><div className="auto-text"><span>{t}</span></div><Badge tone="success">Always</Badge></li>
           ))}
         </ul>

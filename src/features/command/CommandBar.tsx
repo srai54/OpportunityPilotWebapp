@@ -5,13 +5,7 @@ import { Icon } from '../../components/icons'
 import { useShell } from '../shell/ShellContext'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from './commandModel'
 
-type Recognition = { lang: string; interimResults: boolean; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void }
-type RecognitionCtor = new () => Recognition
-
-function recognitionCtor(): RecognitionCtor | null {
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
+import { recognitionCtor, type Recognition } from './speech'
 
 /**
  * "Tell it what to do": type or speak a short instruction. It is read as a search (what, where, remote, repeat) and what you want

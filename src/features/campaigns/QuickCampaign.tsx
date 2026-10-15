@@ -134,7 +134,7 @@ export function QuickCampaign() {
   return <div className="page stack-4">
     <RoleList />
     <PlaceList />
-    <PageHeader title="New campaign" subtitle={wantsCandidate ? 'Tell it what to look for. It reads the jobs, scores them, and suggests the best for your approval.' : 'Tell it who to look for. It reads who is hiring, scores them, and suggests the best leads.'} />
+    <PageHeader title="New campaign" subtitle={wantsCandidate ? 'Say what to find. You approve the best.' : 'Say who to find. You approve the best leads.'} />
     {profiles.error && <ErrorNotice error={profiles.error} onRetry={profiles.reload} what="your profiles" />}
     {profiles.loading && !profiles.data && <LoadingState label="Loading…" waking={profiles.waking} rows={2} />}
     {profiles.data && <form className="card stack-4" onSubmit={(e) => void submit(e)} aria-label="New campaign">

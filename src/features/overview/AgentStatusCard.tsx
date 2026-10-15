@@ -38,7 +38,7 @@ export function AgentStatusCard() {
 
   const state = s.online ? { tone: 'success' as const, text: 'Running' } : s.connected ? { tone: 'warning' as const, text: 'Not running' } : { tone: 'neutral' as const, text: 'Not set up' }
   return (
-    <Card title="Desktop agent" subtitle="Applies to your approved LinkedIn, Naukri and Instahyre jobs from your own computer and browser."
+    <Card title="Desktop agent" subtitle="Applies to approved LinkedIn, Naukri, Instahyre jobs from your browser."
       actions={<Badge tone={state.tone}>{state.text}</Badge>}>
       <div className="stack-2">
         <p className="muted-small">

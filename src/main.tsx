@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles/tokens.css'
 import './styles/app.css'
+import './styles/v5.css'
 import { inject } from '@vercel/analytics'
 import { App } from './App'
 

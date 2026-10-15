@@ -59,7 +59,7 @@ export function ApprovalQueuePage({ embedded = false }: Readonly<{ embedded?: bo
     <div className={embedded ? 'stack-4' : 'page page-wide stack-4'}>
       {!embedded && <PageHeader
         title="Approvals"
-        subtitle="Jobs that scored at or above your campaign's threshold. Approve to shortlist, reject to dismiss."
+        subtitle="Above your threshold. Approve or reject."
       />}
       <HowItWorks summary="What happens after you approve">
         <p><strong>LinkedIn, Naukri and Instahyre jobs:</strong> your agent applies for them on its next run (it has to be running on your

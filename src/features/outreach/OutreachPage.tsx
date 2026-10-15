@@ -207,7 +207,7 @@ export function OutreachPage() {
   const appLabel = MAIL_APPS.find((m) => m.value === mailApp)?.label.split(' —')[0]
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Outreach" subtitle="Review a message, send it from your own mail, and we keep track. Nothing leaves without your OK." />
+    <PageHeader title="Outreach" subtitle="Review, send, track. Nothing leaves without your OK." />
     {drafts.data && drafts.data.items.length > 0 && (
       <KpiBand label="Your messages">
         <KpiCard icon="outreach" tone="amber" label="To review" value={items.filter((d) => d.state === 'Draft').length} sub="drafts waiting for you" />
@@ -228,7 +228,7 @@ export function OutreachPage() {
     {drafts.data && drafts.data.items.length > 0 && <>
       {inQueue ? (
         <Card tone="signature" coach="out-queue" title={`Send queue · message ${position + 1} of ${queueIds.length}`}
-          subtitle="Fix the recipient, approve and send, press Send in your mail, then it moves to the next one."
+          subtitle="Check recipient, approve, send — then the next one."
           actions={<>
             <button type="button" className="btn btn-secondary btn-sm" disabled={position === 0} onClick={() => goTo(queueIds[position - 1])}>← Back</button>
             <button type="button" className="btn btn-secondary btn-sm" disabled={position >= queueIds.length - 1} onClick={nextInQueue}>Skip →</button>
@@ -310,7 +310,7 @@ export function OutreachPage() {
             </Card>
 
             {selected.state === 'Sent' ? (
-              <Card tone="signature" coach="out-resend" title="Sent" subtitle="This message is recorded as sent, so it is locked. To correct it or follow up, edit it and send again; the first send stays on record."
+              <Card tone="signature" coach="out-resend" title="Sent" subtitle="Sent and locked. Edit and send again to follow up."
                 footer={<>
                   <button className="btn btn-primary" type="button" disabled={working} onClick={() => void resendAsNew()}>{working ? 'Reopening…' : 'Edit & send again'}</button>
                   <Link className="btn btn-ghost" to="/follow-ups">See my follow-up reminder</Link>

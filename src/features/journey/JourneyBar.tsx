@@ -12,6 +12,8 @@ export function JourneyBar({ workspace, overview, pathname }: Readonly<{ workspa
   const here = stepForPath(pathname)
   const next = nextStep(workspace, overview)?.step
   const hereIndex = steps.findIndex((s) => s.id === here)
+  const doneCount = steps.filter((s) => s.done).length
+  const pct = Math.round((doneCount / Math.max(1, steps.length)) * 100)
   return (
     <nav className="journey" aria-label="Your steps">
       <ol className="journey-list" data-coach="journey">
@@ -32,6 +34,10 @@ export function JourneyBar({ workspace, overview, pathname }: Readonly<{ workspa
           )
         })}
       </ol>
+      <div className="journey-progress" role="progressbar" aria-label="Steps done" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-valuetext={`${doneCount} of ${steps.length} steps done`}>
+        <i style={{ width: `${pct}%` }} />
+      </div>
+      <span className="journey-pct op-numeric" aria-hidden="true">{doneCount}/{steps.length}</span>
       <span className="journey-compact" aria-hidden="true">
         {hereIndex >= 0 ? `Step ${hereIndex + 1} of ${steps.length} · ${steps[hereIndex].label}` : ''}
       </span>

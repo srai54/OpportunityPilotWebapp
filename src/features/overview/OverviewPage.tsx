@@ -68,7 +68,6 @@ export function OverviewPage() {
           </>
         }
       />
-      <CommandBar />
       {analytics.error && <ErrorNotice error={analytics.error} onRetry={analytics.reload} what="the analytics" />}
       {!a && !analytics.error && <LoadingState label="Computing the figures…" waking={analytics.waking} stats={5} rows={5} />}
       {a && a.activeResearch && (
@@ -187,6 +186,7 @@ function CandidateOverview({ a, overview, trend }: { a: AnalyticsOverview; overv
       <HomeHero a={a} workspace="candidate" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="candidate" />
+      <CommandBar />
       <AutomationProgress workspace="candidate" />
       <div className="two">
         <div className="stack-4">
@@ -298,6 +298,7 @@ function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview:
       <HomeHero a={a} workspace="sales" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="sales" />
+      <CommandBar />
       <AutomationProgress workspace="sales" />
       <div className="two">
         <div className="stack-4">
@@ -391,7 +392,7 @@ function FirstRun({ overview }: { overview: Overview }) {
   const { workspace } = useShell()
   return (
     <div className="page stack-4">
-      <PageHeader title="Welcome to OpportunityPilot" subtitle="Pick Candidate or Sales in the bar above, then say what to look for." />
+      <PageHeader title="Welcome to OpportunityPilot" subtitle="Pick a workspace, then say what to find." />
       <CommandBar />
       <GuidedStart overview={overview} workspace={workspace} />
       {workspace === 'candidate' && <SampleRunCard />}

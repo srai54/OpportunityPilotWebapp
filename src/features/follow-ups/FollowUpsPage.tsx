@@ -41,7 +41,7 @@ export function FollowUpsPage() {
   }
 
   return <div className="page page-wide stack-4">
-    <PageHeader title="Follow-ups" subtitle="What you sent, and the nudges still to do. Replies are not read for you yet: when someone answers, open the lead and update it." />
+    <PageHeader title="Follow-ups" subtitle="Sent messages and nudges due." />
     {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="follow-ups" />}
     {actions.data && (
       <KpiBand label="Your follow-ups">

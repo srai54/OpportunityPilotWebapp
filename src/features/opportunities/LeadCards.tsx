@@ -166,7 +166,7 @@ export function ApplyQueue({ items, onApplied, onClose }: Readonly<{ items: Oppo
   if (list.length === 0) return <Card tone="muted" title="Nothing to apply to"><p>Select approved jobs that have a posting link, then choose Apply.</p><button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>Close</button></Card>
   if (!current) return <Card title="Queue finished"><ProgressBar pct={percentOf(applied, list.length)} label="Marked as applied" text={`${applied} of ${list.length}`} tone="success" /><p>{applied} marked as applied out of {list.length}.</p><button type="button" className="btn btn-primary btn-sm" onClick={onClose}>Close</button></Card>
   return (
-    <Card title={`Apply — ${index + 1} of ${list.length}`} subtitle="Open the posting, apply there, then come back and press “I applied”.">
+    <Card title={`Apply — ${index + 1} of ${list.length}`} subtitle="Apply on the posting, then press “I applied”.">
       <div className="stack-3">
         <ProgressBar pct={percentOf(index, list.length)} label="Postings handled" text={`${index} of ${list.length} · ${applied} applied`} size="sm" />
         <p><strong>{current.title}</strong>{current.organization ? ` · ${current.organization}` : ''}</p>
