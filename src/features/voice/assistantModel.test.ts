@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bestVoice, isYes, speechLang } from './assistantModel'
+import { bestVoice, isYes, sentences, speechLang } from './assistantModel'
 
 describe('isYes', () => {
   it('accepts a spoken confirmation and nothing else', () => {
@@ -25,5 +25,13 @@ describe('bestVoice', () => {
     expect(bestVoice(voices, 'en-IN')?.name).toContain('Neerja')
     expect(bestVoice(voices, 'hi-IN')?.name).toContain('Swara')
     expect(bestVoice(voices, 'fr-FR')).toBeUndefined()
+  })
+})
+
+describe('sentences', () => {
+  it('keeps each piece under the natural voice limit', () => {
+    expect(sentences('You sent 3 emails today. Shall I start a search?')).toEqual(['You sent 3 emails today.', 'Shall I start a search?'])
+    const long = 'word '.repeat(120).trim() + '.'
+    expect(sentences(long).every((p) => p.length <= 200)).toBe(true)
   })
 })

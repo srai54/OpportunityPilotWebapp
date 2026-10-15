@@ -15,6 +15,7 @@ let playing: HTMLAudioElement | null = null
 
 /** Stops whatever the assistant is saying (natural voice or browser voice). */
 export function stopSpeaking(): void {
+  speakToken += 1
   playing?.pause(); playing = null
   if (typeof window !== 'undefined') window.speechSynthesis?.cancel()
 }
@@ -26,17 +27,37 @@ export function stopSpeaking(): void {
 export function speak(text: string, done?: () => void): void {
   stopSpeaking()
   if (speechLang(text, 'en') === 'hi-IN') { browserSpeak(text, done); return }
-  void import('../../lib/api').then(({ apiBlob }) => apiBlob('/api/v1/voice/speak', { method: 'POST', body: JSON.stringify({ text }) }))
-    .then((blob) => {
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      playing = audio
-      const finish = () => { URL.revokeObjectURL(url); if (playing === audio) playing = null; done?.() }
-      audio.onended = finish
-      audio.onerror = finish
-      return audio.play()
-    })
-    .catch(() => browserSpeak(text, done))
+  const parts = sentences(text)
+  const token = (speakToken += 1)
+  const next = (k: number): void => {
+    if (token !== speakToken) return
+    if (k >= parts.length) { done?.(); return }
+    void import('../../lib/api').then(({ apiBlob }) => apiBlob('/api/v1/voice/speak', { method: 'POST', body: JSON.stringify({ text: parts[k] }) }))
+      .then((blob) => new Promise<void>((resolve, reject) => {
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        playing = audio
+        audio.onended = () => { URL.revokeObjectURL(url); resolve() }
+        audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('audio')) }
+        audio.play().catch(reject)
+      }))
+      .then(() => next(k + 1))
+      // The natural voice is unavailable: say the rest with the browser's best voice.
+      .catch(() => { if (token === speakToken) browserSpeak(parts.slice(k).join(' '), done) })
+  }
+  next(0)
+}
+let speakToken = 0
+
+/** Splits a reply into sentences of at most 200 characters (the natural voice's limit per request). */
+export function sentences(text: string, max = 200): string[] {
+  const out: string[] = []
+  for (const raw of text.match(/[^.!?]+[.!?]*\s*/g) ?? [text]) {
+    let s = raw.trim()
+    while (s.length > max) { const cut = s.lastIndexOf(' ', max); const at = cut > 40 ? cut : max; out.push(s.slice(0, at).trim()); s = s.slice(at).trim() }
+    if (s) out.push(s)
+  }
+  return out
 }
 
 function browserSpeak(text: string, done?: () => void): void {
