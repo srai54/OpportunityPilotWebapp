@@ -16,7 +16,7 @@ const CHANNELS: { value: DraftChannel; label: string }[] = [
 
 /** What "To" means for each channel, so a LinkedIn name or a contact page is never asked for as an email address. */
 const TO: Record<string, { label: string; placeholder: string; button: string }> = {
-  Email: { label: 'Email address', placeholder: 'name@company.com', button: 'Write the email' },
+  Email: { label: 'Email address (optional — or add it in Gmail)', placeholder: 'name@company.com', button: 'Write the email' },
   LinkedInMessage: { label: 'Who (name or LinkedIn profile link)', placeholder: 'Nikhil Malhotra or https://www.linkedin.com/in/…', button: 'Write the LinkedIn note' },
   ContactForm: { label: 'Contact page link (optional)', placeholder: 'https://company.com/contact', button: 'Write the message' },
 }
@@ -63,7 +63,7 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
     <label className="field"><span>{TO[channel].label}</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={TO[channel].placeholder} /></label>
     {channel === 'Email' && <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />}
     <button className="btn btn-primary btn-sm" type="button" disabled={busy} onClick={createDraft}>{busy ? 'Writing…' : TO[channel].button}</button>
-    <p className="muted-small">Opens the message to check; Approve &amp; send then opens {channel === 'Email' ? 'your mail app' : channel === 'LinkedInMessage' ? 'LinkedIn on that person, text copied' : 'the contact page, text copied'}.</p>
+    <p className="muted-small">Opens the message to check; Approve &amp; send then opens {channel === 'Email' ? 'Gmail (or your mail app) — add the address there if it is empty' : channel === 'LinkedInMessage' ? 'LinkedIn on that person, text copied' : 'the contact page, text copied'}.</p>
     <hr />
     <label className="field"><span>Next action</span><select value={kind} onChange={(e) => setKind(e.target.value as NextActionKind)}><option value="FollowUp">Follow up</option><option value="CheckStatus">Check status</option><option value="Call">Call</option><option value="Other">Other</option></select></label>
     <label className="field"><span>Due</span><input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} /></label>

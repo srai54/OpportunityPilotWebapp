@@ -27,7 +27,8 @@ const MAIL_APP_KEY = 'op.mailApp'
 export function readMailApp(): MailApp {
   try {
     const v = window.localStorage.getItem(MAIL_APP_KEY)
-    return MAIL_APPS.some((m) => m.value === v) ? (v as MailApp) : 'default'
+    // Gmail on the web works on every device, so it is the default until the person picks another.
+    return MAIL_APPS.some((m) => m.value === v) ? (v as MailApp) : 'gmail'
   } catch {
     return 'default'
   }
@@ -111,7 +112,8 @@ export function endsWithoutName(body: string): boolean {
 export function readyChecks(channel: DraftChannel, d: { recipient: string; subject: string; body: string }): ReadyCheck[] {
   const checks: ReadyCheck[] = []
   if (channel === 'Email') {
-    checks.push({ field: 'recipient', label: 'Recipient', ok: EMAIL.test(d.recipient.trim()), fix: 'Add the recipient email address (name@company.com).' })
+    // No address is fine: the message opens in Gmail / Outlook / your mail app and you type it there. A typed address must be valid.
+    checks.push({ field: 'recipient', label: 'Recipient', ok: !d.recipient.trim() || EMAIL.test(d.recipient.trim()), fix: 'Fix the address (name@company.com), or leave it empty and add it in Gmail.' })
     checks.push({ field: 'subject', label: 'Subject', ok: d.subject.trim().length > 0, fix: 'Add a subject line.' })
   }
   checks.push({ field: 'body', label: 'Message', ok: d.body.trim().length > 0, fix: 'Write the message.' })

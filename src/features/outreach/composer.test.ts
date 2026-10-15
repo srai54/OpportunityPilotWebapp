@@ -61,6 +61,7 @@ describe('readyChecks', () => {
   const ok = { recipient: 'a@b.co', subject: 'Hi', body: 'Hello' }
   it('passes a complete email', () => expect(readyChecks('Email', ok).every((c) => c.ok)).toBe(true))
   it('says what is missing, in order', () => {
+    expect(readyChecks('Email', { recipient: '', subject: 'Hi', body: 'Hello\n\nRegards,\nAsha' }).every((c) => c.ok)).toBe(true)
     const bad = readyChecks('Email', { recipient: 'not-an-email', subject: ' ', body: 'Regards, [Your name]' }).filter((c) => !c.ok)
     expect(bad.map((c) => c.label)).toEqual(['Recipient', 'Subject', 'No placeholders'])
     expect(bad[2].fix).toContain('[Your name]')
