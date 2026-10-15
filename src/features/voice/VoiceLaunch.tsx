@@ -28,14 +28,16 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [whisper, setWhisper] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const recording = useRef<Recording | null>(null)
-  const canVoice = canSpeak || (whisper && canRecord())
+  const useWhisper = whisper && canRecord()
+  const canVoice = useWhisper || canSpeak
   const [reply, setReply] = useState<AssistantReply | null>(null)
   const [thinking, setThinking] = useState(false)
+  const [startWhenReady, setStartWhenReady] = useState(false)
 
   function understand(value: string) {
     setText(value); setReply(null)
     setThinking(true)
-    void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({ text: value, workspace: ws === 'sales' ? 'Sales' : 'Candidate' }) })
+    void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({ text: value, workspace: ws === 'sales' ? 'Sales' : 'Candidate', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) })
       .then((r) => {
         setReply(r)
         const launch = r.action?.kind === 'launch' ? parseCommand([r.action.query, r.action.location ? `in ${r.action.location}` : ''].join(' ').trim(), ws) ?? parseCommand(value, ws) : null
@@ -47,8 +49,17 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   }
   /** After the spoken answer, one short listen: "yes" runs the proposed action, anything else leaves it on screen. */
   function listenForYes(r: AssistantReply, launch: ParsedCommand | null) {
-    const heard = listenOnce((t) => { if (isYes(t)) run(r, launch) }, () => setListening(false))
-    if (heard) { rec.current = heard; setListening(true) }
+    listen((t) => { if (isYes(t)) run(r, launch) }, 5_000)
+  }
+  /** Groq Whisper first (accurate, multilingual); the browser's own speech only when the server has no Whisper key. */
+  function listen(onText: (t: string) => void, maxMs = 15_000) {
+    if (useWhisper) {
+      setListening(true)
+      void recordAndTranscribe(onText, (m) => setErr(m), () => setListening(false), maxMs).then((r) => { recording.current = r })
+      return
+    }
+    const r = listenOnce(onText, () => setListening(false))
+    if (r) { rec.current = r; setListening(true) }
   }
   function run(r: AssistantReply | null, launch: ParsedCommand | null) {
     if (launch) { close(); navigate(commandPath(launch, ws)); return }
@@ -57,26 +68,26 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   function start() {
     setPlan(null); setTried(false); setErr(null)
     if (listening) { rec.current?.stop(); recording.current?.stop(); return }
-    if (canSpeak) {
-      const r = listenOnce((t) => understand(t), () => setListening(false))
-      if (r) { rec.current = r; setListening(true) }
-      return
-    }
-    if (whisper && canRecord()) {
-      setListening(true)
-      void recordAndTranscribe((t) => understand(t), (m) => setErr(m), () => setListening(false)).then((r) => { recording.current = r })
-    }
+    if (canVoice) listen((t) => understand(t))
   }
   function openSheet() {
     setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null); setReply(null)
-    if (canSpeak) start()
-    else if (canRecord()) void whisperAvailable().then(setWhisper)
+    // Ask the server once whether Groq Whisper is on, then start listening with the best engine.
+    void (canRecord() ? whisperAvailable() : Promise.resolve(false)).then((w) => { setWhisper(w); setStartWhenReady(true) })
   }
   function close() { rec.current?.stop(); recording.current?.stop(); window.speechSynthesis?.cancel(); setOpen(false); setListening(false) }
 
+  // Starts listening after the Whisper check, so the engine choice uses the answer.
+  useEffect(() => {
+    if (!startWhenReady) return
+    setStartWhenReady(false)
+    if (canVoice) start()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startWhenReady])
+
   useEffect(() => {
     if (!open) return
-    if (!canSpeak) inputRef.current?.focus()
+    if (!canSpeak && !canRecord()) inputRef.current?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -103,7 +114,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
             <button type="button" className={`voice-orb${listening ? ' is-on' : ''}`} onClick={start} disabled={!canVoice} aria-pressed={listening} aria-label={listening ? 'Stop listening' : 'Speak'}>
               <Icon name="mic" size={30} />
             </button>
-            <p className="muted-small voice-hint">{canVoice ? (listening && !canSpeak ? 'Recording… tap to stop' : example) : 'Voice needs Chrome, Edge or Safari — type instead.'}</p>
+            <p className="muted-small voice-hint">{canVoice ? (listening ? (useWhisper ? 'Listening (any language)… stops when you pause' : 'Listening…') : example) : 'Voice needs Chrome, Edge or Safari — type instead.'}</p>
             <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) understand(text) }} className="voice-form">
               <label className="sr-only" htmlFor="voice-text">Command</label>
               <input id="voice-text" ref={inputRef} value={text} maxLength={300} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false) }} placeholder="find react jobs in Berlin" />

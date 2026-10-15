@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '../../components/cards'
 import { Icon } from '../../components/icons'
@@ -6,6 +6,7 @@ import { useShell } from '../shell/ShellContext'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from './commandModel'
 
 import { recognitionCtor, type Recognition } from './speech'
+import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from '../voice/whisper'
 
 /**
  * "Tell it what to do": type or speak a short instruction. It is read as a search (what, where, remote, repeat) and what you want
@@ -22,7 +23,10 @@ export function CommandBar() {
   const [tried, setTried] = useState(false)
   const [micError, setMicError] = useState('')
   const recognizer = useRef<Recognition | null>(null)
-  const canSpeak = recognitionCtor() !== null
+  const [whisper, setWhisper] = useState(false)
+  const recording = useRef<Recording | null>(null)
+  useEffect(() => { if (canRecord()) void whisperAvailable().then(setWhisper) }, [])
+  const canSpeak = (whisper && canRecord()) || recognitionCtor() !== null
 
   function understand() {
     const parsed = parseCommand(text, ws)
@@ -30,9 +34,17 @@ export function CommandBar() {
   }
 
   function speak() {
+    if (listening) { recognizer.current?.stop(); recording.current?.stop(); return }
+    setMicError('')
+    // Groq Whisper first: accurate and multilingual (Hindi, Hinglish…); the browser's own speech only without it.
+    if (whisper && canRecord()) {
+      setListening(true)
+      void recordAndTranscribe((t) => { setText(t); setHeard(true); setPlan(null); setTried(false) }, setMicError, () => setListening(false))
+        .then((r) => { recording.current = r })
+      return
+    }
     const Ctor = recognitionCtor()
     if (!Ctor) return
-    if (listening) { recognizer.current?.stop(); return }
     const r = new Ctor()
     r.lang = navigator.language || 'en-US'
     r.interimResults = false

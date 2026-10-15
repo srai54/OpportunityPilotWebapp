@@ -17,8 +17,13 @@ export function speak(text: string, done?: () => void): void {
   if (!synth || typeof SpeechSynthesisUtterance === 'undefined') { done?.(); return }
   synth.cancel()
   const u = new SpeechSynthesisUtterance(text)
-  u.lang = navigator.language || 'en-US'
+  u.lang = speechLang(text, navigator.language || 'en-US')
   u.onend = () => done?.()
   u.onerror = () => done?.()
   synth.speak(u)
+}
+
+/** Hindi script is read with a Hindi voice; anything else with the browser's language. */
+export function speechLang(text: string, fallback: string): string {
+  return /[\u0900-\u097F]/.test(text) ? 'hi-IN' : fallback
 }
