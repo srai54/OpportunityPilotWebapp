@@ -36,6 +36,20 @@ export function isYes(heard: string): boolean {
 }
 
 let playing: HTMLAudioElement | null = null
+let lastSpoken = ''
+
+/** Every Stop bumps this; a listen or a reply started before a Stop is ignored afterwards. */
+let epoch = 0
+export function voiceEpoch(): number { return epoch }
+export function stopVoice(): void { epoch += 1; stopSpeaking() }
+
+/** True when what the mic heard is the assistant's own last reply (speaker into microphone), not the person. */
+export function isEcho(heard: string, spoken: string = lastSpoken): boolean {
+  const words = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter((w) => w.length > 2)
+  const h = words(heard); const s = new Set(words(spoken))
+  if (h.length === 0 || s.size === 0) return false
+  return h.filter((w) => s.has(w)).length / h.length >= 0.6
+}
 
 /** Stops whatever the assistant is saying (natural voice or browser voice). */
 export function stopSpeaking(): void {
@@ -50,6 +64,7 @@ export function stopSpeaking(): void {
  */
 export function speak(text: string, done?: () => void): void {
   stopSpeaking()
+  lastSpoken = text
   if (speechLang(text, 'en') === 'hi-IN') { browserSpeak(text, done); return }
   const parts = sentences(text)
   const token = (speakToken += 1)

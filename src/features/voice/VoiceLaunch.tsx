@@ -4,9 +4,9 @@ import { Icon } from '../../components/icons'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from '../command/commandModel'
 import { listenOnce, recognitionCtor, type Recognition } from '../command/speech'
 import type { Workspace } from '../shell/shellModel'
-import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
+import { canRecord, recordAndTranscribe, setVoiceLanguage, voiceLanguage, whisperAvailable, type Recording } from './whisper'
 import { api } from '../../lib/api'
-import { isYes, speak, stopSpeaking, type AssistantReply } from './assistantModel'
+import { isEcho, isYes, speak, stopVoice, voiceEpoch, type AssistantReply } from './assistantModel'
 import { addTurn, flowContext, getFlow, runAction, scheduleFlow, setFlow, useTurns } from './voiceFlow'
 import { schedulePlan, scheduleQuestion } from './scheduleModel'
 
@@ -36,6 +36,8 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [reply, setReply] = useState<AssistantReply | null>(null)
   const [thinking, setThinking] = useState(false)
   const [startWhenReady, setStartWhenReady] = useState(false)
+  const [lang, setLang] = useState<'en' | 'hi'>(voiceLanguage)
+  const [speaking, setSpeaking] = useState(false)
   const turns = useTurns()
   const scheduling = reply?.action?.kind === 'schedule' ? schedulePlan(reply.action, ws === 'sales') : null
   const chatEnd = useRef<HTMLDivElement>(null)
@@ -44,6 +46,8 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   function understand(value: string) {
     const said = value.trim()
     if (!said) return
+    // The mic picked up the assistant's own voice: ignore it instead of answering itself.
+    if (isEcho(said)) return
     // A "yes" while an action is waiting confirms it; it is not a new question.
     if ((reply?.action || plan) && isYes(said)) { addTurn({ role: 'you', text: said }); run(reply, plan); return }
     if ((reply?.action || plan) && /^\s*(no|not now|cancel|stop|nahi)\b/i.test(said)) { addTurn({ role: 'you', text: said }); setReply(null); setPlan(null); addTurn({ role: 'assistant', text: 'Okay, not now.' }); speak('Okay, not now.'); return }
@@ -63,8 +67,22 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
         addTurn({ role: 'assistant', text: r.reply })
         const launch = r.action?.kind === 'launch' ? parseCommand([r.action.query, r.action.location ? `in ${r.action.location}` : ''].join(' ').trim(), ws) ?? parseCommand(said, ws) : null
         setPlan(launch); setTried(r.action?.kind === 'launch')
-        // Keep the conversation going: after the answer it listens again — "yes" runs the action, anything else is the next question.
-        speak(r.reply, () => { if (canVoice) listen((t) => understand(t), r.action ? 6_000 : 8_000) })
+        // It never re-listens on its own after a plain answer (that made it talk to itself). When an action waits, it listens
+        // once, briefly, for "yes" or "no" — starting after its own voice has ended; anything else is ignored.
+        const started = voiceEpoch()
+        setSpeaking(true)
+        speak(r.reply, () => {
+          setSpeaking(false)
+          if (!r.action || !canVoice || voiceEpoch() !== started) return
+          setTimeout(() => {
+            if (voiceEpoch() !== started) return
+            listen((t) => {
+              if (voiceEpoch() !== started || isEcho(t)) return
+              if (isYes(t)) { addTurn({ role: 'you', text: t }); run(r, launch) }
+              else if (/^\s*(no|not now|cancel|stop|nahi)\b/i.test(t)) { addTurn({ role: 'you', text: t }); setReply(null); setPlan(null) }
+            }, 5_000)
+          }, 600)
+        })
       })
       .catch(() => { const parsed = parseCommand(said, ws); setPlan(parsed); setTried(true) })
       .finally(() => { setThinking(false); if (getFlow().phase === 'thinking') setFlow({ phase: 'idle', title: '', steps: [] }) })
@@ -98,7 +116,9 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     // Ask the server once whether Groq Whisper is on, then start listening with the best engine.
     void (canRecord() ? whisperAvailable() : Promise.resolve(false)).then((w) => { setWhisper(w); setStartWhenReady(true) })
   }
-  function close() { rec.current?.stop(); recording.current?.stop(); stopSpeaking(); setOpen(false); setListening(false) }
+  /** Stop button: ends speaking and listening at once, and anything they would have started. */
+  function stopAll() { stopVoice(); rec.current?.stop(); recording.current?.stop(); setListening(false); setSpeaking(false) }
+  function close() { stopAll(); setOpen(false) }
 
   // Starts listening after the Whisper check, so the engine choice uses the answer.
   useEffect(() => {
@@ -139,6 +159,9 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
             <div className="va-head">
               <span className="va-badge" aria-hidden="true"><Icon name="sparkles" size={14} /></span>
               <h2 id="voice-title">{listening ? 'Listening…' : thinking ? 'Thinking…' : 'Your assistant'}</h2>
+              <div className="va-lang" role="group" aria-label="Language you speak">
+                {(['en', 'hi'] as const).map((l) => <button key={l} type="button" aria-pressed={lang === l} onClick={() => { setLang(l); setVoiceLanguage(l) }}>{l === 'en' ? 'EN' : 'हिंदी'}</button>)}
+              </div>
               <button type="button" className="va-close" aria-label="Close" onClick={close}><span aria-hidden="true">✕</span></button>
             </div>
 
@@ -176,6 +199,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
                 <span className="va-ring" aria-hidden="true" /><span className="va-ring r2" aria-hidden="true" />
                 <Icon name="mic" size={26} />
               </button>
+              {(listening || speaking) && <button type="button" className="va-stop" onClick={stopAll}>■ Stop</button>}
               <p className="va-hint">{canVoice ? (listening ? (useWhisper ? 'Speak in any language — I stop when you pause' : 'Listening…') : 'Tap to talk') : 'Voice needs Chrome, Edge or Safari — type below.'}</p>
               <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) understand(text) }} className="va-form">
                 <label className="sr-only" htmlFor="voice-text">Message</label>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/icons'
-import { isYes, speak } from './assistantModel'
+import { isEcho, isYes, speak, stopVoice, voiceEpoch } from './assistantModel'
 import { resetFlow, setFlow, useFlow } from './voiceFlow'
 import { hearOnce } from './whisper'
 
@@ -20,7 +20,11 @@ export function VoicePill() {
   useEffect(() => {
     if (!asking) return
     let live = true
-    speak(asking, () => { void hearOnce((t) => { if (live && isYes(t)) void yes() }) })
+    const started = voiceEpoch()
+    speak(asking, () => {
+      if (!live || voiceEpoch() !== started) return
+      setTimeout(() => { if (live && voiceEpoch() === started) void hearOnce((t) => { if (live && voiceEpoch() === started && !isEcho(t) && isYes(t)) void yes() }) }, 600)
+    })
     return () => { live = false }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asking])
@@ -55,7 +59,8 @@ export function VoicePill() {
           <div className="vpill-actions">
             {flow.confirm && <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void yes()}>{busy ? 'Working…' : flow.confirm.yes}</button>}
             {flow.link && <button type="button" className={`btn btn-sm ${flow.confirm ? 'btn-secondary' : 'btn-primary'}`} onClick={() => go(flow.link!.to)}>{flow.link.label}</button>}
-            {flow.phase !== 'running' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setOpen(false); resetFlow() }}>{flow.confirm ? 'Not now' : 'Close'}</button>}
+            {flow.phase !== 'running' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { stopVoice(); setOpen(false); resetFlow() }}>{flow.confirm ? 'Not now' : 'Close'}</button>}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => stopVoice()} aria-label="Stop talking and listening">Stop voice</button>
           </div>
         </div>
       )}

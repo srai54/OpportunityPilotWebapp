@@ -35,3 +35,13 @@ describe('sentences', () => {
     expect(sentences(long).every((p) => p.length <= 200)).toBe(true)
   })
 })
+
+describe('isEcho', () => {
+  it('spots the assistant hearing its own reply, not the person answering it', async () => {
+    const { isEcho } = await import('./assistantModel')
+    const said = 'Shall I launch a campaign for software engineer jobs posted in the last 3 days in Gurugram?'
+    expect(isEcho('shall I launch a campaign for software engineer jobs in Gurugram', said)).toBe(true)
+    expect(isEcho('yes', said)).toBe(false)
+    expect(isEcho('no, search Pune instead', said)).toBe(false)
+  })
+})

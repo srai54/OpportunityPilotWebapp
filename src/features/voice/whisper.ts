@@ -24,6 +24,7 @@ export async function recordAndTranscribe(onText: (t: string) => void, onError: 
       const type = rec.mimeType || 'audio/webm'
       const form = new FormData()
       form.append('audio', new Blob(chunks, { type }), type.includes('ogg') ? 'voice.ogg' : type.includes('mp4') ? 'voice.mp4' : 'voice.webm')
+      form.append('language', voiceLanguage())
       const r = await api<{ text: string }>('/api/v1/voice/transcribe', { method: 'POST', body: form })
       if (r.text) onText(r.text); else onError('Nothing was heard. Try again or type it.')
     } catch { onError('Could not transcribe. Type the command instead.') } finally { onEnd() }
@@ -68,6 +69,13 @@ function watchSilence(stream: MediaStream, onSilence: () => void, quietMs = 1200
 
 let whisperCache: Promise<boolean> | null = null
 /** One short listen with the best engine (Groq Whisper if the server has it, else the browser); used for a spoken yes/no. */
+/** The language the person speaks to the assistant: chosen in the assistant window, else the browser's (Hindi or English). */
+export function voiceLanguage(): 'en' | 'hi' {
+  try { const v = localStorage.getItem('op.voice.lang'); if (v === 'en' || v === 'hi') return v } catch { /* default below */ }
+  return typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('hi') ? 'hi' : 'en'
+}
+export function setVoiceLanguage(lang: 'en' | 'hi') { try { localStorage.setItem('op.voice.lang', lang) } catch { /* this visit only */ } }
+
 export async function hearOnce(onText: (t: string) => void, maxMs = 5_000): Promise<void> {
   whisperCache ??= canRecord() ? whisperAvailable() : Promise.resolve(false)
   if (await whisperCache) { await recordAndTranscribe(onText, () => {}, () => {}, maxMs); return }

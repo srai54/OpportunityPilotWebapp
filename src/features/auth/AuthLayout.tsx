@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { ThemeToggle } from '../shell/ThemeToggle'
 import { Link } from 'react-router-dom'
 import { AUTH_PATHS, CLASSIC_SIGNIN_PARAM, CLASSIC_SIGNIN_VALUE } from './authModel'
 import { useAuth } from './AuthContext'
@@ -34,6 +35,7 @@ export function AuthLayout({
 }) {
   return (
     <div className="auth">
+      <div className="auth-theme"><ThemeToggle /></div>
       <aside className="auth-story" aria-label="About OpportunityPilot">
         <div className="auth-brand">
           <span className="auth-brand-mark">

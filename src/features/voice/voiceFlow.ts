@@ -4,7 +4,7 @@ import type { BatchApproveDraftResult, Campaign, DraftPage, OpportunityPage, Pro
 import { campaignPayload, newDraft, quickSourceBodies, suggestedMode } from '../campaigns/campaignModel'
 import type { Mailbox } from '../mail/mailModel'
 import type { BatchSendResult } from '../outreach/sendAll'
-import { isYes, speak, type AssistantAction, type AssistantReply } from './assistantModel'
+import { isEcho, isYes, speak, voiceEpoch, type AssistantAction, type AssistantReply } from './assistantModel'
 import { candidateInterviewBody, pickDealSlot, salesScheduleBody, scheduleLine, schedulePlan, scheduleProblem, scheduleQuestion, type SchedulePlan } from './scheduleModel'
 
 /**
@@ -55,9 +55,14 @@ export function flowContext(): string {
 /** Says the result aloud, records it in the conversation, and a spoken "yes" runs the suggested next step. */
 function announce(text: string, next?: () => Promise<void>) {
   addTurn({ role: 'assistant', text })
+  const started = voiceEpoch()
   speak(text, () => {
-    if (!next) return
-    void import('./whisper').then(({ hearOnce }) => hearOnce((heard) => { if (isYes(heard)) void next() }))
+    if (!next || voiceEpoch() !== started) return
+    // Wait a moment so the end of its own voice is not recorded, then one short listen for a yes.
+    setTimeout(() => {
+      if (voiceEpoch() !== started) return
+      void import('./whisper').then(({ hearOnce }) => hearOnce((heard) => { if (voiceEpoch() === started && !isEcho(heard) && isYes(heard)) void next() }))
+    }, 600)
   })
 }
 

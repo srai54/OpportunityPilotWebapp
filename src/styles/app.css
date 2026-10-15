@@ -2671,3 +2671,23 @@ html { scroll-padding-bottom: 96px; }
 .prog-next-title { margin: 0; font-size: var(--op-text-screen); font-weight: 600; }
 .prog-next-when { margin: 0; font-size: var(--op-text-screen); overflow-wrap: anywhere; }
 .prog-next > .muted-small { margin: 0; overflow-wrap: anywhere; }
+
+/* Sign-in / sign-out (2026-10-15): the story panel uses the app bar's navy in both themes, so the page matches the app;
+   a theme switch sits in the top corner because the app bar is not shown here. */
+.auth-story { background: linear-gradient(165deg, var(--v5-nav), var(--v5-nav-2)); color: var(--v5-nav-muted); }
+.auth-story .auth-brand, .auth-story .auth-headline { color: #fff; }
+.auth-story .auth-steps { color: var(--v5-nav-ink); border-color: var(--v5-nav-line); }
+.auth-story .auth-steps li::before { background: rgb(255 255 255 / 0.1); color: #93c5fd; }
+.auth-story .auth-aside-title { color: var(--v5-nav-muted); }
+.auth-story .auth-aside, .auth-story .plain-list { color: var(--v5-nav-ink); }
+.auth { position: relative; }
+.auth-theme { position: absolute; top: 14px; right: 16px; z-index: 2; }
+/* Assistant: language switch and the Stop button (ends talking and listening at once). */
+.va-lang { display: inline-flex; border: 1px solid rgb(255 255 255 / 0.14); border-radius: 999px; overflow: hidden; }
+.va-lang button { border: 0; background: none; color: #a5b4d6; font: inherit; font-size: 12px; font-weight: 600; padding: 6px 10px; cursor: pointer; min-height: 32px; }
+.va-lang button[aria-pressed="true"] { background: rgb(96 165 250 / 0.25); color: #fff; }
+.va-stop { border: 1px solid rgb(248 113 113 / 0.5); background: rgb(248 113 113 / 0.15); color: #fecaca; border-radius: 999px; padding: 8px 18px; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; min-height: 40px; }
+.va-stop:hover { background: rgb(248 113 113 / 0.28); color: #fff; }
+/* The listening rings are decoration: they must never catch a tap meant for Stop. */
+.va-ring { pointer-events: none; }
+.va-stop { position: relative; z-index: 2; margin-top: 6px; }
