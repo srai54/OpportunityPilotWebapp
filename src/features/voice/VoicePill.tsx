@@ -25,7 +25,7 @@ export function VoicePill() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asking])
   if (flow.phase === 'idle') return null
-  const expanded = open || flow.phase === 'confirm' || flow.phase === 'error'
+  const expanded = open || flow.phase === 'confirm' || flow.phase === 'error' || (flow.phase === 'done' && !!flow.confirm)
 
   async function yes() {
     if (!flow.confirm) return

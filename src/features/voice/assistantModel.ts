@@ -1,7 +1,7 @@
 /** What /api/v1/assistant answers: a spoken reply and at most one action the person confirms. */
 export interface AssistantReply {
   reply: string
-  action: { kind: 'launch' | 'open' | 'review' | 'outreach' | 'apply'; label: string; query: string | null; location: string | null; page: string | null; days?: number | null } | null
+  action: { kind: 'launch' | 'open' | 'review' | 'outreach' | 'apply'; label: string; query: string | null; location: string | null; page: string | null; days?: number | null; campaignId?: string | null } | null
   source: string
   fallbackReason: string | null
 }

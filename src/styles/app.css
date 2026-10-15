@@ -2580,3 +2580,14 @@ html { scroll-padding-bottom: 96px; }
 @keyframes va-ring { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
 @keyframes va-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 @media (prefers-reduced-motion: reduce) { .va-msg, .va-action, .va-orb.is-on .va-ring, .va-orb.is-thinking, .va-typing i { animation: none; } }
+/* Assistant sheet sizes itself to the conversation: compact when empty, scrolls inside when long; phones get a shorter bottom sheet. */
+.voice-sheet.va { min-height: 0; max-height: min(80vh, 680px); }
+.va-chat { min-height: 0; max-height: 46vh; }
+.va-hello { margin: 4px 0; }
+@media (max-width: 640px) {
+  .voice-sheet.va { max-height: 85vh; padding: 12px 14px calc(14px + env(safe-area-inset-bottom)); gap: 10px; }
+  .va-hi { font-size: 18px; }
+  .va-chip { padding: 6px 10px; font-size: 12.5px; }
+  .va-orb { width: 60px; height: 60px; }
+  .va-chat { max-height: 40vh; }
+}

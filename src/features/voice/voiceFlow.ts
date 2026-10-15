@@ -4,7 +4,7 @@ import type { BatchApproveDraftResult, Campaign, DraftPage, OpportunityPage, Pro
 import { campaignPayload, newDraft, quickSourceBodies, suggestedMode } from '../campaigns/campaignModel'
 import type { Mailbox } from '../mail/mailModel'
 import type { BatchSendResult } from '../outreach/sendAll'
-import type { AssistantReply } from './assistantModel'
+import { isYes, speak, type AssistantReply } from './assistantModel'
 
 /**
  * Voice flows: what a confirmed voice command does, step by step, shown live in the voice pill. They run through the same API calls as
@@ -31,6 +31,35 @@ const listeners = new Set<() => void>()
 function set(next: Partial<FlowState>) { state = { ...state, ...next }; listeners.forEach((l) => l()) }
 export function setFlow(next: FlowState) { state = next; listeners.forEach((l) => l()) }
 export function resetFlow() { setFlow(IDLE) }
+export function getFlow(): FlowState { return state }
+
+/** The conversation with the assistant, kept while the app is open so "it" and "yes" refer to what was said before. */
+export interface Turn { role: 'you' | 'assistant'; text: string }
+let turns: Turn[] = []
+const turnListeners = new Set<() => void>()
+export function addTurn(t: Turn) { turns = [...turns, t].slice(-20); turnListeners.forEach((l) => l()) }
+export function clearTurns() { turns = []; turnListeners.forEach((l) => l()) }
+export function useTurns(): Turn[] {
+  return useSyncExternalStore((l) => { turnListeners.add(l); return () => turnListeners.delete(l) }, () => turns, () => turns)
+}
+
+/** One line for the assistant about what is running or just finished, so it can answer "is it done?" and suggest the next step. */
+export function flowContext(): string {
+  const f = state
+  if (f.phase === 'idle') return lastCampaign() ? 'Nothing is running. The last voice campaign has finished.' : 'Nothing is running.'
+  const steps = f.steps.map((s) => `${s.label}: ${s.state}`).join(', ')
+  return `Voice task "${f.title}" is ${f.phase}${f.progress != null ? ` (${f.progress}%)` : ''}. ${f.detail ?? ''} ${steps}`.slice(0, 400)
+}
+
+/** Says the result aloud, records it in the conversation, and a spoken "yes" runs the suggested next step. */
+function announce(text: string, next?: () => Promise<void>) {
+  addTurn({ role: 'assistant', text })
+  speak(text, () => {
+    if (!next) return
+    void import('./whisper').then(({ hearOnce }) => hearOnce((heard) => { if (isYes(heard)) void next() }))
+  })
+}
+
 export function useFlow(): FlowState {
   return useSyncExternalStore((l) => { listeners.add(l); return () => listeners.delete(l) }, () => state, () => state)
 }
@@ -47,10 +76,11 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 /** Runs the action the assistant proposed and the person confirmed. */
 export async function runAction(action: NonNullable<AssistantReply['action']>, sales: boolean): Promise<void> {
   try {
+    const target = action.campaignId ?? null
     if (action.kind === 'launch') await launch(action.query ?? '', action.location, action.days ?? null, sales)
-    else if (action.kind === 'outreach') await outreach()
-    else if (action.kind === 'apply') await apply()
-    else if (action.kind === 'review') review(sales)
+    else if (action.kind === 'outreach') await outreach(target)
+    else if (action.kind === 'apply') await apply(target)
+    else if (action.kind === 'review') review(sales, target)
   } catch (e) {
     set({ phase: 'error', title: 'That did not work', detail: (e as Error).message })
   }
@@ -83,17 +113,24 @@ export async function launch(query: string, location: string | null, days: numbe
   await Promise.all(quickSourceBodies(sales ? 'LinkedIn' : 'FreeFeeds', '').map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
   const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
   set({ steps: steps(labels, 1), progress: 20 })
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 180; i++) {
     const job = await api<ResearchJob>(`/api/v1/research-jobs/${jobId}`)
     const c = job.counts
     const done = c.sources > 0 ? c.sourcesDone + c.sourcesFailed : 0
     set({ steps: steps(labels, c.candidates > 0 ? 2 : 1), progress: Math.min(90, 20 + Math.round((done / Math.max(1, c.sources)) * 70)), detail: `${c.fetched} read · ${c.candidates} found · ${c.qualified} good` })
     if (job.state !== 'Queued' && job.state !== 'Running') {
+      const nextStep = sales ? () => outreach(campaign.id) : () => apply(campaign.id)
       setFlow({
         phase: 'done', title: `${c.candidates} found · ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}`,
         detail: starter ? `${query}${where}. I started a profile for you — add your skills to rank the matches better.` : `${query}${where}`,
         steps: steps(labels, 4), progress: 100, link: { to: `/opportunities?campaign=${campaign.id}`, label: 'Review' },
+        confirm: c.qualified > 0 ? { yes: sales ? 'Write the emails' : 'Approve the best', run: nextStep } : undefined,
       })
+      announce(
+        `Done. Your ${query} campaign found ${c.candidates} ${sales ? 'companies' : 'jobs'}, ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}. ` +
+        (c.qualified > 0 ? (sales ? 'Shall I write the emails for the approved companies?' : 'Shall I approve the best ones so your agent applies?') : 'Want to review them, or search wider?'),
+        c.qualified > 0 ? nextStep : undefined,
+      )
       return
     }
     await wait(2000)
@@ -101,14 +138,14 @@ export async function launch(query: string, location: string | null, days: numbe
   setFlow({ phase: 'done', title: 'Still running', detail: 'It keeps going in the background.', steps: steps(labels, 2), link: { to: `/research/${jobId}`, label: 'Watch it' } })
 }
 
-function review(sales: boolean) {
-  const id = lastCampaign()
+function review(sales: boolean, campaignId: string | null = null) {
+  const id = campaignId ?? lastCampaign()
   setFlow({ phase: 'done', title: 'Your results', detail: id ? 'From your latest voice campaign' : 'Everything found so far', steps: [], link: { to: id ? `/opportunities?campaign=${id}` : '/opportunities', label: sales ? 'Review leads' : 'Review jobs' } })
 }
 
 /** Sales: write emails for the approved leads of the latest campaign, then (after a yes) approve and send them from the connected mailbox. */
-async function outreach(): Promise<void> {
-  const id = lastCampaign()
+async function outreach(campaignId: string | null = null): Promise<void> {
+  const id = campaignId ?? lastCampaign()
   if (!id) throw new Error('Start a campaign first, then approve the companies you want to email.')
   const labels = ['Write the emails', 'Your OK', 'Send from your mailbox']
   setFlow({ phase: 'running', title: 'Writing emails', steps: steps(labels, 0), progress: 30 })
@@ -140,14 +177,15 @@ async function outreach(): Promise<void> {
         const out = await api<BatchSendResult[]>('/api/v1/drafts/send-via-mailbox-batch', { method: 'POST', body: JSON.stringify({ provider: box.provider, items }) })
         const sent = out.filter((o) => o.outcome === 'Sent').length
         setFlow({ phase: 'done', title: `${sent} sent`, detail: sent < items.length ? `${items.length - sent} not sent — see Outreach.` : 'Replies show up in your Inbox.', steps: steps(labels, 3), progress: 100, link: { to: '/outreach', label: 'Open Outreach' } })
+        announce(`Done. ${sent} email${sent === 1 ? '' : 's'} sent. I will tell you when replies come in; check your Inbox.`)
       },
     },
   })
 }
 
 /** Candidate: approve the best matches of the latest campaign (after a yes) so the desktop agent applies to them. */
-async function apply(): Promise<void> {
-  const id = lastCampaign()
+async function apply(campaignId: string | null = null): Promise<void> {
+  const id = campaignId ?? lastCampaign()
   if (!id) throw new Error('Start a campaign first, then I can approve its best matches.')
   const labels = ['Pick the best matches', 'Your OK', 'Approve for the agent']
   setFlow({ phase: 'running', title: 'Picking the best matches', steps: steps(labels, 0), progress: 30 })
@@ -168,7 +206,8 @@ async function apply(): Promise<void> {
         for (const o of best) {
           try { await api(`/api/v1/opportunities/${o.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Shortlisted' }) }); ok++ } catch { /* a status that cannot move is skipped */ }
         }
-        setFlow({ phase: 'done', title: `${ok} approved to apply`, detail: 'Your desktop agent applies to them on its next run.', steps: steps(labels, 3), progress: 100, link: { to: '/applications', label: 'See applications' } })
+        setFlow({ phase: 'done', title: `${ok} approved to apply`, detail: 'Your desktop agent applies to them on its next run.', steps: steps(labels, 3), progress: 100, link: { to: `/opportunities?campaign=${id}`, label: 'See them' } })
+        announce(`Done. ${ok} job${ok === 1 ? '' : 's'} approved. Your desktop agent applies to them on its next run. Anything else?`)
       },
     },
   })

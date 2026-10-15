@@ -7,7 +7,7 @@ import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
 import { api } from '../../lib/api'
 import { isYes, speak, stopSpeaking, type AssistantReply } from './assistantModel'
-import { runAction, setFlow } from './voiceFlow'
+import { addTurn, flowContext, getFlow, runAction, setFlow, useTurns } from './voiceFlow'
 
 /**
  * Voice assistant and launch from anywhere. What you say goes to the assistant, which answers aloud from your own numbers and may
@@ -35,23 +35,37 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [reply, setReply] = useState<AssistantReply | null>(null)
   const [thinking, setThinking] = useState(false)
   const [startWhenReady, setStartWhenReady] = useState(false)
+  const turns = useTurns()
+  const chatEnd = useRef<HTMLDivElement>(null)
+  useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'end' }) }, [turns.length, thinking, plan])
 
   function understand(value: string) {
-    setText(value); setReply(null)
-    setThinking(true); setFlow({ phase: 'thinking', title: `“${value.slice(0, 60)}”`, steps: [] })
-    void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({ text: value, workspace: ws === 'sales' ? 'Sales' : 'Candidate', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) })
+    const said = value.trim()
+    if (!said) return
+    // A "yes" while an action is waiting confirms it; it is not a new question.
+    if ((reply?.action || plan) && isYes(said)) { addTurn({ role: 'you', text: said }); run(reply, plan); return }
+    if ((reply?.action || plan) && /^\s*(no|not now|cancel|stop|nahi)\b/i.test(said)) { addTurn({ role: 'you', text: said }); setReply(null); setPlan(null); addTurn({ role: 'assistant', text: 'Okay, not now.' }); speak('Okay, not now.'); return }
+    const history = turns.slice(-8)
+    addTurn({ role: 'you', text: said })
+    setText(''); setReply(null); setPlan(null)
+    setThinking(true)
+    // The pill shows "thinking" only when nothing else is running; a running campaign keeps its progress.
+    const idle = getFlow().phase === 'idle'
+    if (idle) setFlow({ phase: 'thinking', title: `“${said.slice(0, 60)}”`, steps: [] })
+    void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({
+      text: said, workspace: ws === 'sales' ? 'Sales' : 'Candidate', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      history, context: flowContext(),
+    }) })
       .then((r) => {
         setReply(r)
-        const launch = r.action?.kind === 'launch' ? parseCommand([r.action.query, r.action.location ? `in ${r.action.location}` : ''].join(' ').trim(), ws) ?? parseCommand(value, ws) : null
+        addTurn({ role: 'assistant', text: r.reply })
+        const launch = r.action?.kind === 'launch' ? parseCommand([r.action.query, r.action.location ? `in ${r.action.location}` : ''].join(' ').trim(), ws) ?? parseCommand(said, ws) : null
         setPlan(launch); setTried(r.action?.kind === 'launch')
-        speak(r.reply, () => { if (r.action && canSpeak) listenForYes(r, launch) })
+        // Keep the conversation going: after the answer it listens again — "yes" runs the action, anything else is the next question.
+        speak(r.reply, () => { if (canVoice) listen((t) => understand(t), r.action ? 6_000 : 8_000) })
       })
-      .catch(() => { const parsed = parseCommand(value, ws); setPlan(parsed); setTried(true) })
-      .finally(() => { setThinking(false); setFlow({ phase: 'idle', title: '', steps: [] }) })
-  }
-  /** After the spoken answer, one short listen: "yes" runs the proposed action, anything else leaves it on screen. */
-  function listenForYes(r: AssistantReply, launch: ParsedCommand | null) {
-    listen((t) => { if (isYes(t)) run(r, launch) }, 5_000)
+      .catch(() => { const parsed = parseCommand(said, ws); setPlan(parsed); setTried(true) })
+      .finally(() => { setThinking(false); if (getFlow().phase === 'thinking') setFlow({ phase: 'idle', title: '', steps: [] }) })
   }
   /** Groq Whisper first (accurate, multilingual); the browser's own speech only when the server has no Whisper key. */
   function listen(onText: (t: string) => void, maxMs = 15_000) {
@@ -76,7 +90,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     if (canVoice) listen((t) => understand(t))
   }
   function openSheet() {
-    setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null); setReply(null)
+    setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null)
     // Ask the server once whether Groq Whisper is on, then start listening with the best engine.
     void (canRecord() ? whisperAvailable() : Promise.resolve(false)).then((w) => { setWhisper(w); setStartWhenReady(true) })
   }
@@ -125,7 +139,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
             </div>
 
             <div className="va-chat" aria-live="polite">
-              {!text && !reply && !thinking && (
+              {turns.length === 0 && !thinking && (
                 <div className="va-hello">
                   <p className="va-hi">Ask anything, or tell me what to do.</p>
                   <div className="va-chips">
@@ -136,9 +150,8 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
                   </div>
                 </div>
               )}
-              {text && (thinking || reply || plan) && <div className="va-msg is-you"><span>{text}</span></div>}
+              {turns.map((t, i) => <div key={i} className={`va-msg ${t.role === 'you' ? 'is-you' : 'is-ai'}`}><span>{t.text}</span></div>)}
               {thinking && <div className="va-msg is-ai"><span className="va-typing" aria-label="Thinking"><i /><i /><i /></span></div>}
-              {reply && <div className="va-msg is-ai"><span>{reply.reply}</span></div>}
               {err && <div className="va-msg is-ai is-warn"><span>{err}</span></div>}
               {tried && !plan && !reply && <div className="va-msg is-ai is-warn"><span>Add a role or skill, e.g. “react developer in Berlin”.</span></div>}
               {(plan || (reply?.action && reply.action.kind !== 'launch')) && (
@@ -146,11 +159,12 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
                   <p>{plan ? describeCommand(plan, ws) : reply?.action?.label}</p>
                   <div className="va-action-btns">
                     <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>{plan ? 'Yes, run it' : 'Yes, do it'}</button>
-                    <button type="button" className="btn btn-ghost" onClick={() => { setPlan(null); setReply(null); setText('') }}>Not now</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => understand('not now')}>Not now</button>
                   </div>
                   <span className="va-say">or just say “yes”</span>
                 </div>
               )}
+              <div ref={chatEnd} />
             </div>
 
             <div className="va-dock">
@@ -161,7 +175,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
               <p className="va-hint">{canVoice ? (listening ? (useWhisper ? 'Speak in any language — I stop when you pause' : 'Listening…') : 'Tap to talk') : 'Voice needs Chrome, Edge or Safari — type below.'}</p>
               <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) understand(text) }} className="va-form">
                 <label className="sr-only" htmlFor="voice-text">Message</label>
-                <input id="voice-text" ref={inputRef} value={text} maxLength={300} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false); setReply(null) }} placeholder="Or type here…" />
+                <input id="voice-text" ref={inputRef} value={text} maxLength={300} onChange={(e) => setText(e.target.value)} placeholder="Or type here…" />
                 <button type="submit" className="va-send" disabled={!text.trim()} aria-label="Send"><Icon name="arrowUp" size={18} /></button>
               </form>
             </div>
