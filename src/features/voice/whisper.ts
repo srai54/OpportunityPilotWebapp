@@ -65,3 +65,12 @@ function watchSilence(stream: MediaStream, onSilence: () => void, quietMs = 1200
   frame = requestAnimationFrame(tick)
   return () => { cancelAnimationFrame(frame); void ctx.close().catch(() => {}) }
 }
+
+let whisperCache: Promise<boolean> | null = null
+/** One short listen with the best engine (Groq Whisper if the server has it, else the browser); used for a spoken yes/no. */
+export async function hearOnce(onText: (t: string) => void, maxMs = 5_000): Promise<void> {
+  whisperCache ??= canRecord() ? whisperAvailable() : Promise.resolve(false)
+  if (await whisperCache) { await recordAndTranscribe(onText, () => {}, () => {}, maxMs); return }
+  const { listenOnce } = await import('../command/speech')
+  listenOnce(onText, () => {})
+}

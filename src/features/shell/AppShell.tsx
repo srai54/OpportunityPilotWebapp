@@ -15,6 +15,7 @@ import { flowIdForPath, resetAllTips, setTipsOff, tipsOff } from '../coach/coach
 import { JourneyBar } from '../journey/JourneyBar'
 import { NextBar } from '../journey/NextBar'
 import { VoiceLaunch } from '../voice/VoiceLaunch'
+import { VoicePill } from '../voice/VoicePill'
 import { AppFooter } from './AppFooter'
 import { ThemeToggle } from './ThemeToggle'
 import {
@@ -380,6 +381,7 @@ export function AppShell() {
                 <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
               <VoiceLaunch workspace={workspace} />
+              <VoicePill />
               <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
                 <Icon name="help" size={17} />
               </button>

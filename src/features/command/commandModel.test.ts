@@ -35,4 +35,8 @@ describe('describe and path', () => {
     const p = new URLSearchParams(commandPath(c, 'candidate').split('?')[1])
     expect(Object.fromEntries(p)).toEqual({ keywords: 'react developers', auto: '1', then: 'apply', location: 'Berlin', repeat: '1440', board: 'FreeFeeds' })
   })
+  it('reads "launch campaign of ... in past 3 days in Gurgaon" as role, place and posting age', () => {
+    expect(parseCommand('launch campaign of software engineer jobs in past 3 days in Gurgaon', 'candidate')).toMatchObject({ query: 'software engineer', location: 'Gurgaon', days: 3 })
+    expect(parseCommand('find react jobs in Pune posted today', 'candidate')).toMatchObject({ query: 'react', location: 'Pune', days: 1 })
+  })
 })

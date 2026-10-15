@@ -48,6 +48,9 @@
   --op-neutral-tint: #f1f0ee;  --op-on-neutral-tint: #4a4743;
   --op-teal-tint: #e3f1f0;  --op-on-teal-tint: #1d6b68;
   --op-green-tint:   #e6f3ea;  --op-on-green-tint:   #13603a;
+  /* live listening indicator: island is dark in both themes; --op-live on --op-island-bg 11:1; white on --op-live-solid 5.0:1 */
+  --op-island-bg: #0b0b0b;  --op-island-ink: #ffffff;  --op-island-line: rgb(255 255 255 / 0);
+  --op-live: #4ade80;  --op-live-solid: #15803d;  --op-on-live: #ffffff;
   --op-amber-tint:   #fbf1dc;  --op-on-amber-tint:   #7a4f00;
   --op-danger-tint:  #fbeaec;  --op-on-danger-tint:  #8f2129;
   --op-indigo-tint:  #e8eefa;  --op-on-indigo-tint:  #27478a;
@@ -156,6 +159,8 @@
   --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
   --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;
   --op-green-tint:   #11301f;  --op-on-green-tint:   #72d6a0;
+  /* dark: #052e16 on #4ade80 9.9:1; island gets a hairline so it separates from the dark page */
+  --op-island-line: rgb(255 255 255 / 0.14);  --op-live-solid: #4ade80;  --op-on-live: #052e16;
   --op-amber-tint:   #33260f;  --op-on-amber-tint:   #e4ae55;
   --op-danger-tint:  #36181c;  --op-on-danger-tint:  #f2929a;
   --op-indigo-tint:  #1a2742;  --op-on-indigo-tint:  #97b1f2;
@@ -223,6 +228,7 @@
     --op-neutral-tint: #2a2927;  --op-on-neutral-tint: #cbc5be;
     --op-teal-tint: #142f2e;  --op-on-teal-tint: #6fd0cc;
     --op-green-tint:   #11301f;  --op-on-green-tint:   #72d6a0;
+    --op-island-line: rgb(255 255 255 / 0.14);  --op-live-solid: #4ade80;  --op-on-live: #052e16;
     --op-amber-tint:   #33260f;  --op-on-amber-tint:   #e4ae55;
     --op-danger-tint:  #36181c;  --op-on-danger-tint:  #f2929a;
     --op-indigo-tint:  #1a2742;  --op-on-indigo-tint:  #97b1f2;

@@ -7,10 +7,12 @@ import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
 import { api } from '../../lib/api'
 import { isYes, speak, type AssistantReply } from './assistantModel'
+import { runAction, setFlow } from './voiceFlow'
 
 /**
  * Voice assistant and launch from anywhere. What you say goes to the assistant, which answers aloud from your own numbers and may
  * propose one action (start a search, open a screen); say "yes" or tap to run it. Without the server it falls back to the local parser.
+ * While it listens, a green "Listening" pill shows at the top of the screen (tap it to stop), like a phone's live-call indicator.
  * Voice launch from anywhere: a mic in the app bar (and a round button on phones). Say "find react jobs in Pune every day";
  * it shows what it understood and runs only after "Yes, run it". Typing works where the browser has no speech support.
  */
@@ -36,7 +38,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
 
   function understand(value: string) {
     setText(value); setReply(null)
-    setThinking(true)
+    setThinking(true); setFlow({ phase: 'thinking', title: `“${value.slice(0, 60)}”`, steps: [] })
     void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({ text: value, workspace: ws === 'sales' ? 'Sales' : 'Candidate', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) })
       .then((r) => {
         setReply(r)
@@ -45,7 +47,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
         speak(r.reply, () => { if (r.action && canSpeak) listenForYes(r, launch) })
       })
       .catch(() => { const parsed = parseCommand(value, ws); setPlan(parsed); setTried(true) })
-      .finally(() => setThinking(false))
+      .finally(() => { setThinking(false); setFlow({ phase: 'idle', title: '', steps: [] }) })
   }
   /** After the spoken answer, one short listen: "yes" runs the proposed action, anything else leaves it on screen. */
   function listenForYes(r: AssistantReply, launch: ParsedCommand | null) {
@@ -62,8 +64,11 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     if (r) { rec.current = r; setListening(true) }
   }
   function run(r: AssistantReply | null, launch: ParsedCommand | null) {
+    const action = r?.action
+    // Multi-step commands run in the voice pill, which shows each step and stays across screens.
+    if (action && action.kind !== 'open') { close(); void runAction(launch && action.kind === 'launch' ? { ...action, query: launch.query, location: launch.location || action.location, days: action.days ?? launch.days ?? null } : action, ws === 'sales'); return }
     if (launch) { close(); navigate(commandPath(launch, ws)); return }
-    if (r?.action?.kind === 'open' && r.action.page) { close(); navigate(r.action.page) }
+    if (action?.kind === 'open' && action.page) { close(); navigate(action.page) }
   }
   function start() {
     setPlan(null); setTried(false); setErr(null)
@@ -104,6 +109,13 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
         <Icon name="mic" size={17} />
       </button>
       <button type="button" className="voice-fab" aria-label="Start a campaign by voice" onClick={openSheet}><Icon name="mic" size={22} /></button>
+      {open && listening && (
+        <button type="button" className="voice-island" data-testid="voice-island" aria-label="Listening. Stop listening" onClick={start}>
+          <span className="voice-island-dot" aria-hidden="true" />
+          <span className="voice-island-label">Listening</span>
+          <span className="voice-island-wave" aria-hidden="true"><i /><i /><i /><i /></span>
+        </button>
+      )}
       {open && (
         <div className="voice-scrim" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
           <div className="voice-sheet" role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
@@ -124,7 +136,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
             {thinking && <p className="muted-small" role="status">Thinking…</p>}
             {reply && <div className="voice-plan" role="status" aria-live="polite">
               <p>{reply.reply}</p>
-              {reply.action?.kind === 'open' && <button type="button" className="btn btn-primary voice-run" onClick={() => run(reply, null)}>{reply.action.label || 'Open it'}</button>}
+              {reply.action && reply.action.kind !== 'launch' && <button type="button" className="btn btn-primary voice-run" onClick={() => run(reply, null)}>{reply.action.label || 'Do it'}</button>}
               {reply.action && <span className="muted-small">Say “yes” or tap.</span>}
             </div>}
             {tried && !plan && <p className="notice notice-warning" role="alert">Add a role or skill, e.g. “react developer in Berlin”.</p>}

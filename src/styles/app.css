@@ -2450,6 +2450,23 @@ html { scroll-padding-bottom: 96px; }
 .voice-plan { background: var(--op-primary-tint); border: 1px solid var(--op-primary-tint-border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; color: var(--op-ink); }
 .voice-run { min-height: 44px; }
 @media (prefers-reduced-motion: reduce) { .voice-orb.is-on, .voice-sheet { animation: none; } }
+/* Live listening indicator (DESIGN.md §7): green orb + a dark pill at the top, like a phone's live-call island. */
+.voice-orb.is-on { background: var(--op-live-solid); color: var(--op-on-live); animation-name: voice-pulse-live; }
+@keyframes voice-pulse-live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--op-live-solid) 45%, transparent); } 100% { box-shadow: 0 0 0 22px color-mix(in srgb, var(--op-live-solid) 0%, transparent); } }
+.voice-island { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; z-index: 61; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px 0 14px; border-radius: 999px; border: 1px solid var(--op-island-line); background: var(--op-island-bg); color: var(--op-island-ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transform: translateX(-50%); transition: transform 160ms var(--op-ease-out); animation: island-in 240ms var(--op-ease-out); overscroll-behavior: contain; }
+.voice-island:active { transform: translateX(-50%) scale(0.97); }
+.voice-island:focus-visible { outline: 2px solid var(--op-live); outline-offset: 3px; }
+.voice-island-label { color: var(--op-live); }
+.voice-island-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--op-live); animation: island-dot 1.2s ease-in-out infinite; }
+.voice-island-wave { display: inline-flex; align-items: center; gap: 2px; height: 16px; }
+.voice-island-wave i { width: 3px; height: 16px; border-radius: 2px; background: var(--op-live); transform: scaleY(0.3); animation: island-wave 0.9s ease-in-out infinite; }
+.voice-island-wave i:nth-child(2) { animation-delay: 0.15s; }
+.voice-island-wave i:nth-child(3) { animation-delay: 0.3s; }
+.voice-island-wave i:nth-child(4) { animation-delay: 0.45s; }
+@keyframes island-in { from { opacity: 0; transform: translateX(-50%) scale(0.95); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+@keyframes island-dot { 50% { opacity: 0.35; } }
+@keyframes island-wave { 50% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .voice-island, .voice-island-dot, .voice-island-wave i { animation: none; } .voice-island-wave i { transform: scaleY(0.6); } }
 
 .journey { gap: 12px; flex-wrap: wrap; }
 .journey-progress { width: 120px; height: 6px; border-radius: 999px; background: var(--op-hair); overflow: hidden; }
@@ -2481,3 +2498,41 @@ html { scroll-padding-bottom: 96px; }
 .reach-route .btn { max-width: 100%; white-space: normal; height: auto; }
 /* The voice sheet opens from the dark app bar: use the page's own text colour, not the bar's (light + dark mode). */
 .voice-sheet { color: var(--op-ink); }
+
+/* Voice pill (DESIGN.md §voice): a dark island at the top centre that grows with what the voice command is doing. */
+.vpill { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 60; width: min(220px, calc(100vw - 32px)); background: #0b0f19; color: #fff; border-radius: 22px; box-shadow: 0 12px 32px rgb(0 0 0 / 0.35); overflow: hidden; transition: width 0.35s cubic-bezier(.23,1,.32,1), border-radius 0.35s cubic-bezier(.23,1,.32,1); animation: vpill-in 0.35s cubic-bezier(.23,1,.32,1); }
+.vpill.is-running, .vpill.is-done, .vpill.is-confirm, .vpill.is-error { width: min(340px, calc(100vw - 32px)); }
+.vpill.is-open { width: min(400px, calc(100vw - 32px)); border-radius: 24px; }
+.vpill-bar { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 16px; background: none; border: 0; color: inherit; font: inherit; font-size: 14px; cursor: pointer; text-align: left; }
+.vpill-bar:focus-visible { outline: 2px solid #60a5fa; outline-offset: -2px; border-radius: 22px; }
+.vpill-icon { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 auto; color: #4ade80; }
+.vpill.is-error .vpill-icon { color: #f87171; }
+.vpill.is-confirm .vpill-icon { color: #fbbf24; }
+.vpill-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.vpill-pct { color: #93c5fd; font-size: 12.5px; }
+.vpill-wave { display: flex; align-items: center; gap: 2px; height: 16px; }
+.vpill-wave i { width: 3px; border-radius: 2px; background: #4ade80; animation: vpill-wave 0.9s ease-in-out infinite; }
+.vpill-wave i:nth-child(2) { animation-delay: 0.12s; } .vpill-wave i:nth-child(3) { animation-delay: 0.24s; } .vpill-wave i:nth-child(4) { animation-delay: 0.36s; } .vpill-wave i:nth-child(5) { animation-delay: 0.48s; }
+.vpill-dots { display: flex; gap: 3px; } .vpill-dots i { width: 5px; height: 5px; border-radius: 50%; background: #93c5fd; animation: vpill-dot 1s ease-in-out infinite; }
+.vpill-dots i:nth-child(2) { animation-delay: 0.15s; } .vpill-dots i:nth-child(3) { animation-delay: 0.3s; }
+.vpill-spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgb(255 255 255 / 0.25); border-top-color: #60a5fa; animation: vpill-spin 0.8s linear infinite; }
+.vpill.is-done .vpill-icon svg { animation: vpill-pop 0.4s cubic-bezier(.23,1,.32,1); }
+.vpill-progress { display: block; height: 3px; margin: 0 16px 8px; background: rgb(255 255 255 / 0.12); border-radius: 2px; overflow: hidden; }
+.vpill-progress i { display: block; height: 100%; background: linear-gradient(90deg, #3b82f6, #14b8a6); border-radius: 2px; transition: width 0.6s cubic-bezier(.23,1,.32,1); }
+.vpill-body { padding: 0 16px 14px; display: grid; gap: 10px; animation: vpill-fade 0.25s ease-out; }
+.vpill-detail { margin: 0; color: #cbd5e1; font-size: 13.5px; }
+.vpill-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; color: #94a3b8; }
+.vpill-steps li { display: flex; align-items: center; gap: 8px; }
+.vpill-steps li span { width: 8px; height: 8px; border-radius: 50%; background: rgb(255 255 255 / 0.2); flex: 0 0 auto; }
+.vpill-steps li.is-done { color: #e2e8f0; } .vpill-steps li.is-done span { background: #4ade80; }
+.vpill-steps li.is-now { color: #fff; font-weight: 600; } .vpill-steps li.is-now span { background: #60a5fa; box-shadow: 0 0 0 4px rgb(96 165 250 / 0.25); animation: vpill-dot 1.2s ease-in-out infinite; }
+.vpill-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.vpill-actions .btn-ghost { color: #cbd5e1; }
+@keyframes vpill-in { from { opacity: 0; transform: translate(-50%, -8px) scale(0.9); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes vpill-wave { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+@keyframes vpill-dot { 0%, 100% { opacity: 0.35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes vpill-spin { to { transform: rotate(360deg); } }
+@keyframes vpill-pop { 0% { transform: scale(0.4); } 70% { transform: scale(1.2); } 100% { transform: scale(1); } }
+@keyframes vpill-fade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 860px) { .vpill { top: 64px; } }
+@media (prefers-reduced-motion: reduce) { .vpill, .vpill-wave i, .vpill-dots i, .vpill-spin, .vpill-steps li.is-now span, .vpill-body, .vpill.is-done .vpill-icon svg { animation: none; transition: none; } }
