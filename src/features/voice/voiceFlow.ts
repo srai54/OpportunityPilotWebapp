@@ -62,8 +62,16 @@ export async function launch(query: string, location: string | null, days: numbe
   const where = location ? ` in ${location}` : ''
   setFlow({ phase: 'running', title: `${query}${where}`, detail: days ? `Posted in the last ${days} day${days === 1 ? '' : 's'}` : undefined, steps: steps(labels, 0), progress: 5 })
   const profiles = await api<ProfileSummary[]>('/api/v1/profiles')
-  const profile = profiles.find((p) => (p.type === 'Candidate') === !sales)
-  if (!profile) throw new Error(sales ? 'Create your Sales profile first (what you sell).' : 'Create your profile first (your skills).')
+  let profile: Pick<ProfileSummary, 'id' | 'type'> | undefined = profiles.find((p) => (p.type === 'Candidate') === !sales)
+  let starter = false
+  if (!profile) {
+    // No profile yet: start one from what was said, so the campaign runs now; skills can be added later for sharper matches.
+    profile = await api<ProfileSummary>('/api/v1/profiles', { method: 'POST', body: JSON.stringify({
+      type: sales ? 'Services' : 'Candidate', name: sales ? 'My services' : 'My profile',
+      data: { fields: sales ? { offer: `Services for companies hiring ${query}`, idealCustomer: `Companies hiring ${query}` } : { offer: query }, confirmations: {} }, confirmed: true,
+    }) })
+    starter = true
+  }
   const mode = suggestedMode(profile.type)
   const draft = newDraft()
   draft.name = `${query}${where}`.slice(0, 80) + ' — voice'
@@ -82,7 +90,8 @@ export async function launch(query: string, location: string | null, days: numbe
     set({ steps: steps(labels, c.candidates > 0 ? 2 : 1), progress: Math.min(90, 20 + Math.round((done / Math.max(1, c.sources)) * 70)), detail: `${c.fetched} read · ${c.candidates} found · ${c.qualified} good` })
     if (job.state !== 'Queued' && job.state !== 'Running') {
       setFlow({
-        phase: 'done', title: `${c.candidates} found · ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}`, detail: `${query}${where}`,
+        phase: 'done', title: `${c.candidates} found · ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}`,
+        detail: starter ? `${query}${where}. I started a profile for you — add your skills to rank the matches better.` : `${query}${where}`,
         steps: steps(labels, 4), progress: 100, link: { to: `/opportunities?campaign=${campaign.id}`, label: 'Review' },
       })
       return

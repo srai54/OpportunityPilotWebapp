@@ -111,3 +111,8 @@ export async function apiDownload(path: string, accept = '*/*'): Promise<{ blob:
   const response = await send(path, { headers: { Accept: accept } })
   return { blob: await response.blob(), disposition: response.headers.get('Content-Disposition') }
 }
+
+/** For binary answers such as audio: the body as a blob (same auth and error handling as api()). */
+export async function apiBlob(path: string, init: RequestInit = {}): Promise<Blob> {
+  return (await send(path, init)).blob()
+}

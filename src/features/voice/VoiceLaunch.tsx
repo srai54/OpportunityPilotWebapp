@@ -6,7 +6,7 @@ import { listenOnce, recognitionCtor, type Recognition } from '../command/speech
 import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
 import { api } from '../../lib/api'
-import { isYes, speak, type AssistantReply } from './assistantModel'
+import { isYes, speak, stopSpeaking, type AssistantReply } from './assistantModel'
 import { runAction, setFlow } from './voiceFlow'
 
 /**
@@ -80,7 +80,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     // Ask the server once whether Groq Whisper is on, then start listening with the best engine.
     void (canRecord() ? whisperAvailable() : Promise.resolve(false)).then((w) => { setWhisper(w); setStartWhenReady(true) })
   }
-  function close() { rec.current?.stop(); recording.current?.stop(); window.speechSynthesis?.cancel(); setOpen(false); setListening(false) }
+  function close() { rec.current?.stop(); recording.current?.stop(); stopSpeaking(); setOpen(false); setListening(false) }
 
   // Starts listening after the Whisper check, so the engine choice uses the answer.
   useEffect(() => {
@@ -99,7 +99,6 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const example = ws === 'sales' ? '“What’s my status?” or “Find companies hiring React developers in London”' : '“What’s my status?” or “Find .NET jobs in Pune every day”'
   return (
     <>
       <button type="button" className="cmd-pill" data-testid="command-pill" aria-label="Start a campaign: type or say it" onClick={openSheet}>
@@ -118,34 +117,54 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
       )}
       {open && (
         <div className="voice-scrim" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
-          <div className="voice-sheet" role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
-            <div className="voice-head">
-              <h2 id="voice-title">{listening ? 'Listening…' : plan || reply ? 'Ready' : 'Ask or say what to do'}</h2>
-              <button type="button" className="icon-btn" aria-label="Close" onClick={close}><span aria-hidden="true">✕</span></button>
+          <div className="voice-sheet va" role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
+            <div className="va-head">
+              <span className="va-badge" aria-hidden="true"><Icon name="sparkles" size={14} /></span>
+              <h2 id="voice-title">{listening ? 'Listening…' : thinking ? 'Thinking…' : 'Your assistant'}</h2>
+              <button type="button" className="va-close" aria-label="Close" onClick={close}><span aria-hidden="true">✕</span></button>
             </div>
-            <button type="button" className={`voice-orb${listening ? ' is-on' : ''}`} onClick={start} disabled={!canVoice} aria-pressed={listening} aria-label={listening ? 'Stop listening' : 'Speak'}>
-              <Icon name="mic" size={30} />
-            </button>
-            <p className="muted-small voice-hint">{canVoice ? (listening ? (useWhisper ? 'Listening (any language)… stops when you pause' : 'Listening…') : example) : 'Voice needs Chrome, Edge or Safari — type instead.'}</p>
-            <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) understand(text) }} className="voice-form">
-              <label className="sr-only" htmlFor="voice-text">Command</label>
-              <input id="voice-text" ref={inputRef} value={text} maxLength={300} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false) }} placeholder="find react jobs in Berlin" />
-              <button type="submit" className="btn btn-secondary" disabled={!text.trim()}>Check</button>
-            </form>
-            {err && <p className="notice notice-warning" role="alert">{err}</p>}
-            {thinking && <p className="muted-small" role="status">Thinking…</p>}
-            {reply && <div className="voice-plan" role="status" aria-live="polite">
-              <p>{reply.reply}</p>
-              {reply.action && reply.action.kind !== 'launch' && <button type="button" className="btn btn-primary voice-run" onClick={() => run(reply, null)}>{reply.action.label || 'Do it'}</button>}
-              {reply.action && <span className="muted-small">Say “yes” or tap.</span>}
-            </div>}
-            {tried && !plan && <p className="notice notice-warning" role="alert">Add a role or skill, e.g. “react developer in Berlin”.</p>}
-            {plan && (
-              <div className="voice-plan" role="status">
-                <p>{describeCommand(plan, ws)}</p>
-                <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>Yes, run it</button>
-              </div>
-            )}
+
+            <div className="va-chat" aria-live="polite">
+              {!text && !reply && !thinking && (
+                <div className="va-hello">
+                  <p className="va-hi">Ask anything, or tell me what to do.</p>
+                  <div className="va-chips">
+                    {(ws === 'sales'
+                      ? ['What’s my status?', 'Find companies hiring React developers in Pune', 'Send the outreach', 'Show my interviews']
+                      : ['What’s my status?', 'Find software engineer jobs in Gurugram from the past 3 days', 'Apply to the best matches', 'How many emails did I send today?']
+                    ).map((c) => <button key={c} type="button" className="va-chip" onClick={() => understand(c)}>{c}</button>)}
+                  </div>
+                </div>
+              )}
+              {text && (thinking || reply || plan) && <div className="va-msg is-you"><span>{text}</span></div>}
+              {thinking && <div className="va-msg is-ai"><span className="va-typing" aria-label="Thinking"><i /><i /><i /></span></div>}
+              {reply && <div className="va-msg is-ai"><span>{reply.reply}</span></div>}
+              {err && <div className="va-msg is-ai is-warn"><span>{err}</span></div>}
+              {tried && !plan && !reply && <div className="va-msg is-ai is-warn"><span>Add a role or skill, e.g. “react developer in Berlin”.</span></div>}
+              {(plan || (reply?.action && reply.action.kind !== 'launch')) && (
+                <div className="va-action">
+                  <p>{plan ? describeCommand(plan, ws) : reply?.action?.label}</p>
+                  <div className="va-action-btns">
+                    <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>{plan ? 'Yes, run it' : 'Yes, do it'}</button>
+                    <button type="button" className="btn btn-ghost" onClick={() => { setPlan(null); setReply(null); setText('') }}>Not now</button>
+                  </div>
+                  <span className="va-say">or just say “yes”</span>
+                </div>
+              )}
+            </div>
+
+            <div className="va-dock">
+              <button type="button" className={`va-orb${listening ? ' is-on' : ''}${thinking ? ' is-thinking' : ''}`} onClick={start} disabled={!canVoice} aria-pressed={listening} aria-label={listening ? 'Stop listening' : 'Speak'}>
+                <span className="va-ring" aria-hidden="true" /><span className="va-ring r2" aria-hidden="true" />
+                <Icon name="mic" size={26} />
+              </button>
+              <p className="va-hint">{canVoice ? (listening ? (useWhisper ? 'Speak in any language — I stop when you pause' : 'Listening…') : 'Tap to talk') : 'Voice needs Chrome, Edge or Safari — type below.'}</p>
+              <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) understand(text) }} className="va-form">
+                <label className="sr-only" htmlFor="voice-text">Message</label>
+                <input id="voice-text" ref={inputRef} value={text} maxLength={300} onChange={(e) => { setText(e.target.value); setPlan(null); setTried(false); setReply(null) }} placeholder="Or type here…" />
+                <button type="submit" className="va-send" disabled={!text.trim()} aria-label="Send"><Icon name="arrowUp" size={18} /></button>
+              </form>
+            </div>
           </div>
         </div>
       )}

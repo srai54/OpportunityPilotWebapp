@@ -2536,3 +2536,47 @@ html { scroll-padding-bottom: 96px; }
 @keyframes vpill-fade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (max-width: 860px) { .vpill { top: 64px; } }
 @media (prefers-reduced-motion: reduce) { .vpill, .vpill-wave i, .vpill-dots i, .vpill-spin, .vpill-steps li.is-now span, .vpill-body, .vpill.is-done .vpill-icon svg { animation: none; transition: none; } }
+
+/* Voice assistant sheet (2026-10-15): a dark, calm panel with a conversation and a glowing orb; same in light and dark themes. */
+.voice-sheet.va { background: radial-gradient(120% 80% at 50% 0%, #1e2a5a 0%, #0f1530 55%, #0a0f22 100%); color: #e8ecff; padding: 16px 18px calc(18px + env(safe-area-inset-bottom)); gap: 14px; width: min(520px, 100%); min-height: min(560px, 86vh); max-height: 92vh; border: 1px solid rgb(255 255 255 / 0.08); box-shadow: 0 30px 80px rgb(2 6 23 / 0.55); }
+.va-head { display: flex; align-items: center; gap: 10px; }
+.va-head h2 { flex: 1; margin: 0; font-size: 16px; font-weight: 650; color: #fff; letter-spacing: -0.01em; }
+.va-badge { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: linear-gradient(135deg, #3b82f6, #a855f7); color: #fff; }
+.va-close { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.12); background: rgb(255 255 255 / 0.06); color: #cbd5e1; cursor: pointer; font-size: 14px; }
+.va-close:hover { background: rgb(255 255 255 / 0.12); color: #fff; }
+.va-chat { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; min-height: 160px; }
+.va-hello { margin: auto 0; display: grid; gap: 14px; }
+.va-hi { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 650; letter-spacing: -0.02em; background: linear-gradient(90deg, #93c5fd, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.va-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.va-chip { border: 1px solid rgb(255 255 255 / 0.14); background: rgb(255 255 255 / 0.06); color: #dbe4ff; border-radius: 999px; padding: 8px 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: left; transition: background 0.15s, border-color 0.15s, transform 0.15s; }
+.va-chip:hover { background: rgb(255 255 255 / 0.12); border-color: rgb(147 197 253 / 0.5); transform: translateY(-1px); }
+.va-msg { display: flex; animation: va-in 0.28s cubic-bezier(.23,1,.32,1); }
+.va-msg span { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.45; }
+.va-msg.is-you { justify-content: flex-end; } .va-msg.is-you span { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; border-bottom-right-radius: 6px; }
+.va-msg.is-ai span { background: rgb(255 255 255 / 0.08); color: #eef2ff; border: 1px solid rgb(255 255 255 / 0.08); border-bottom-left-radius: 6px; }
+.va-msg.is-warn span { background: rgb(251 191 36 / 0.12); border-color: rgb(251 191 36 / 0.3); color: #fde68a; }
+.va-typing { display: inline-flex; gap: 4px; padding: 14px 16px !important; } .va-typing i { width: 7px; height: 7px; border-radius: 50%; background: #a5b4fc; animation: vpill-dot 1s ease-in-out infinite; }
+.va-typing i:nth-child(2) { animation-delay: 0.15s; } .va-typing i:nth-child(3) { animation-delay: 0.3s; }
+.va-action { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: rgb(59 130 246 / 0.12); border: 1px solid rgb(96 165 250 / 0.35); animation: va-in 0.3s cubic-bezier(.23,1,.32,1); }
+.va-action p { margin: 0; font-size: 14px; color: #dbeafe; }
+.va-action-btns { display: flex; flex-wrap: wrap; gap: 8px; } .va-action .btn-ghost { color: #cbd5e1; }
+.va-say { font-size: 12px; color: #93a3c8; }
+.va-dock { display: grid; justify-items: center; gap: 8px; }
+.va-orb { position: relative; display: grid; place-items: center; width: 76px; height: 76px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 55%, #4f46e5); box-shadow: 0 10px 30px rgb(37 99 235 / 0.5), inset 0 -6px 16px rgb(0 0 0 / 0.25); transition: transform 0.2s cubic-bezier(.23,1,.32,1); }
+.va-orb:hover { transform: scale(1.04); } .va-orb:active { transform: scale(0.96); }
+.va-orb:disabled { opacity: 0.45; cursor: not-allowed; }
+.va-orb:focus-visible { outline: 3px solid #93c5fd; outline-offset: 4px; }
+.va-ring { position: absolute; inset: -6px; border-radius: 50%; border: 2px solid rgb(96 165 250 / 0.35); opacity: 0; }
+.va-orb.is-on { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a 55%, #0d9488); box-shadow: 0 10px 34px rgb(22 163 74 / 0.55); }
+.va-orb.is-on .va-ring { border-color: rgb(74 222 128 / 0.5); animation: va-ring 1.6s ease-out infinite; } .va-orb.is-on .va-ring.r2 { animation-delay: 0.8s; }
+.va-orb.is-thinking { animation: va-breathe 1.4s ease-in-out infinite; }
+.va-hint { margin: 0; font-size: 12.5px; color: #a5b4d6; text-align: center; }
+.va-form { display: flex; gap: 8px; width: 100%; }
+.va-form input { flex: 1; min-width: 0; height: 44px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.14); background: rgb(255 255 255 / 0.06); color: #fff; padding: 0 16px; font: inherit; font-size: 14.5px; }
+.va-form input::placeholder { color: #8b98bd; } .va-form input:focus { outline: 2px solid #60a5fa; outline-offset: 1px; }
+.va-send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #3b82f6; color: #fff; display: grid; place-items: center; cursor: pointer; }
+.va-send:disabled { background: rgb(255 255 255 / 0.1); color: #64748b; cursor: not-allowed; }
+@keyframes va-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes va-ring { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.55); } }
+@keyframes va-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) { .va-msg, .va-action, .va-orb.is-on .va-ring, .va-orb.is-thinking, .va-typing i { animation: none; } }
