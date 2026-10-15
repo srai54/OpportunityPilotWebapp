@@ -38,6 +38,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [startWhenReady, setStartWhenReady] = useState(false)
   const [lang, setLang] = useState<'en' | 'hi'>(voiceLanguage)
   const [speaking, setSpeaking] = useState(false)
+  const openEpoch = useRef(0)
   const turns = useTurns()
   const scheduling = reply?.action?.kind === 'schedule' ? schedulePlan(reply.action, ws === 'sales') : null
   const chatEnd = useRef<HTMLDivElement>(null)
@@ -46,6 +47,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   function understand(value: string) {
     const said = value.trim()
     if (!said) return
+    openEpoch.current = -1 // a question was asked: the window's opening listen is no longer wanted
     // The mic picked up the assistant's own voice: ignore it instead of answering itself.
     if (isEcho(said)) return
     // A "yes" while an action is waiting confirms it; it is not a new question.
@@ -114,17 +116,19 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   function openSheet() {
     setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null)
     // Ask the server once whether Groq Whisper is on, then start listening with the best engine.
+    openEpoch.current = voiceEpoch()
     void (canRecord() ? whisperAvailable() : Promise.resolve(false)).then((w) => { setWhisper(w); setStartWhenReady(true) })
   }
   /** Stop button: ends speaking and listening at once, and anything they would have started. */
-  function stopAll() { stopVoice(); rec.current?.stop(); recording.current?.stop(); setListening(false); setSpeaking(false) }
+  function stopAll() { openEpoch.current = -1; stopVoice(); rec.current?.stop(); recording.current?.stop(); setListening(false); setSpeaking(false) }
   function close() { stopAll(); setOpen(false) }
 
   // Starts listening after the Whisper check, so the engine choice uses the answer.
   useEffect(() => {
     if (!startWhenReady) return
     setStartWhenReady(false)
-    if (canVoice) start()
+    // The opening listen is skipped when Stop was pressed, or typing or a question started while the check was running.
+    if (canVoice && voiceEpoch() === openEpoch.current && !thinking && !text && !listening) start()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startWhenReady])
 
