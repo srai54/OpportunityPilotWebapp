@@ -2420,3 +2420,8 @@ html { scroll-padding-bottom: 96px; }
 @media (prefers-reduced-motion: reduce) { .donut-arc { transition: none; } .live-pill i, .agent-dot.is-live, .donut-dot.is-live { animation: none; } }
 .result-check { flex: 0 0 auto; margin-top: 4px; width: 18px; height: 18px; accent-color: var(--op-primary); }
 .result-card.is-selected { border-color: var(--op-primary-tint-border); background: var(--op-primary-tint); }
+/* Find: the source tabs wrap onto a second line on phones instead of scrolling sideways (user, 2026-10-14). */
+@media (max-width: 640px) {
+  .search-hero > .segmented { display: flex; flex-wrap: wrap; overflow-x: visible; width: 100%; }
+  .search-hero > .segmented button { flex: 1 1 auto; white-space: nowrap; padding-inline: 10px; }
+}

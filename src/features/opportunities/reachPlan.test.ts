@@ -21,6 +21,10 @@ describe('reachRoutes', () => {
     expect(routes.map((r) => r.id)).toEqual(['decision-maker', 'referral', 'find-email', 'connect-finder', 'contact-form'])
     expect(routes.at(-1)?.why).toContain('northwind.example')
   })
+  it('never offers a job board\'s own contact form for a lead found there', () => {
+    for (const url of ['https://www.naukri.com/job-listings-x-123', 'https://www.instahyre.com/job-1', 'https://boards.greenhouse.io/acme/jobs/1'])
+      expect(reachRoutes({ ...lead, url }).map((r) => r.id)).not.toContain('contact-form')
+  })
   it('a connected Hunter or Apollo replaces the connect prompt, and a finished search is not offered again', () => {
     const ids = reachRoutes({ ...lead, finders: ['Hunter', 'Apollo'], emailSearched: true }).map((r) => r.id)
     expect(ids).toContain('people-Hunter')

@@ -16,6 +16,7 @@ describe('composerTarget', () => {
   it('opens LinkedIn Messages with the text copied, or a LinkedIn profile link when given', () => {
     expect(composerTarget('LinkedInMessage', { recipient: '', subject: '', body: 'Hi' })).toMatchObject({ kind: 'site', url: 'https://www.linkedin.com/messaging/', copy: true })
     expect(composerTarget('LinkedInMessage', { recipient: 'https://www.linkedin.com/in/x', subject: '', body: 'Hi' }).url).toBe('https://www.linkedin.com/in/x')
+    expect(composerTarget('LinkedInMessage', { recipient: 'Nikhil Malhotra', subject: '', body: 'Hi' }).url).toBe('https://www.linkedin.com/search/results/people/?keywords=Nikhil%20Malhotra')
   })
   it('never opens a non-https recipient as a site', () => {
     expect(composerTarget('ContactForm', { recipient: 'javascript:alert(1)', subject: '', body: 'Hi' }).url).toBeNull()

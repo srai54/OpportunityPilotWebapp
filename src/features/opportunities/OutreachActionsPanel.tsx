@@ -1,7 +1,7 @@
 import { ContactFinder } from '../outreach/ContactFinder'
 import { Card } from '../../components/cards'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { ProfileConfirmNotice } from '../profiles/ProfileConfirmNotice'
 import { needsProfileConfirm } from '../profiles/profileFields'
@@ -14,9 +14,17 @@ const CHANNELS: { value: DraftChannel; label: string }[] = [
   { value: 'Email', label: 'Email' }, { value: 'LinkedInMessage', label: 'LinkedIn message' }, { value: 'ContactForm', label: 'Contact form' },
 ]
 
+/** What "To" means for each channel, so a LinkedIn name or a contact page is never asked for as an email address. */
+const TO: Record<string, { label: string; placeholder: string; button: string }> = {
+  Email: { label: 'Email address', placeholder: 'name@company.com', button: 'Write the email' },
+  LinkedInMessage: { label: 'Who (name or LinkedIn profile link)', placeholder: 'Nikhil Malhotra or https://www.linkedin.com/in/…', button: 'Write the LinkedIn note' },
+  ContactForm: { label: 'Contact page link (optional)', placeholder: 'https://company.com/contact', button: 'Write the message' },
+}
+
 export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
   const opportunityId = o.id
   const { advanced } = useShell()
+  const navigate = useNavigate()
   const [adv, setAdv] = useState(advanced)
   const [channel, setChannel] = useState<DraftChannel>('Email')
   const [recipient, setRecipient] = useState('')
@@ -30,8 +38,9 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
   async function createDraft() {
     setBusy(true); setError(undefined)
     try {
-      await api<OutreachDraft>(`/api/v1/opportunities/${opportunityId}/drafts`, { method: 'POST', body: JSON.stringify({ channel, recipient: recipient || null }) })
-      setMessage('Draft created.'); setRecipient('')
+      const made = await api<OutreachDraft>(`/api/v1/opportunities/${opportunityId}/drafts`, { method: 'POST', body: JSON.stringify({ channel, recipient: recipient.trim() || null }) })
+      // Straight to the written message, where Approve & send opens the mail app, LinkedIn or the contact form.
+      navigate(`/outreach?draft=${made.id}`)
     } catch (e) { setError(e as Error) } finally { setBusy(false) }
   }
   async function createAction() {
@@ -51,9 +60,10 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
     <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Write to someone else, or add a follow-up'}</button>
     {adv && <>
     <label className="field"><span>Draft channel</span><select value={channel} onChange={(e) => setChannel(e.target.value as DraftChannel)}>{CHANNELS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select></label>
-    <label className="field"><span>Recipient (required for email approval)</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} /></label>
-    <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />
-    <button className="btn btn-secondary btn-sm" type="button" disabled={busy} onClick={createDraft}>Create draft</button>
+    <label className="field"><span>{TO[channel].label}</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={TO[channel].placeholder} /></label>
+    {channel === 'Email' && <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />}
+    <button className="btn btn-primary btn-sm" type="button" disabled={busy} onClick={createDraft}>{busy ? 'Writing…' : TO[channel].button}</button>
+    <p className="muted-small">Opens the message to check; Approve &amp; send then opens {channel === 'Email' ? 'your mail app' : channel === 'LinkedInMessage' ? 'LinkedIn on that person, text copied' : 'the contact page, text copied'}.</p>
     <hr />
     <label className="field"><span>Next action</span><select value={kind} onChange={(e) => setKind(e.target.value as NextActionKind)}><option value="FollowUp">Follow up</option><option value="CheckStatus">Check status</option><option value="Call">Call</option><option value="Other">Other</option></select></label>
     <label className="field"><span>Due</span><input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} /></label>

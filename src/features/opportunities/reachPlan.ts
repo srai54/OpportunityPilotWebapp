@@ -52,9 +52,16 @@ export function connectionsAtUrl(company: string): string {
   return people(`"${clean(company, 80)}"`, { network: '["F"]' })
 }
 
+/** Job boards and ATS hosts: a lead found there links to the board, whose contact form does not reach the company. */
+const BOARD_HOSTS = /(^|\.)(naukri|instahyre|linkedin|indeed|seek|wellfound|angel|glassdoor|monster|foundit|shine|google|greenhouse|lever|ashbyhq|smartrecruiters|recruitee|workable|myworkdayjobs|workday|remotive|remoteok|themuse|weworkremotely|arbeitnow|jobicy|adzuna|freelancer|upwork)\.(com|co|in|io|co\.in|co\.uk|com\.au|net|org|co\.nz)$/i
+
 function websiteOf(input: ReachInput): string | null {
   if (input.mode === 'Job' || !input.url) return null
-  try { const u = new URL(input.url); return u.protocol === 'https:' || u.protocol === 'http:' ? u.origin : null } catch { return null }
+  try {
+    const u = new URL(input.url)
+    if (BOARD_HOSTS.test(u.hostname)) return null
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.origin : null
+  } catch { return null }
 }
 
 /** The ways to reach this lead, best first. */

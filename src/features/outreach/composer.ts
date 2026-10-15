@@ -69,7 +69,12 @@ export function composerTarget(channel: DraftChannel, d: { recipient: string; su
       ? { kind: 'mailto', url: `mailto:${encodeURIComponent(to)}`, label: 'Open email app (text copied)', copy: true }
       : { kind: 'mailto', url, label: 'Open email app', copy: false }
   }
-  if (channel === 'LinkedInMessage') return { kind: 'site', url: /^https:\/\/(www\.)?linkedin\.com\//i.test(to) ? to : 'https://www.linkedin.com/messaging/', label: 'Open LinkedIn Messages (text copied)', copy: true }
+  if (channel === 'LinkedInMessage') {
+    if (/^https:\/\/(www\.)?linkedin\.com\//i.test(to)) return { kind: 'site', url: to, label: 'Open their LinkedIn (text copied)', copy: true }
+    // A name: LinkedIn's people search for it, where the person's Message / Connect button is one click away.
+    if (to && !to.includes('@')) return { kind: 'site', url: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(to)}`, label: `Find ${to} on LinkedIn (text copied)`, copy: true }
+    return { kind: 'site', url: 'https://www.linkedin.com/messaging/', label: 'Open LinkedIn Messages (text copied)', copy: true }
+  }
   if (channel === 'ContactForm') return { kind: 'site', url: /^https:\/\//i.test(to) ? to : null, label: 'Open the contact form (text copied)', copy: true }
   return { kind: 'copy', url: null, label: 'Copy the text', copy: true }
 }
