@@ -20,6 +20,7 @@ export function CommandBar() {
   const [listening, setListening] = useState(false)
   const [plan, setPlan] = useState<ParsedCommand | null>(null)
   const [tried, setTried] = useState(false)
+  const [micError, setMicError] = useState('')
   const recognizer = useRef<Recognition | null>(null)
   const canSpeak = recognitionCtor() !== null
 
@@ -37,9 +38,13 @@ export function CommandBar() {
     r.interimResults = false
     r.onresult = (e) => { setText(e.results[0]?.[0]?.transcript ?? ''); setHeard(true); setPlan(null); setTried(false) }
     r.onend = () => setListening(false)
-    r.onerror = () => setListening(false)
+    r.onerror = (e: { error?: string }) => {
+      setListening(false)
+      setMicError(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'The microphone is blocked. Allow it in the browser (the icon in the address bar), or type instead.'
+        : e.error === 'no-speech' ? 'Nothing was heard. Tap Speak and talk, or type instead.' : 'Voice did not work here. Type instead.')
+    }
     recognizer.current = r
-    setListening(true)
+    setListening(true); setMicError('')
     r.start()
   }
 
@@ -53,6 +58,7 @@ export function CommandBar() {
           {canSpeak && <button type="button" className={`btn btn-secondary${listening ? ' is-listening' : ''}`} aria-pressed={listening} onClick={speak}><Icon name="mic" size={16} /> {listening ? 'Listening… tap to stop' : 'Speak'}</button>}
           <button type="submit" className="btn btn-primary" disabled={!text.trim()}>Go</button>
         </div>
+        {micError && <p className="notice notice-warning" role="alert">{micError}</p>}
         {heard && <p className="muted-small" role="status">Heard: “{text}”. Fix it above if it is wrong, then press Go.</p>}
         {!canSpeak && <p className="muted-small">Voice needs Chrome, Edge or Safari. Typing works everywhere.</p>}
         {tried && !plan && <p className="notice notice-warning" role="alert">I need at least a role or skill to search for, e.g. “react developer in Berlin”.</p>}

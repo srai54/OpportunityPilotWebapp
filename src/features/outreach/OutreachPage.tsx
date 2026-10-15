@@ -21,6 +21,10 @@ import { useApi } from '../../lib/useApi'
 export function OutreachPage() {
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const [selected, setSelected] = useState<OutreachDraft>()
+  async function removeDraft() {
+    if (!selected || !window.confirm('Delete this message? A sent message stays on record in the lead history.')) return
+    try { await api<void>(`/api/v1/drafts/${selected.id}`, { method: 'DELETE' }); setSelected(undefined); drafts.reload(); setNotice('Message deleted.') } catch (e) { setError(e as Error) }
+  }
   const [loadError, setLoadError] = useState(false)
   const [tried, setTried] = useState(false)
   const [mailApp, setMailAppState] = useState<MailApp>(readMailApp)
@@ -328,6 +332,7 @@ export function OutreachPage() {
                   <button className="btn btn-secondary" type="button" disabled={working || !body.trim()} onClick={() => mutate('save')}>Save</button>
                   {selected.state === 'Approved' ? <button className="btn btn-ghost" type="button" disabled={working} onClick={() => mutate('revoke')}>Revoke approval</button> : <button className="btn btn-ghost" type="button" disabled={working || !body.trim()} onClick={() => mutate('approve')}>Approve only</button>}
                   <button className="btn btn-ghost" type="button" disabled={working} onClick={copyDraft}>Copy text</button>
+                  <button className="btn btn-ghost text-danger" type="button" disabled={working} onClick={() => void removeDraft()}>Delete</button>
                 </div>
                 <SendPanel key={`${selected.id}:${sendTick}`} draftId={selected.id} version={selected.version} state={selected.state} appLabel={selected.channel === 'Email' ? appLabel : 'LinkedIn'} onOpenAgain={() => void openAgain()}
                   channel={selected.channel} onSwitchChannel={(to) => void switchChannel(to)} onPending={setSendOpen}

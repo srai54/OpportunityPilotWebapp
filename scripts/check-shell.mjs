@@ -28,8 +28,8 @@ const guest = await (await fetch(`${API}/api/v1/auth/guest`, { method: 'POST' })
 if (!guest?.token) { console.error(`Could not sign in as a guest at ${API}. Is the API running in demo mode?`); process.exit(2) }
 const signIn = ([t, g]) => { try { localStorage.setItem('op-theme', t); localStorage.setItem('op.guestToken', JSON.stringify(g)); localStorage.setItem('op.onboarded', '1'); localStorage.setItem('op.coach.off', '1') } catch {} }
 const ROUTES = ['/', '/wellfound', '/opportunities', '/outreach', '/campaigns', '/campaigns/new', '/follow-ups', '/insights',
-  '/profiles', '/settings', '/connectors', '/how-it-works', '/staffing', '/staffing/candidates', '/does-not-exist']
-const ADV_ONLY = new Set(['/campaigns', '/campaigns/new', '/follow-ups', '/insights', '/connectors', '/how-it-works', '/staffing', '/staffing/candidates'])
+  '/profiles', '/settings', '/connectors', '/how-it-works', '/staffing', '/staffing/candidates', '/staffing/interviews', '/interviews', '/does-not-exist']
+const ADV_ONLY = new Set(['/campaigns', '/campaigns/new', '/follow-ups', '/insights', '/connectors', '/how-it-works', '/staffing', '/staffing/candidates', '/staffing/interviews', '/interviews'])
 const fails = []
 const tid = (id) => `[data-testid="${id}"]`
 

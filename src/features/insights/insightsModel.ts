@@ -194,7 +194,7 @@ export const ACTIVITY_GROUPS: { key: ActivityGroup; label: string; kinds: string
   { key: 'setup', label: 'Profile and mailbox', kinds: ['ProfileSaved', 'MailboxConnected'] },
 ]
 
-export const ACTIVITY_RANGES = [{ days: 7, label: '7 days' }, { days: 30, label: '30 days' }, { days: 90, label: '90 days' }, { days: 0, label: 'All time' }] as const
+export const ACTIVITY_RANGES = [{ days: 1, label: 'Today' }, { days: 7, label: '7 days' }, { days: 30, label: '30 days' }, { days: 90, label: '90 days' }, { days: 0, label: 'All time' }] as const
 
 /** The API path for one page of the feed. `before` is the oldest time already shown; `days` 0 means no start date. */
 export function activityPath(sales: boolean, group: ActivityGroup, days: number, before: string | null, now: Date = new Date(), take = 20): string {

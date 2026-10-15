@@ -14,6 +14,7 @@ import { useShell } from '../shell/ShellContext'
 import { CoverNotePanel } from './CoverNotePanel'
 import { OutreachActionsPanel } from './OutreachActionsPanel'
 import { JdCircle } from './JdCircle'
+import { JobInterviewsCard } from '../interviews/JobInterviewsCard'
 import {
   displayUrl,
   factLabel,
@@ -390,6 +391,7 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
             <OutreachActionsPanel o={o} />
           </div>
           <JdCircle o={o} />
+          {o.mode === 'Job' && <JobInterviewsCard opportunityId={o.id} />}
 
           {details && <>
           <Card title={`Evidence — ${o.evidence.length} ${o.evidence.length === 1 ? 'source' : 'sources'}`}>

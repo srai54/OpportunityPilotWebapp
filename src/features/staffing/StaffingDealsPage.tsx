@@ -124,7 +124,7 @@ function NewDealForm({ accounts, onCreated }: { accounts: StaffingAccount[]; onC
     try {
       let id = accountId
       if (!id) {
-        const created = await api<StaffingAccount>('/api/v1/staffing/accounts', { method: 'POST', body: JSON.stringify({ name: accountName.trim(), source }) })
+        const created = await api<StaffingAccount>('/api/v1/staffing/accounts', { method: 'POST', body: JSON.stringify({ name: accountName.trim(), source: accountSource(source) }) })
         id = created.id
       }
       await api<StaffingDeal>(`/api/v1/staffing/accounts/${id}/deals`, {
@@ -154,4 +154,9 @@ function NewDealForm({ accounts, onCreated }: { accounts: StaffingAccount[]; onC
     {error && <ErrorNotice error={error} />}
     <div className="panel-foot"><button className="btn btn-primary" type="submit" disabled={busy || !title.trim() || (!accountId && !accountName.trim())}>{busy ? 'Creating…' : 'Create deal'}</button></div>
   </form>
+}
+
+/** A client only knows these sources; a deal from LinkedIn (assisted) creates a client recorded as found on the public web. */
+function accountSource(source: DealSource): string {
+  return ['Manual', 'Import', 'PublicWeb', 'Upwork', 'Freelancer', 'Tender', 'Referral'].includes(source) ? source : 'PublicWeb'
 }

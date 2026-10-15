@@ -56,8 +56,11 @@ describe('NAV_GROUPS', () => {
   })
 
   it('adds campaigns, follow-ups, insights, staffing and help only with Advanced on, each route once', () => {
-    expect(labels(true)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Inbox', 'Campaigns', 'Follow-ups', 'Autopilot', 'Insights', 'Profiles', 'Settings', 'Connectors', 'How it works'])
+    expect(labels(true)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Inbox', 'Campaigns', 'Follow-ups', 'My interviews', 'Autopilot', 'Insights', 'Profiles', 'Settings', 'Connectors', 'How it works'])
     expect(labels(true, 'sales')).toContain('Deals')
+    expect(labels(true, 'sales')).toContain('Interviews')
+    expect(labels(true, 'sales')).not.toContain('My interviews')
+    expect(labels(false, 'sales')).not.toContain('Interviews')
     expect(labels(false, 'sales')).not.toContain('Deals')
     const routes = navGroupsFor('candidate', true).flatMap((g) => g.items.map((i) => i.to))
     expect(new Set(routes).size).toBe(routes.length)

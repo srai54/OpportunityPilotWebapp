@@ -13,7 +13,8 @@ import { leadChips } from '../../components/cardModel'
 import { foundLabel, platformLabel, STATUS_LABELS } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
 import { percent } from './analyticsModel'
-import { averageFromBands, greeting, heroFor, lastWeek, strongCount } from './homeModel'
+import { useAuth } from '../auth/AuthContext'
+import { averageFromBands, firstName, greeting, heroFor, lastWeek, strongCount } from './homeModel'
 
 const dateText = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 
@@ -25,11 +26,13 @@ export function HomeHero({ a, workspace, trend }: Readonly<{ a: AnalyticsOvervie
   const goal = clampGoal(readGoal(workspace))
   const done = trend ? lastWeek(trend.points, metric.key) : 0
   const [now] = useState(() => new Date())
+  const { user } = useAuth()
+  const name = user && !user.guest ? firstName(user.email) : ''
   return (
     <section className="ccard hero2" aria-label="Today">
       <div>
         <p className="date">{dateText.format(now)}</p>
-        <h2>{greeting(now.getHours())}</h2>
+        <h2>{greeting(now.getHours())}{name ? `, ${name}` : ''}</h2>
         <p className="lead">{hero.text}</p>
         <div className="acts">
           <Link className="btn btn-primary" to={hero.primary.to} data-coach="start-card">{hero.primary.label}</Link>

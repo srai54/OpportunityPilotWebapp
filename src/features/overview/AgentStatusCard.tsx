@@ -45,6 +45,17 @@ export function AgentStatusCard() {
           {s.lastSeenAt ? `Last checked in ${when(s.lastSeenAt)}.` : s.connected ? 'It has not checked in yet.' : 'No agent is connected.'}
           {' '}{s.appliedLast7Days} application{s.appliedLast7Days === 1 ? '' : 's'} in the last 7 days · {s.waiting} approved job{s.waiting === 1 ? '' : 's'} waiting for it.
         </p>
+        {!s.online && (
+          <details className="how-it-works">
+            <summary>How to start it</summary>
+            <ol className="hint-list">
+              <li>On your computer (Node 20+): <code>cd OpportunityPilotWebApi/agent</code>, <code>npm install</code>, <code>npx playwright install chromium</code>, <code>npm run agent -- init</code>.</li>
+              <li>Applications → <strong>Create agent key</strong>, paste it into <code>config.json</code> (<code>api.key</code>) with your answers (notice period, salary, phone).</li>
+              <li>Sign in once per site in the window it opens: <code>npm run agent -- login linkedin</code> (also <code>naukri</code>).</li>
+              <li>Approve jobs here, then <code>npm run agent -- apply linkedin</code> (a dry run) and <code>--submit</code> to really apply. This card turns green when it checks in.</li>
+            </ol>
+          </details>
+        )}
         {s.recent.length > 0 && (
           <ul className="hint-list" aria-label="Latest applications">
             {s.recent.map((r) => <li key={`${r.title}${r.at}`}><strong>{r.status}</strong> · {r.title} at {r.company} ({r.platform}) · {when(r.at)}</li>)}

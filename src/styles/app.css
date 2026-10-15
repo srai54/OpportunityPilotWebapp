@@ -2472,3 +2472,12 @@ html { scroll-padding-bottom: 96px; }
 .more-info > summary::-webkit-details-marker { display: none; }
 .more-info > summary::before { content: "ⓘ "; }
 .more-info[open] > summary { margin-bottom: 4px; }
+
+/* Job/lead page: one column, one card after another, so no side column runs out and leaves empty space (user, 2026-10-15). */
+.detail2, .detail3 { grid-template-columns: minmax(0, 1fr); max-width: 980px; margin-inline: auto; width: 100%; }
+.detail3 > :nth-child(2) { order: 0; grid-column: auto; }
+.detail3 .evidence-panel { max-height: none; }
+.reach-route { flex-wrap: wrap; }
+.reach-route .btn { max-width: 100%; white-space: normal; height: auto; }
+/* The voice sheet opens from the dark app bar: use the page's own text colour, not the bar's (light + dark mode). */
+.voice-sheet { color: var(--op-ink); }

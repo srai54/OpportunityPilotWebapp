@@ -42,3 +42,9 @@ export function averageFromBands(bands: readonly { from: number; to: number; cou
   if (!n) return null
   return Math.round(bands.reduce((a, b) => a + ((b.from + b.to) / 2) * b.count, 0) / n)
 }
+
+/** "Shivanshu" from shivanshu.rai@company.com; nothing for a guest or an address without a readable name. */
+export function firstName(email: string | null | undefined): string {
+  const part = (email ?? '').split('@')[0].split(/[._+-]/)[0].replace(/[^a-zA-Z]/g, '')
+  return part.length >= 2 ? part[0].toUpperCase() + part.slice(1).toLowerCase() : ''
+}

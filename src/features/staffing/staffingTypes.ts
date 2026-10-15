@@ -98,3 +98,10 @@ export type StaffingKpis = {
   offersExtended: number; offersAccepted: number; contractsSigned: number; placements: number
   messagesAwaitingSend: number; repliesToClassify: number; meetingsUpcoming: number
 }
+
+/** GET /api/v1/staffing/interviews: one row of the sales interview tracker (StaffingInterviewBoardRowDto). */
+export type InterviewBoardRow = {
+  interview: Interview & { dealId: string; candidateNotifiedAt: string | null; updatedAt: string }
+  candidateId: string; candidateName: string; candidateEmail: string | null; dealTitle: string; client: string | null
+  progressLinkActive: boolean; progressShowsInterviews: boolean
+}

@@ -17,7 +17,8 @@ import {
   ACTIVITY_GROUPS, ACTIVITY_RANGES, activityLine, activityPulse, agoLabel, activityPath, clampGoal, hasMore, type ActivityGroup, trimBands, funnelRows, goalMetric, goalProgress, kpisFor, lastDays, readGoal, seriesFor, sumOf, trendSummary, writeGoal,
 } from './insightsModel'
 
-const RANGES = [7, 14, 30, 90] as const
+/** 1 = today (the default); the trend chart needs at least a week, so it shows the last 7 days then. */
+const RANGES = [1, 7, 14, 30, 90] as const
 const KPI_ICONS = ['search', 'check', 'approvals', 'outreach', 'mail', 'trend'] as const
 const KPI_TONES = ['blue', 'teal', 'green', 'indigo', 'amber', 'neutral'] as const
 
@@ -34,7 +35,7 @@ export function InsightsPage() {
 /** "My activity": the person's own recorded actions, newest first, filtered by kind and date, with "Load more". Lines about a job or lead link to it. */
 function ActivityPanel({ sales }: Readonly<{ sales: boolean }>) {
   const [group, setGroup] = useState<ActivityGroup>('all')
-  const [days, setDays] = useState<number>(30)
+  const [days, setDays] = useState<number>(1)
   // Keyed so changing a filter starts again from the newest page.
   return <ActivityList key={`${group}|${days}`} sales={sales} group={group} days={days} onGroup={setGroup} onDays={setDays} />
 }
@@ -130,10 +131,12 @@ function ActivityList({ sales, group, days, onGroup, onDays }: Readonly<{ sales:
 function InsightsView() {
   const { workspace, overview } = useShell()
   const sales = workspace === 'sales'
-  const [days, setDays] = useState<(typeof RANGES)[number]>(30)
+  const [days, setDays] = useState<(typeof RANGES)[number]>(1)
+  const trendDays = Math.max(7, days)
+  const rangeLabel = days === 1 ? 'today' : `last ${days} days`
   const [goal, setGoalState] = useState(() => readGoal(workspace))
 
-  const trend = useApi<AnalyticsTrend>(`/api/v1/analytics/trend?workspace=${sales ? 'Sales' : 'Candidate'}&days=${days}`)
+  const trend = useApi<AnalyticsTrend>(`/api/v1/analytics/trend?workspace=${sales ? 'Sales' : 'Candidate'}&days=${trendDays}`)
   const detail = useApi<AnalyticsOverview>(analyticsPath(workspace, days))
   const t = trend.data
   const a = detail.data
@@ -161,7 +164,7 @@ function InsightsView() {
         actions={
           <div className="segmented" role="group" aria-label="Time range" data-coach="insights-range">
             {RANGES.map((r) => (
-              <button key={r} type="button" className={days === r ? 'active' : ''} aria-pressed={days === r} onClick={() => setDays(r)}>{r} days</button>
+              <button key={r} type="button" className={days === r ? 'active' : ''} aria-pressed={days === r} onClick={() => setDays(r)}>{r === 1 ? 'Today' : `${r} days`}</button>
             ))}
           </div>
         }
@@ -187,11 +190,11 @@ function InsightsView() {
           <KpiBand six label="Key figures">
             {kpisFor(workspace).map((k, i) => (
               <KpiCard key={k.key} icon={KPI_ICONS[i % KPI_ICONS.length]} tone={KPI_TONES[i % KPI_TONES.length]} label={k.label} value={t.current[k.key]}
-                change={{ current: t.current[k.key], previous: t.previous[k.key] }} sub={`vs the ${days} days before`} series={t.points.map((p) => p[k.key])} />
+                change={{ current: t.current[k.key], previous: t.previous[k.key] }} sub={`vs the ${trendDays} days before`} series={t.points.map((p) => p[k.key])} />
             ))}
           </KpiBand>
 
-          <Card title="Activity over time" actions={<span className="muted-small">last {days} days · per day</span>} coach="insights-trend">
+          <Card title="Activity over time" actions={<span className="muted-small">last {trendDays} days · per day</span>} coach="insights-trend">
 <div className="stack-3">
               <p>{trendSummary(workspace, days, t.current, t.previous)}</p>
               <TrendChart points={t.points} series={series} summary={trendSummary(workspace, days, t.current, t.previous)} />
@@ -221,7 +224,7 @@ function InsightsView() {
               </div>
 </Card>
 
-            <Card title="Funnel" actions={<span className="muted-small">last {days} days</span>}>
+            <Card title="Funnel" actions={<span className="muted-small">{rangeLabel}</span>}>
 <div className="stack-3">
                 <HBars
                   rows={funnelRows(workspace, t.current).map((r) => ({ label: r.label, value: r.count, note: r.fromPrevious === null ? undefined : `${r.fromPrevious}% of previous` }))}

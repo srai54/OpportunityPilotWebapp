@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { greeting, heroFor, lastWeek, strongCount } from './homeModel'
+import { firstName, greeting, heroFor, lastWeek, strongCount } from './homeModel'
 
 const base = { sales: false, awaiting: 0, shortlistedNotApplied: 0, found: 0, qualified: 0, days: 30 }
 
@@ -36,4 +36,12 @@ import { averageFromBands } from './homeModel'
 describe('averageFromBands', () => {
   it('weights band midpoints by count', () => { expect(averageFromBands([{ from: 0, to: 50, count: 1 }, { from: 50, to: 100, count: 3 }])).toBe(63) })
   it('is null with nothing scored', () => { expect(averageFromBands([{ from: 0, to: 50, count: 0 }])).toBeNull() })
+})
+
+describe('firstName', () => {
+  it('reads a first name from the sign-in email, and nothing from a bare address', () => {
+    expect(firstName('shivanshu.rai@fiftyfivetech.io')).toBe('Shivanshu')
+    expect(firstName('x@y.z')).toBe('')
+    expect(firstName(null)).toBe('')
+  })
 })

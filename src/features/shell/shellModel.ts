@@ -42,6 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/inbox', label: 'Inbox', icon: 'mail' },
       { to: '/campaigns', label: 'Campaigns', icon: 'campaigns', advanced: true, count: { key: 'campaigns', tone: 'muted', srLabel: 'campaigns' } },
       { to: '/follow-ups', label: 'Follow-ups', icon: 'followUps', advanced: true },
+      { to: '/interviews', label: 'My interviews', icon: 'calendar', advanced: true },
       { to: '/autopilot', label: 'Autopilot', icon: 'autopilot', advanced: true },
       { to: '/insights', label: 'Insights', icon: 'insights', advanced: true },
     ],
@@ -81,6 +82,7 @@ export const SALES_NAV_GROUPS: NavGroup[] = [
     items: [
       { to: '/staffing', label: 'Deals', icon: 'bids', advanced: true },
       { to: '/staffing/candidates', label: 'Candidates', icon: 'profiles', advanced: true },
+      { to: '/staffing/interviews', label: 'Interviews', icon: 'calendar', advanced: true },
     ],
   },
   NAV_GROUPS[2],

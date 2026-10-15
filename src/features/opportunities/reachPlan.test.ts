@@ -53,3 +53,10 @@ describe('referralNote', () => {
     expect(signOffName('Hello\n\nRegards,')).toBeNull()
   })
 })
+
+describe('connections at a company', () => {
+  it('opens the same LinkedIn search as typing the company with 1st-degree connections only', async () => {
+    const { connectionsAtUrl } = await import('./reachPlan')
+    expect(connectionsAtUrl('Comviva')).toBe('https://www.linkedin.com/search/results/people/?keywords=%22Comviva%22&network=%5B%22F%22%5D')
+  })
+})

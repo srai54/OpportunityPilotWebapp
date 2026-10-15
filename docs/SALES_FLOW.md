@@ -152,3 +152,14 @@ Template fields per entry: Route, Component, What it shows, Actions, State (read
 - **Staffing (rail → Staffing):** Deals (funnel KPIs), deal page (stages, conversation and meetings, submissions,
   interviews, feedback, offers/contract/placement, proposals from rate cards), Candidates (consent and shareable fields),
   Rate cards. Routes: `/staffing`, `/staffing/deals/:id`, `/staffing/candidates`, `/staffing/rate-cards`.
+
+### Interviews — tracker across deals (2026-10-15)
+
+- **Who:** Sales (staffing). **Route:** `/staffing/interviews` (rail → Staffing → Interviews, Advanced like the rest of Staffing).
+- **API:** `GET /api/v1/staffing/interviews` (rows with candidate, client, role, progress-link visibility); quick actions call the
+  existing deal endpoints (`…/interviews/{id}/notified`, `…/finish` with Completed / NoShow / Cancelled, `POST …/interviews` for the next round).
+- **Shows:** KPIs (coming up, next 7 days, candidate not told, done), then cards: coming up (soonest first) and past.
+  Each card: candidate · round, status word, "Candidate told / not told", client · role · time, what the progress link shows.
+- **Actions:** I told the candidate · Mark done · No-show · Ask for next round · Cancel · Share progress (the existing
+  progress-link panel) · Open deal. The candidate's `/progress/<token>` page reflects a status change when the link shows interviews.
+- **Status:** built.

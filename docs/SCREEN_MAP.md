@@ -45,6 +45,8 @@ Navigation rail (`navGroupsFor` in `src/features/shell/shellModel.ts`): **Candid
 | `/staffing` | `src/features/staffing/StaffingDealsPage.tsx` | built |
 | `/staffing/deals/:id` | `src/features/staffing/StaffingDealPage.tsx` (+ `DealWorkPanels.tsx`, `ConversationPanel.tsx`) | built |
 | `/staffing/candidates` | `src/features/staffing/StaffingCandidatesPage.tsx` | built |
+| `/staffing/interviews` | `src/features/staffing/StaffingInterviewsPage.tsx` | built |
+| `/interviews` | `src/features/interviews/MyInterviewsPage.tsx` | built |
 | `/staffing/rate-cards` | `src/features/staffing/StaffingRateCardsPage.tsx` | built |
 | `/wellfound` (Job discovery / Hiring signals) | `src/features/wellfound/WellfoundPage.tsx` + `BoardSearchPanel.tsx` (Indeed, LinkedIn, SEEK tabs) | built |
 

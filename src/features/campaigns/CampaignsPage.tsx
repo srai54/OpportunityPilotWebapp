@@ -11,6 +11,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import type { CampaignSummary, ProfileSummary } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
+import { api } from '../../lib/api'
 import { formatWhen } from '../applications/applicationStatus'
 import { JOB_STATE_LABELS } from '../research/researchModel'
 import { campaignFilterCounts, filterCampaigns, isRunning, MODE_LABELS, repeatLabel, type CampaignModeFilter } from './campaignModel'
@@ -26,6 +27,12 @@ const FLOW = [
 export function CampaignsPage() {
   const { workspace } = useShell()
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
+  const [deleteError, setDeleteError] = useState<Error>()
+  async function remove(c: CampaignSummary) {
+    if (!window.confirm(`Delete "${c.name}" and its ${c.opportunityCount} leads and drafts? This cannot be undone.`)) return
+    setDeleteError(undefined)
+    try { await api<void>(`/api/v1/campaigns/${c.id}`, { method: 'DELETE' }); campaigns.reload() } catch (e) { setDeleteError(e as Error) }
+  }
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
   const schedules = useApi<{ campaignId: string; cadenceMinutes: number; nextRunAt: string; paused: boolean }[]>('/api/v1/schedules')
   const [filter, setFilter] = useState<CampaignModeFilter>('all')
@@ -62,6 +69,7 @@ export function CampaignsPage() {
         </KpiBand>
       )}
       {campaigns.error && <ErrorNotice error={campaigns.error} onRetry={campaigns.reload} what="your campaigns" />}
+      {deleteError && <ErrorNotice error={deleteError} />}
       {campaigns.loading && !campaigns.data && <LoadingState label="Loading campaigns…" waking={campaigns.waking} rows={3} />}
 
       {campaigns.data && campaigns.data.length === 0 && (
@@ -171,6 +179,7 @@ export function CampaignsPage() {
                         ) : (
                           <Link to={`/campaigns/${c.id}/edit?step=4`}>Run now</Link>
                         )}
+                        {' · '}<button type="button" className="btn-link text-danger" onClick={() => void remove(c)}>Delete<span className="sr-only"> {c.name}</span></button>
                       </td>
                     </tr>
                   )

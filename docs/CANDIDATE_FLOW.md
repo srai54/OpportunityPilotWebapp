@@ -231,3 +231,13 @@ Campaign builder step 3 offers **Indeed job search** (Job campaigns only), next 
 searched (first 3 job titles/phrases, first location that is not "Remote"), warns when the server has no JSearch key,
 and adds a source with no URL (`POST /api/v1/campaigns/{id}/sources { kind: "Indeed" }`). Runs list Indeed postings in
 Opportunities with platform "Indeed"; they are scored, suggested to Approvals and applied to on Indeed.
+
+### My interviews — rounds for jobs you applied to (2026-10-15)
+
+- **Who:** Candidate. **Route:** `/interviews` (rail → Work → My interviews, Advanced); per job on the opportunity page (job leads) as the "Interviews" card.
+- **API:** `GET /api/v1/interviews[?opportunityId=]`, `POST /api/v1/opportunities/{id}/interviews`, `PUT /api/v1/interviews/{id}`,
+  `POST /api/v1/interviews/{id}/status`, `DELETE /api/v1/interviews/{id}`.
+- **Shows:** KPIs (coming up, next 7 days, done, jobs), then cards (coming up soonest first, then past): job · round, status word, time, notes, Join link.
+- **Actions:** Add (on the job page: when, join link, notes; the round counts up), Edit, Mark done / Missed / Cancel (done and missed need a time), Undo, Remove (confirms).
+  Typed in by you; nothing is read from a calendar or sent.
+- **Status:** built.

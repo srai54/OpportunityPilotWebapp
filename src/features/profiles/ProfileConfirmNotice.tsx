@@ -13,6 +13,7 @@ export function ProfileConfirmNotice({ opportunityId, onConfirmed }: Readonly<{ 
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<Error>()
   const [profileId, setProfileId] = useState<string>()
+  const [empty, setEmpty] = useState(false)
 
   async function confirm() {
     setBusy(true); setProblem(undefined)
@@ -22,7 +23,7 @@ export function ProfileConfirmNotice({ opportunityId, onConfirmed }: Readonly<{ 
       setProfileId(campaign.profileId)
       const profile = await api<Profile>(`/api/v1/profiles/${campaign.profileId}`)
       const data = confirmFilledClaims(profile.type, normalizeData(profile.data))
-      if (!Object.values(data.confirmations).some(Boolean)) throw new Error('This profile has no skills or claims written down yet, so there is nothing to confirm. Add some to the profile first.')
+      if (!Object.values(data.confirmations).some(Boolean)) { setEmpty(true); return }
       const saved = profile.confirmedAt ? profile
         : await api<Profile>(`/api/v1/profiles/${profile.id}`, { method: 'PUT', body: JSON.stringify({ name: profile.name, data, confirmed: true, expectedVersion: profile.version }) })
       // Never leave the button spinning on a profile the server still treats as unconfirmed: say so and point at it.
@@ -38,6 +39,8 @@ export function ProfileConfirmNotice({ opportunityId, onConfirmed }: Readonly<{ 
         <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void confirm()}>{busy ? 'Confirming…' : 'Confirm my profile and continue'}</button>
         <Link className="btn btn-ghost btn-sm" to={profileId ? `/profiles/${profileId}` : '/profiles'}>Review my profile first</Link>
       </div>
+      {empty && <div className="stack-2"><span>Your profile has no skills yet. Add a few (e.g. "Python, SQL, 4 years"), save, then come back.</span>
+        <Link className="btn btn-primary btn-sm" to={profileId ? `/profiles/${profileId}` : '/profiles'}>Add my skills</Link></div>}
       {problem && <ErrorNotice error={problem} />}
     </div>
   )

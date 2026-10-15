@@ -29,6 +29,8 @@ const ResearchProgressPage = lazyPage(() => import('./features/research/Research
 const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const StaffingDealsPage = lazyPage(() => import('./features/staffing/StaffingDealsPage').then((m) => ({ default: m.StaffingDealsPage })))
 const StaffingDealPage = lazyPage(() => import('./features/staffing/StaffingDealPage').then((m) => ({ default: m.StaffingDealPage })))
+const StaffingInterviewsPage = lazyPage(() => import('./features/staffing/StaffingInterviewsPage').then((m) => ({ default: m.StaffingInterviewsPage })))
+const MyInterviewsPage = lazyPage(() => import('./features/interviews/MyInterviewsPage').then((m) => ({ default: m.MyInterviewsPage })))
 const StaffingCandidatesPage = lazyPage(() => import('./features/staffing/StaffingCandidatesPage').then((m) => ({ default: m.StaffingCandidatesPage })))
 const AppShell = lazyPage(() => import('./features/shell/AppShell').then((m) => ({ default: m.AppShell })))
 const ProgressPage = lazyPage(() => import('./features/progress/ProgressPage').then((m) => ({ default: m.ProgressPage })))
@@ -124,6 +126,8 @@ const router = createBrowserRouter([
       { path: 'staffing', element: <StaffingDealsPage />, handle: { title: 'Staffing deals' } },
       { path: 'staffing/deals/:id', element: <StaffingDealPage />, handle: { title: 'Staffing deal' } },
       { path: 'staffing/candidates', element: <StaffingCandidatesPage />, handle: { title: 'Candidates' } },
+      { path: 'staffing/interviews', element: <StaffingInterviewsPage />, handle: { title: 'Interviews' } },
+      { path: 'interviews', element: <MyInterviewsPage />, handle: { title: 'My interviews' } },
       { path: 'how-it-works', element: <HowItWorksPage />, handle: { title: 'How it works' } },
       { path: 'profiles', element: <ProfilesPage />, handle: { title: 'Profiles' } },
       { path: 'profiles/:id', element: <ProfilesPage />, handle: { title: 'Profiles' } },

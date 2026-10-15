@@ -151,6 +151,7 @@ Line length ≤ 72ch for prose. The top bar holds the only `<h1>` (visually hidd
 | `LeadCard` (jobs and companies) | Review, approved list, Find results | Select box · initial avatar · title · company · place · source chips (Remote, pay, new) · **match ring** (score out of 100, with the word "match") · status badge · primary action (Approve / Open / Reach out) |
 | `MessageCard` | Outreach inbox | Company · channel icon · subject line · state badge (Draft / Approved / Sent) · first line of the text |
 | `FollowUpCard` | Follow-ups | Company · what to do · due label · Open / Done |
+| Interview card (2026-10-15) | Sales Interviews, My interviews, the job page | Same layout as `FollowUpCard` (`followup-card`): avatar · who + round + status word (+ "Candidate told" for Sales) · where and when ("Today, 15:00") · one note line · quick actions as secondary buttons, Cancel/Remove as ghost. Coming up first (soonest first), then Past |
 | `StatCard` | Key figures | Label, figure, change, sparkline |
 | `ComposeCard` / `SendCard` | Outreach | Compose = fields + the "Before you send" chips. Send = mail app choice + the one big button + the receipt |
 

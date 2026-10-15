@@ -1,5 +1,5 @@
 /** Browser speech recognition (Chrome, Edge, Android Chrome, iOS Safari). No audio leaves the browser through our servers. */
-export type Recognition = { lang: string; interimResults: boolean; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: (() => void) | null; start: () => void; stop: () => void }
+export type Recognition = { lang: string; interimResults: boolean; onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null; onend: (() => void) | null; onerror: ((e: { error?: string }) => void) | null; start: () => void; stop: () => void }
 type RecognitionCtor = new () => Recognition
 
 export function recognitionCtor(): RecognitionCtor | null {
