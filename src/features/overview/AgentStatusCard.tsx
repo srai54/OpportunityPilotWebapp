@@ -49,10 +49,10 @@ export function AgentStatusCard() {
           <details className="how-it-works">
             <summary>How to start it</summary>
             <ol className="hint-list">
-              <li>On your computer (Node 20+): <code>cd OpportunityPilotWebApi/agent</code>, <code>npm install</code>, <code>npx playwright install chromium</code>, <code>npm run agent -- init</code>.</li>
-              <li>Applications → <strong>Create agent key</strong>, paste it into <code>config.json</code> (<code>api.key</code>) with your answers (notice period, salary, phone).</li>
-              <li>Sign in once per site in the window it opens: <code>npm run agent -- login linkedin</code> (also <code>naukri</code>).</li>
-              <li>Approve jobs here, then <code>npm run agent -- apply linkedin</code> (a dry run) and <code>--submit</code> to really apply. This card turns green when it checks in.</li>
+              <li>Press <strong>Connect the agent</strong> below and copy the key (shown once).</li>
+              <li>On Windows: double-click <code>OpportunityPilotWebApi/agent/setup.cmd</code> and paste the key. It installs everything, connects and opens LinkedIn to sign in (needs Node.js from nodejs.org).</li>
+              <li>Fill your answers in the agent’s <code>config.json</code> (notice period, salary, phone, years per skill).</li>
+              <li>Approve jobs here, then run <code>npm run agent -- apply linkedin</code> (a dry run) and add <code>--submit</code> to really apply. This card turns green when it checks in.</li>
             </ol>
           </details>
         )}

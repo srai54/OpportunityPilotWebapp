@@ -5,8 +5,12 @@ import { commandPath, describeCommand, parseCommand, type ParsedCommand } from '
 import { listenOnce, recognitionCtor, type Recognition } from '../command/speech'
 import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, whisperAvailable, type Recording } from './whisper'
+import { api } from '../../lib/api'
+import { isYes, speak, type AssistantReply } from './assistantModel'
 
 /**
+ * Voice assistant and launch from anywhere. What you say goes to the assistant, which answers aloud from your own numbers and may
+ * propose one action (start a search, open a screen); say "yes" or tap to run it. Without the server it falls back to the local parser.
  * Voice launch from anywhere: a mic in the app bar (and a round button on phones). Say "find react jobs in Pune every day";
  * it shows what it understood and runs only after "Yes, run it". Typing works where the browser has no speech support.
  */
@@ -25,11 +29,30 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const [err, setErr] = useState<string | null>(null)
   const recording = useRef<Recording | null>(null)
   const canVoice = canSpeak || (whisper && canRecord())
+  const [reply, setReply] = useState<AssistantReply | null>(null)
+  const [thinking, setThinking] = useState(false)
 
   function understand(value: string) {
-    setText(value)
-    const parsed = parseCommand(value, ws)
-    setPlan(parsed); setTried(true)
+    setText(value); setReply(null)
+    setThinking(true)
+    void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({ text: value, workspace: ws === 'sales' ? 'Sales' : 'Candidate' }) })
+      .then((r) => {
+        setReply(r)
+        const launch = r.action?.kind === 'launch' ? parseCommand([r.action.query, r.action.location ? `in ${r.action.location}` : ''].join(' ').trim(), ws) ?? parseCommand(value, ws) : null
+        setPlan(launch); setTried(r.action?.kind === 'launch')
+        speak(r.reply, () => { if (r.action && canSpeak) listenForYes(r, launch) })
+      })
+      .catch(() => { const parsed = parseCommand(value, ws); setPlan(parsed); setTried(true) })
+      .finally(() => setThinking(false))
+  }
+  /** After the spoken answer, one short listen: "yes" runs the proposed action, anything else leaves it on screen. */
+  function listenForYes(r: AssistantReply, launch: ParsedCommand | null) {
+    const heard = listenOnce((t) => { if (isYes(t)) run(r, launch) }, () => setListening(false))
+    if (heard) { rec.current = heard; setListening(true) }
+  }
+  function run(r: AssistantReply | null, launch: ParsedCommand | null) {
+    if (launch) { close(); navigate(commandPath(launch, ws)); return }
+    if (r?.action?.kind === 'open' && r.action.page) { close(); navigate(r.action.page) }
   }
   function start() {
     setPlan(null); setTried(false); setErr(null)
@@ -45,11 +68,11 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     }
   }
   function openSheet() {
-    setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null)
+    setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null); setReply(null)
     if (canSpeak) start()
     else if (canRecord()) void whisperAvailable().then(setWhisper)
   }
-  function close() { rec.current?.stop(); recording.current?.stop(); setOpen(false); setListening(false) }
+  function close() { rec.current?.stop(); recording.current?.stop(); window.speechSynthesis?.cancel(); setOpen(false); setListening(false) }
 
   useEffect(() => {
     if (!open) return
@@ -60,7 +83,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const example = ws === 'sales' ? '“Find companies hiring React developers in London”' : '“Find .NET jobs in Pune every day”'
+  const example = ws === 'sales' ? '“What’s my status?” or “Find companies hiring React developers in London”' : '“What’s my status?” or “Find .NET jobs in Pune every day”'
   return (
     <>
       <button type="button" className="cmd-pill" data-testid="command-pill" aria-label="Start a campaign: type or say it" onClick={openSheet}>
@@ -74,7 +97,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
         <div className="voice-scrim" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
           <div className="voice-sheet" role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
             <div className="voice-head">
-              <h2 id="voice-title">{listening ? 'Listening…' : plan ? 'Ready' : 'Say it or type it'}</h2>
+              <h2 id="voice-title">{listening ? 'Listening…' : plan || reply ? 'Ready' : 'Ask or say what to do'}</h2>
               <button type="button" className="icon-btn" aria-label="Close" onClick={close}><span aria-hidden="true">✕</span></button>
             </div>
             <button type="button" className={`voice-orb${listening ? ' is-on' : ''}`} onClick={start} disabled={!canVoice} aria-pressed={listening} aria-label={listening ? 'Stop listening' : 'Speak'}>
@@ -87,11 +110,17 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
               <button type="submit" className="btn btn-secondary" disabled={!text.trim()}>Check</button>
             </form>
             {err && <p className="notice notice-warning" role="alert">{err}</p>}
+            {thinking && <p className="muted-small" role="status">Thinking…</p>}
+            {reply && <div className="voice-plan" role="status" aria-live="polite">
+              <p>{reply.reply}</p>
+              {reply.action?.kind === 'open' && <button type="button" className="btn btn-primary voice-run" onClick={() => run(reply, null)}>{reply.action.label || 'Open it'}</button>}
+              {reply.action && <span className="muted-small">Say “yes” or tap.</span>}
+            </div>}
             {tried && !plan && <p className="notice notice-warning" role="alert">Add a role or skill, e.g. “react developer in Berlin”.</p>}
             {plan && (
               <div className="voice-plan" role="status">
                 <p>{describeCommand(plan, ws)}</p>
-                <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => { close(); navigate(commandPath(plan, ws)) }}>Yes, run it</button>
+                <button type="button" className="btn btn-primary voice-run" data-testid="voice-run" onClick={() => run(reply, plan)}>Yes, run it</button>
               </div>
             )}
           </div>
