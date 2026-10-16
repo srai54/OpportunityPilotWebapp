@@ -27,6 +27,30 @@ export const PAID_SITES = [
   { id: 'Naukri', label: 'Naukri' },
 ] as const
 
+/** Markets for the Sales team: the US, and Europe country by country. The country narrows the place a search is sent with. */
+export const COUNTRIES: readonly { value: string; label: string; group: 'US' | 'Europe' }[] = [
+  { value: 'United States', label: 'United States', group: 'US' },
+  { value: 'Sweden', label: 'Sweden', group: 'Europe' }, { value: 'Germany', label: 'Germany', group: 'Europe' },
+  { value: 'United Kingdom', label: 'United Kingdom', group: 'Europe' }, { value: 'Netherlands', label: 'Netherlands', group: 'Europe' },
+  { value: 'France', label: 'France', group: 'Europe' }, { value: 'Denmark', label: 'Denmark', group: 'Europe' },
+  { value: 'Norway', label: 'Norway', group: 'Europe' }, { value: 'Finland', label: 'Finland', group: 'Europe' },
+  { value: 'Ireland', label: 'Ireland', group: 'Europe' }, { value: 'Spain', label: 'Spain', group: 'Europe' },
+  { value: 'Poland', label: 'Poland', group: 'Europe' }, { value: 'Switzerland', label: 'Switzerland', group: 'Europe' },
+]
+
+/** The place sent to the sites: the typed place and the chosen country together ("Berlin, Germany"), or whichever there is. */
+export function placeWithCountry(place: string, country: string): string {
+  const p = place.trim(), c = country.trim()
+  if (!c) return p
+  if (!p) return c
+  return p.toLowerCase().includes(c.toLowerCase()) ? p : `${p}, ${c}`
+}
+
+/** A contract role (not an employee job): the board's own employment type says so, or the title does. */
+export function isContract(j: Pick<BoardJob, 'employmentType' | 'title'>): boolean {
+  return /contract/i.test(j.employmentType ?? '') || /\b(contract|contractor|freelance)\b/i.test(j.title)
+}
+
 /** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */
 export function chosenSites(off: ReadonlySet<string>, paidReady: boolean): { free: string[]; paid: JobBoard[] } {
   return {
@@ -103,7 +127,7 @@ export function siteLines(feed: FeedSearchResult | undefined, boards: readonly {
 }
 
 /** A company that is hiring: the sales view of a search, one row per company instead of one per posting. */
-export type HiringCompany = { company: string; roles: AllJob[]; sites: string[]; places: string[]; remote: boolean; newest: string | null }
+export type HiringCompany = { company: string; roles: AllJob[]; sites: string[]; places: string[]; remote: boolean; contract: boolean; newest: string | null }
 
 const companyKey = (name: string) => name.toLowerCase().replace(/\b(inc|ltd|llc|limited|gmbh|pvt|private|corp|corporation|co)\b\.?/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 
@@ -119,11 +143,12 @@ export function groupByCompany(jobs: readonly AllJob[]): HiringCompany[] {
     if (!name) return
     const key = companyKey(name) || name.toLowerCase()
     let g = groups.get(key)
-    if (!g) { g = { company: name, roles: [], sites: [], places: [], remote: false, newest: null }; firstSeen.set(g, i) }
+    if (!g) { g = { company: name, roles: [], sites: [], places: [], remote: false, contract: false, newest: null }; firstSeen.set(g, i) }
     g.roles.push(j)
     if (!g.sites.includes(j.siteName)) g.sites.push(j.siteName)
     if (j.job.location && !g.places.includes(j.job.location)) g.places.push(j.job.location)
     g.remote ||= Boolean(j.job.isRemote)
+    g.contract ||= isContract(j.job)
     if (j.job.postedAt && (!g.newest || j.job.postedAt > g.newest)) g.newest = j.job.postedAt
     groups.set(key, g)
   })

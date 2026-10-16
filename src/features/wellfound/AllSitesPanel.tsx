@@ -11,7 +11,7 @@ import { placeFor } from '../suggest/picks'
 import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
 import { SitePicker } from './SitePicker'
 import type { Workspace } from '../shell/shellModel'
-import { chosenSites, feedsPath, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, COUNTRIES, feedsPath, isContract, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
 import { boardJobsPath, campaignFromSearchPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
 const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
@@ -30,6 +30,8 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const [remoteOnly, setRemoteOnly] = useState(false)
   const [off, setOff] = useState<Set<string>>(new Set())
   const [visaOnly, setVisaOnly] = useState(false)
+  const [country, setCountry] = useState('')
+  const [contractOnly, setContractOnly] = useState(false)
   const [busy, setBusy] = useState(false)
   const [found, setFound] = useState<Found>()
   const sales = workspace === 'sales'
@@ -37,7 +39,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   async function submit(e: FormEvent) {
     e.preventDefault()
     const pick = placeFor(location)
-    const place = pick.location
+    const place = placeWithCountry(pick.location, country)
     const remote = remoteOnly || pick.remote
     const { free, paid } = chosenSites(off, paidReady)
     const path = feedsPath({ query, location: place, remoteOnly: remote, sites: free })
@@ -57,7 +59,8 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const feedOk = found && !(found.feed instanceof Error) ? found.feed : undefined
   const merged = found ? mergeAll(feedOk?.jobs ?? [], found.boards.flatMap((b) => (b.result instanceof Error || b.result.status !== 'Ready') ? [] : [{ board: b.board, jobs: b.result.jobs }]), found.query) : []
   const lines = found ? siteLines(feedOk, found.boards) : []
-  const shown = visaOnly ? merged.filter((m) => mentionsVisaOrRelocation(m.job)) : merged
+  const afterVisa = visaOnly ? merged.filter((m) => mentionsVisaOrRelocation(m.job)) : merged
+  const shown = contractOnly ? afterVisa.filter((m) => isContract(m.job)) : afterVisa
   // Sales looks for companies that are hiring, not for a job: one row per company with its open roles.
   const companies = sales ? groupByCompany(shown) : []
   const count = sales ? companies.length : shown.length
@@ -73,11 +76,16 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
           <input list={ROLE_LIST_ID} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={sales ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. backend developer'} /></label>
         <label className="search-field"><span className="sr-only">Place</span>
           <input list={PLACE_LIST_ID} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Place (optional)" /></label>
+        {sales && <label className="search-field"><span className="sr-only">Country</span>
+          <select value={country} onChange={(e) => setCountry(e.target.value)}><option value="">Any country</option>
+            <optgroup label="US">{COUNTRIES.filter((c) => c.group === 'US').map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>
+            <optgroup label="Europe">{COUNTRIES.filter((c) => c.group === 'Europe').map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup></select></label>}
         <SitePicker off={off} onChange={setOff} paidReady={paidReady} />
         <button className="btn btn-primary" type="submit" disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Search'}</button>
       </div>
       <div className="search-tools row wrap" data-coach="find-filters">
         <label className="chip-check"><input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} /> Remote only</label>
+        <label className="chip-check" title="Keeps contract and freelance roles; the posting's own type or title says so"><input type="checkbox" checked={contractOnly} onChange={(e) => setContractOnly(e.target.checked)} /> Contract only</label>
         <label className="chip-check" title="Reads each posting's own text; it is a hint, not a promise"><input type="checkbox" checked={visaOnly} onChange={(e) => setVisaOnly(e.target.checked)} /> Mentions visa or relocation</label>
       </div>
     </form>
@@ -95,7 +103,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
         </ul>
       </Card>
       {count === 0
-        ? <Card tone="muted"><p>{sales ? 'No hiring company matched' : 'No job matched'} on any site that answered. Try fewer words, a broader place, or turn off Remote only{visaOnly ? ' and the visa filter' : ''}.</p></Card>
+        ? <Card tone="muted"><p>{sales ? 'No hiring company matched' : 'No job matched'} on any site that answered. Try fewer words, a broader place, or turn off Remote only{contractOnly ? ', Contract only' : ''}{visaOnly ? ' and the visa filter' : ''}.</p></Card>
         : sales ? <CardList label="Companies hiring">
           {companies.slice(0, 60).map((c) => {
             const first = c.roles[0]
@@ -110,6 +118,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
                 <div className="lead-tags">
                   {c.sites.map((site) => <span key={site} className="chip chip-site">{site}</span>)}
                   {c.remote && <span className="chip">Remote</span>}
+                  {c.contract && <span className="chip">Contract</span>}
                   {c.places.slice(0, 2).map((place) => <span key={place} className="chip">{place}</span>)}
                   {c.newest && <span className="lead-note">Newest posting {new Date(c.newest).toLocaleDateString()}</span>}
                 </div>
@@ -134,6 +143,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
                 <div className="lead-tags">
                   <span className="chip chip-site">{siteName}</span>
                   {job.isRemote && <span className="chip">Remote</span>}
+                  {isContract(job) && <span className="chip">Contract</span>}
                   {salary && <span className="chip">{salary}</span>}
                   {job.postedAt && <span className="lead-note">Posted {new Date(job.postedAt).toLocaleDateString()}</span>}
                 </div>
