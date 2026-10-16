@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { AUTH_PATHS, CLASSIC_SIGNIN_PARAM, CLASSIC_SIGNIN_VALUE } from './authModel'
 import { useAuth } from './AuthContext'
 import { MIN_PASSWORD, passwordStrength } from './authModel'
+import { AuthShowcase } from './AuthShowcase'
 
 export function BrandMark({ size = 22 }: { size?: number }) {
   return (
@@ -14,8 +15,6 @@ export function BrandMark({ size = 22 }: { size?: number }) {
     </svg>
   )
 }
-
-const STEPS = ['Find', 'Decide', 'Act', 'Track']
 
 /** Two panels (design AuthSignIn/SignUp/Verify/Reset): a dark story panel and the form. Story hides under 860 px. */
 export function AuthLayout({
@@ -34,7 +33,7 @@ export function AuthLayout({
   footnote?: ReactNode
 }) {
   return (
-    <div className="auth">
+    <div className="auth auth-v6">
       <div className="auth-theme"><ThemeToggle /></div>
       <aside className="auth-story" aria-label="About OpportunityPilot">
         <div className="auth-brand">
@@ -45,15 +44,11 @@ export function AuthLayout({
         </div>
         <h2 className="auth-headline">{headline}</h2>
         <p className="auth-lead">{lead}</p>
-        <ol className="auth-steps">
-          {STEPS.map((s) => (
-            <li key={s}>{s}</li>
-          ))}
-        </ol>
+        <AuthShowcase />
         <div className="grow" />
         <div className="auth-aside">
           <div className="auth-aside-title">{asideTitle}</div>
-          <ul className="plain-list">
+          <ul className="auth-trust">
             {asideItems.map((i) => (
               <li key={i}>{i}</li>
             ))}
@@ -67,6 +62,7 @@ export function AuthLayout({
           </span>
           OpportunityPilot
         </div>
+        <div className="auth-mobile-head" aria-hidden="true">{headline}</div>
         <div className="auth-card">{children}</div>
         {footnote && <p className="auth-footnote">{footnote}</p>}
       </main>
