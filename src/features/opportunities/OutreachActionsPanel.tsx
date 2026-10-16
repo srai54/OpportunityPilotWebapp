@@ -11,14 +11,14 @@ import { ReachPlanner } from './ReachPlanner'
 import { useShell } from '../shell/ShellContext'
 
 const CHANNELS: { value: DraftChannel; label: string }[] = [
-  { value: 'Email', label: 'Email — opens in Gmail' }, { value: 'LinkedInMessage', label: 'LinkedIn message' }, { value: 'ContactForm', label: 'Contact form' },
+  { value: 'Email', label: 'Email — opens in Gmail' }, { value: 'LinkedInMessage', label: 'LinkedIn message' }, { value: 'ContactForm', label: 'Job site message (Naukri, Instahyre, Indeed…) or contact form' },
 ]
 
 /** What "To" means for each channel, so a LinkedIn name or a contact page is never asked for as an email address. */
 const TO: Record<string, { label: string; placeholder: string; button: string }> = {
   Email: { label: 'Email address (optional — or add it in Gmail)', placeholder: 'name@company.com', button: 'Write the email' },
   LinkedInMessage: { label: 'Who (name or LinkedIn profile link)', placeholder: 'Nikhil Malhotra or https://www.linkedin.com/in/…', button: 'Write the LinkedIn note' },
-  ContactForm: { label: 'Contact page link (optional)', placeholder: 'https://company.com/contact', button: 'Write the message' },
+  ContactForm: { label: 'Page to send it on (the job posting or a contact page)', placeholder: 'https://www.naukri.com/job-listings-…', button: 'Write the message' },
 }
 
 export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
@@ -61,7 +61,7 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
     <ReachPlanner o={o} onError={setError} />
     <button type="button" className="btn btn-ghost btn-sm" aria-expanded={adv} onClick={() => setAdv(!adv)}>{adv ? 'Hide advanced' : 'Write to someone else, or add a follow-up'}</button>
     {adv && <>
-    <label className="field"><span>Draft channel</span><select value={channel} onChange={(e) => setChannel(e.target.value as DraftChannel)}>{CHANNELS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select></label>
+    <label className="field"><span>Draft channel</span><select value={channel} onChange={(e) => { const next = e.target.value as DraftChannel; setChannel(next); if (next === 'ContactForm' && !recipient) setRecipient(o.applyUrl ?? o.url ?? '') }}>{CHANNELS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}</select></label>
     <label className="field"><span>{TO[channel].label}</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={TO[channel].placeholder} /></label>
     {channel === 'Email' && <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />}
     <button className="btn btn-primary btn-sm" type="button" disabled={busy} onClick={createDraft}>{busy ? 'Writing…' : TO[channel].button}</button>

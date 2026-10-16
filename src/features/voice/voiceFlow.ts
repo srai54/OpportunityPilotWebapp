@@ -24,6 +24,8 @@ export interface FlowState {
   link?: { to: string; label: string }
   /** The question asked in the confirm phase, answered with yes/no. */
   confirm?: { yes: string; run: () => Promise<void> }
+  /** What can come next, offered as buttons when a step is done (the assistant keeps going instead of disappearing). */
+  next?: { label: string; to?: string; run?: () => Promise<void> }[]
 }
 
 const IDLE: FlowState = { phase: 'idle', title: '', steps: [] }
@@ -132,6 +134,9 @@ export async function launch(query: string, location: string | null, days: numbe
         detail: starter ? `${query}${where}. I started a profile for you — add your skills to rank the matches better.` : `${query}${where}`,
         steps: steps(labels, 4), progress: 100, link: { to: `/opportunities?campaign=${campaign.id}`, label: 'Review' },
         confirm: c.qualified > 0 ? { yes: sales ? 'Write the emails' : 'Approve the best', run: nextStep } : undefined,
+        next: sales
+          ? [{ label: 'Message my LinkedIn connections', to: '/outreach#linkedin' }, { label: 'Search wider', to: '/wellfound' }]
+          : [{ label: 'Tailor my resume', to: `/opportunities?campaign=${campaign.id}` }, { label: 'Search wider', to: '/wellfound' }],
       })
       announce(
         `Done. Your ${query} campaign found ${c.candidates} ${sales ? 'companies' : 'jobs'}, ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}. ` +
@@ -191,7 +196,7 @@ async function outreach(campaignId: string | null = null): Promise<void> {
   const boxes = await api<Mailbox[]>('/api/v1/mailboxes').catch(() => [] as Mailbox[])
   const box = boxes.find((b) => b.connected)
   if (!box || withAddress.length === 0) {
-    setFlow({ phase: 'done', title: `${toSend.length} email${toSend.length === 1 ? '' : 's'} ready`, detail: 'Open Outreach: each one opens in Gmail with the text filled in — add the address there and press Send.', steps: steps(labels, 2), progress: 100, link: { to: '/outreach', label: 'Send them in Gmail' } })
+    setFlow({ phase: 'done', title: `${toSend.length} email${toSend.length === 1 ? '' : 's'} ready`, detail: 'Open Outreach: each one opens in Gmail with the text filled in — add the address there and press Send.', steps: steps(labels, 2), progress: 100, link: { to: '/outreach', label: 'Send them in Gmail' }, next: [{ label: 'Message my LinkedIn connections', to: '/outreach#linkedin' }, { label: 'Follow-ups', to: '/follow-ups' }] })
     announce(`${toSend.length} email${toSend.length === 1 ? ' is' : 's are'} ready. Open Outreach and each one opens in Gmail for you to send.`)
     return
   }
@@ -238,7 +243,7 @@ async function apply(campaignId: string | null = null): Promise<void> {
         for (const o of best) {
           try { await api(`/api/v1/opportunities/${o.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Shortlisted' }) }); ok++ } catch { /* a status that cannot move is skipped */ }
         }
-        setFlow({ phase: 'done', title: `${ok} approved to apply`, detail: 'Your desktop agent applies to them on its next run.', steps: steps(labels, 3), progress: 100, link: { to: `/opportunities?campaign=${id}`, label: 'See them' } })
+        setFlow({ phase: 'done', title: `${ok} approved to apply`, detail: 'Your desktop agent applies to them on its next run.', steps: steps(labels, 3), progress: 100, link: { to: `/opportunities?campaign=${id}`, label: 'See them' }, next: [{ label: 'Desktop agent status', to: '/campaigns' }, { label: 'Find more jobs', to: '/wellfound' }] })
         announce(`Done. ${ok} job${ok === 1 ? '' : 's'} approved. Your desktop agent applies to them on its next run. Anything else?`)
       },
     },

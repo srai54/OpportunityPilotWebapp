@@ -2691,3 +2691,35 @@ html { scroll-padding-bottom: 96px; }
 /* The listening rings are decoration: they must never catch a tap meant for Stop. */
 .va-ring { pointer-events: none; }
 .va-stop { position: relative; z-index: 2; margin-top: 6px; }
+/* Account menu: Guide and Advanced look like the switches they are (they read as plain "On/Off" text on phones). */
+.menu-switch { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--op-line); flex: 0 0 auto; transition: background 0.15s; }
+.menu-switch i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.3); transition: transform 0.15s; }
+.menu-check[aria-checked="true"] .menu-switch { background: var(--op-primary); }
+.menu-check[aria-checked="true"] .menu-switch i { transform: translateX(16px); }
+.menu-check { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+
+/* Voice look (2026-10-16, user: "change the green, it looks like a copy of a phone call"): OpportunityPilot's own violet → blue
+   aurora instead of call-green. Listening = a slowly turning gradient and soft rings; same in light and dark. */
+@keyframes va-aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.va-orb.is-on { background: linear-gradient(120deg, #7c3aed, #4f46e5, #2563eb, #06b6d4, #7c3aed); background-size: 300% 300%; animation: va-aurora 3s ease-in-out infinite; box-shadow: 0 10px 34px rgb(124 58 237 / 0.5); }
+.va-orb.is-on .va-ring { border-color: rgb(167 139 250 / 0.55); }
+.voice-island { background: linear-gradient(90deg, #1e1b4b, #172554); border-color: rgb(167 139 250 / 0.35); color: #e0e7ff; }
+.voice-island .voice-island-dot { background: #a78bfa; box-shadow: 0 0 0 4px rgb(167 139 250 / 0.25); }
+.voice-island .voice-island-wave i, .voice-island-wave i { background: #a78bfa; }
+.vpill-icon { color: #a78bfa; }
+.vpill-wave i { background: linear-gradient(180deg, #a78bfa, #60a5fa); }
+.vpill-progress i { background: linear-gradient(90deg, #7c3aed, #2563eb, #06b6d4); }
+.vpill.is-done .vpill-icon { color: #34d399; }
+@media (prefers-reduced-motion: reduce) { .va-orb.is-on { animation: none; } }
+/* LinkedIn queue: one row per approved company. */
+.li-queue { display: grid; gap: 8px; }
+.li-queue-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; border: 1px solid var(--op-line); border-radius: var(--op-radius-control); background: var(--op-surface); }
+/* Profile: photo + Improve with AI at the top of the editor. */
+.profile-extras { display: grid; grid-template-columns: auto 1fr; gap: 16px 24px; align-items: start; padding: 14px; border: 1px solid var(--op-line); border-radius: 16px; background: var(--op-surface); }
+@media (max-width: 640px) { .profile-extras { grid-template-columns: 1fr; } }
+.profile-photo { display: flex; gap: 12px; align-items: center; }
+.profile-avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; font-size: 24px; font-weight: 700; flex: 0 0 auto; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-suggestions { display: grid; gap: 8px; }
+.profile-suggestion { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--op-surface-raised, var(--op-bg)); border: 1px solid var(--op-line); }
+.profile-suggestion p { margin: 4px 0 0; white-space: pre-wrap; }

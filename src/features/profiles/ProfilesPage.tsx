@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ProfileExtras } from './ProfileExtras'
 import { useBlocker, useNavigate, useParams } from 'react-router-dom'
 import { ProgressBar } from '../../components/ProgressBar'
 import { percentOf } from '../../components/percent'
@@ -23,6 +24,8 @@ import {
   FIELDS,
   confirmTyped,
   isFullyConfirmed,
+  profileConfirmed,
+  withdrawClaims,
   isTagField,
   isWideField,
   joinTags,
@@ -173,7 +176,8 @@ function saveError(error: Error) {
 
 function cleanData(type: ProfileType, data: ProfileData, keys: FieldDef[] = FIELDS[type]): ProfileData {
   return {
-    fields: Object.fromEntries(keys.map((f) => [f.key, data.fields[f.key] ?? ''])),
+    // The photo is kept alongside the text fields (a small data URL), so saving never drops it.
+    fields: { ...Object.fromEntries(keys.map((f) => [f.key, data.fields[f.key] ?? ''])), ...(data.fields.photo ? { photo: data.fields.photo } : {}) },
     confirmations: Object.fromEntries(keys.filter((f) => f.confirmable).map((f) => [f.key, data.confirmations[f.key] === true])),
   }
 }
@@ -272,10 +276,10 @@ function NewProfile({ onSaved, onCancel }: { onSaved: (p: Profile) => void; onCa
     setError(undefined)
     setFieldErrors({})
     try {
-      const payload = advanced ? cleanData(type, data) : confirmFilledClaims(type, cleanData(type, data))
+      const payload = confirmFilledClaims(type, cleanData(type, data))
       const saved = await api<Profile>('/api/v1/profiles', {
         method: 'POST',
-        body: JSON.stringify({ type, name: name.trim(), data: payload, confirmed: !advanced && isFullyConfirmed(type, payload) }),
+        body: JSON.stringify({ type, name: name.trim(), data: payload, confirmed: profileConfirmed(type, payload) }),
       })
       savedRef.current = true
       onSaved(saved)
@@ -383,7 +387,12 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
       confirmations: { ...d.confirmations, [key]: false },
     }))
   }
-  const setConfirmed = (key: string, value: boolean) => setData((d) => ({ ...d, confirmations: { ...d.confirmations, [key]: value } }))
+  // Un-ticking a claim is remembered, so Save does not tick it again; everything else filled in counts as confirmed by saving.
+  const [withdrawn, setWithdrawn] = useState<Set<string>>(new Set())
+  const setConfirmed = (key: string, value: boolean) => {
+    setData((d) => ({ ...d, confirmations: { ...d.confirmations, [key]: value } }))
+    setWithdrawn((w) => { const n = new Set(w); if (value) n.delete(key); else n.add(key); return n })
+  }
 
   const fields = FIELDS[type]
   // What Save will store: claims typed in this edit count as confirmed.
@@ -398,10 +407,12 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
     setError(undefined)
     setFieldErrors({})
     try {
-      const payload = confirmTyped(type, cleanData(type, data), typed)
+      // Saving your own profile confirms what is filled in (it used to confirm only fields typed in this edit, so a profile with older
+      // filled fields never counted as confirmed and kept asking for a review). Fields you un-ticked stay unconfirmed.
+      const payload = withdrawClaims(confirmFilledClaims(type, cleanData(type, data)), withdrawn)
       const saved = await api<Profile>(`/api/v1/profiles/${existing.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name, data: payload, confirmed: isFullyConfirmed(type, payload), expectedVersion: existing.version }),
+        body: JSON.stringify({ name, data: payload, confirmed: profileConfirmed(type, payload), expectedVersion: existing.version }),
       })
       setTyped(new Set())
       savedRef.current = true
@@ -485,6 +496,7 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
 
         {tab === 'details' && (
           <div className="editor-grid">
+            <ProfileExtras type={type} data={data} setField={setField} />
             <div className="field">
               <label htmlFor="pname">Profile name *</label>
               <input id="pname" value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />
@@ -498,7 +510,7 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
               <p className="hint">Fixed once created: campaigns rely on it. Create another profile for a different type.</p>
             </div>
             )}
-            {fields.filter((f) => adv || f.required || f.key === 'skills' || f.key === 'availability').map((f) => (
+            {fields.filter((f) => adv || f.required || ['skills', 'availability', 'headline', 'location', 'links', 'website'].includes(f.key)).map((f) => (
               <FieldInput key={f.key} f={f} data={data} setField={setField} setConfirmed={setConfirmed} />
             ))}
             {fieldErrors.data && <p className="field-error grid-wide">{fieldErrors.data.join(' ')}</p>}
@@ -573,8 +585,9 @@ function ProfileEditor({ existing, onSaved }: { existing: Profile; onSaved: (p: 
         <button type="button" className="btn btn-secondary" onClick={discard} disabled={!dirty || saving}>
           Discard changes
         </button>
-        <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={!dirty || saving || !name.trim()}>
-          {saving ? 'Saving…' : `Save as version ${existing.version + 1}`}
+        {/* An unconfirmed profile can be saved (= confirmed) as it is, without a change; otherwise it kept asking for a review. */}
+        <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={(!dirty && !!existing.confirmedAt) || saving || !name.trim()}>
+          {saving ? 'Saving…' : !dirty && !existing.confirmedAt ? 'Confirm my profile' : `Save as version ${existing.version + 1}`}
         </button>
       </div>
     </div>

@@ -405,10 +405,10 @@ export function AppShell() {
                     <div className="menu-meta">{user?.email}</div>
                     <div className="menu-switches">
                       <button type="button" role="menuitemcheckbox" aria-checked={guide} data-testid="toggle-guide" className="menu-item menu-check" onClick={() => setGuide(!guide)}>
-                        <span>Guide</span><span className="muted-small">{guide ? 'On' : 'Off'}</span>
+                        <span>Guide</span><span className="menu-switch" aria-hidden="true"><i /></span>
                       </button>
                       <button type="button" role="menuitemcheckbox" aria-checked={advanced} data-testid="toggle-advanced" className="menu-item menu-check" onClick={() => setAdvanced(!advanced)}>
-                        <span>Advanced</span><span className="muted-small">{advanced ? 'On' : 'Off'}</span>
+                        <span>Advanced</span><span className="menu-switch" aria-hidden="true"><i /></span>
                       </button>
                     </div>
                     <Link to="/settings" role="menuitem" className="menu-item" onClick={closeMenu}>Settings</Link>

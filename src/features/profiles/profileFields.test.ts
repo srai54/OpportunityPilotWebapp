@@ -18,7 +18,7 @@ describe('profile confirmation', () => {
   it('ignores stale confirmations on empty fields', () => {
     const data = { fields: { experience: '4 years .NET', skills: '' }, confirmations: { experience: true, skills: true } }
     expect(isFullyConfirmed('Candidate', data)).toBe(true)
-    expect(confirmationState('Candidate', data).missing).toEqual(['Skills'])
+    expect(confirmationState('Candidate', data).missing).toEqual(['Skills', 'Education'])
   })
 })
 
@@ -41,7 +41,7 @@ describe('round-3 profile editor', () => {
   })
 
   it('creates with the offer and non-claim fields only; claims come after saving', () => {
-    expect(createFields('Candidate').map((f) => f.key)).toEqual(['offer', 'availability', 'outreachIdentity'])
+    expect(createFields('Candidate').map((f) => f.key)).toEqual(['offer', 'headline', 'location', 'links', 'availability', 'languages', 'outreachIdentity'])
     expect(createFields('Candidate').some((f) => f.confirmable)).toBe(false)
   })
 
@@ -104,5 +104,16 @@ describe('confirmTyped', () => {
     expect(out.confirmations[typed]).toBe(true)
     expect(out.confirmations[withdrawn]).toBe(false)
     expect(out.confirmations[empty]).toBeUndefined()
+  })
+})
+
+describe('saving a profile confirms it', async () => {
+  const { confirmFilledClaims, profileConfirmed, withdrawClaims } = await import('./profileFields')
+  it('confirms older filled fields too, keeps un-ticked ones open, and treats a profile with no claims as confirmed', () => {
+    const data = { fields: { offer: 'Data scientist', skills: 'Python, SQL', experience: '4 years at Acme' }, confirmations: {} }
+    const saved = confirmFilledClaims('Candidate', data)
+    expect(profileConfirmed('Candidate', saved)).toBe(true)
+    expect(profileConfirmed('Candidate', withdrawClaims(saved, new Set(['experience'])))).toBe(false)
+    expect(profileConfirmed('Services', { fields: { offer: 'IT staffing' }, confirmations: {} })).toBe(true)
   })
 })

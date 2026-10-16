@@ -132,6 +132,19 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startWhenReady])
 
+  // "What next?" from the pill (or anywhere): reopen the assistant with the conversation and ask it.
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const question = (e as CustomEvent<string>).detail
+      setOpen(true); setErr(null)
+      openEpoch.current = -1
+      if (question) setTimeout(() => understand(question), 50)
+    }
+    window.addEventListener('op-open-assistant', onAsk)
+    return () => window.removeEventListener('op-open-assistant', onAsk)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     if (!open) return
     if (!canSpeak && !canRecord()) inputRef.current?.focus()

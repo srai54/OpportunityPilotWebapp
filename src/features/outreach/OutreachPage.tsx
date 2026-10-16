@@ -3,6 +3,7 @@ import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type
 import { useShell } from '../shell/ShellContext'
 import { ContactFinder } from './ContactFinder'
 import { PrepareEmailsCard } from './PrepareEmailsCard'
+import { LinkedInQueueCard } from './LinkedInQueueCard'
 import { RewriteBox } from './RewriteBox'
 import { SendAllCard } from './SendAllCard'
 import { SendPanel } from './SendPanel'
@@ -227,6 +228,7 @@ export function OutreachPage() {
     {drafts.error && <ErrorNotice error={drafts.error} onRetry={drafts.reload} what="outreach drafts" />}
     {drafts.loading && !drafts.data && <LoadingState label="Loading outreach drafts…" waking={drafts.waking} rows={4} />}
     {sales && drafts.data && <PrepareEmailsCard onDone={drafts.reload} primary={drafts.data.items.length === 0} />}
+    {sales && <LinkedInQueueCard signOff={null} />}
     {drafts.data?.items.length === 0 && <EmptyState title="No messages yet" actions={<Link className="btn btn-primary" to="/opportunities">Choose who to contact</Link>}><p>Select one or several leads and press Draft messages, or open one and press Reach out.</p></EmptyState>}
 
     {drafts.data && drafts.data.items.length > 0 && <>

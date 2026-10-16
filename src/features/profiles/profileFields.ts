@@ -44,13 +44,20 @@ export const FIELDS: Record<ProfileType, FieldDef[]> = {
   ],
   Candidate: [
     { key: 'offer', label: 'What you offer', hint: OFFER_HINT, rows: 3, required: true },
+    { key: 'headline', label: 'Headline', hint: 'One line, e.g. Data scientist · Python, ML · 4 years', rows: 1 },
+    { key: 'location', label: 'Location', hint: 'City, and whether you work remotely', rows: 1 },
+    { key: 'links', label: 'LinkedIn and portfolio links', hint: 'One per line', rows: 2 },
     { key: 'experience', label: 'Experience', rows: 4, confirmable: true },
     { key: 'skills', label: 'Skills', rows: 2, confirmable: true },
     { key: 'availability', label: 'Availability and terms', hint: PLACEHOLDER_HINT, rows: 2 },
+    { key: 'education', label: 'Education', rows: 2, confirmable: true },
+    { key: 'languages', label: 'Languages', hint: 'e.g. English, Hindi', rows: 1 },
     { key: 'outreachIdentity', label: 'Your name for message sign-offs', hint: 'How your messages end, e.g. Asha Rao. Without it a draft ends with a placeholder you must fill in.', rows: 1 },
   ],
   Services: [
     { key: 'offer', label: 'Services you deliver', hint: OFFER_HINT, rows: 3, required: true },
+    { key: 'website', label: 'Website', rows: 1 },
+    { key: 'location', label: 'Location', rows: 1 },
     { key: 'industries', label: 'Industries you serve', rows: 1 },
     { key: 'idealCustomer', label: 'Ideal customer', hint: 'Who buys this: company type, size, region, the problem they have.', rows: 2, required: true },
     { key: 'regions', label: 'Regions and time zones', rows: 1 },
@@ -179,4 +186,17 @@ export function needsProfileConfirm(error: (Error & { fieldErrors?: Record<strin
   if (!error) return false
   const text = [error.message, ...Object.values(error.fieldErrors ?? {}).flat()].join(' ')
   return /confirm the campaign profile/i.test(text)
+}
+
+/** Clears the confirmation of claims the person un-ticked. */
+export function withdrawClaims(data: ProfileData, withdrawn: ReadonlySet<string>): ProfileData {
+  if (withdrawn.size === 0) return data
+  const confirmations = { ...data.confirmations }
+  for (const k of withdrawn) confirmations[k] = false
+  return { ...data, confirmations }
+}
+
+/** A saved profile is confirmed when no filled claim is left unconfirmed; a profile with no claims to tick (most Sales profiles) is confirmed too. */
+export function profileConfirmed(type: ProfileType, data: ProfileData): boolean {
+  return FIELDS[type].filter((f) => f.confirmable && data.fields[f.key]?.trim()).every((f) => data.confirmations[f.key] === true)
 }

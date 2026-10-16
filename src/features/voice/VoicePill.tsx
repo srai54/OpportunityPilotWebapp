@@ -59,6 +59,8 @@ export function VoicePill() {
           <div className="vpill-actions">
             {flow.confirm && <button type="button" className="btn btn-primary btn-sm" disabled={busy} onClick={() => void yes()}>{busy ? 'Working…' : flow.confirm.yes}</button>}
             {flow.link && <button type="button" className={`btn btn-sm ${flow.confirm ? 'btn-secondary' : 'btn-primary'}`} onClick={() => go(flow.link!.to)}>{flow.link.label}</button>}
+            {flow.phase === 'done' && flow.next?.map((n) => <button key={n.label} type="button" className="btn btn-secondary btn-sm" onClick={() => { if (n.run) void n.run(); else if (n.to) go(n.to) }}>{n.label}</button>)}
+            {(flow.phase === 'done' || flow.phase === 'error') && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent('op-open-assistant', { detail: 'What should I do next?' })) }}>What next?</button>}
             {flow.phase !== 'running' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { stopVoice(); setOpen(false); resetFlow() }}>{flow.confirm ? 'Not now' : 'Close'}</button>}
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => stopVoice()} aria-label="Stop talking and listening">Stop voice</button>
           </div>
