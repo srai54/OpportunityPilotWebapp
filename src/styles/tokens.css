@@ -388,30 +388,23 @@ body {
   --op-text-section: 13px;
 }
 
-/* ---- Journey stepper v6 (2026-10-16): tiles; the current stage is the dark tile. Ratios measured on their own tile. ---- */
+/* ---- Journey stepper v6 (2026-10-16): the app's own colours. Done = primary blue, current stage = the navy of the app bar with a teal edge. ---- */
 :root {
   --op-stage-bg: #0f172a;        --op-stage-ink: #ffffff;       /* 17.9:1 */
-  --op-stage-muted: #cbd5e1;                                     /* 12.0:1 on --op-stage-bg */
-  --op-stage-accent: #a3e635;    --op-on-stage-accent: #1a2e05; /* accent edge 11.8:1 on the tile; number 9.7:1 */
-  --op-step-done-bg: #f0faf3;    --op-step-done-line: #bfe3cb;  /* label --op-ink 12.4:1, tick --op-on-green-tint 7.1:1 */
-  --op-step-done-num: #15803d;   --op-on-step-done-num: #ffffff;/* 5.0:1 */
+  --op-stage-accent: #2dd4bf;    --op-on-stage-accent: #042f2e; /* edge 9.6:1 on the tile; number 7.8:1 */
+  --op-step-done-bg: var(--op-primary-tint);  --op-step-done-line: var(--op-primary-tint-border);  /* label --op-ink 11.9:1 on the tint */
+  --op-step-done-num: var(--op-primary);      --op-on-step-done-num: var(--op-on-primary);          /* 5.2:1 */
   --op-step-todo-num: #d6d3d1;   --op-on-step-todo-num: #44403c;/* 6.9:1; label --op-muted on --op-neutral-tint 5.7:1 */
 }
 :root[data-theme="dark"] {
   --op-stage-bg: #e2e8f0;        --op-stage-ink: #0b1220;       /* inverted in dark: 15.2:1 */
-  --op-stage-muted: #334155;                                     /* 8.4:1 */
-  --op-stage-accent: #4d7c0f;    --op-on-stage-accent: #ffffff; /* edge 4.1:1 on the tile; number 5.0:1 */
-  --op-step-done-bg: #11301f;    --op-step-done-line: #1f5a38;  /* tick --op-on-green-tint 8.1:1 */
-  --op-step-done-num: #22c55e;   --op-on-step-done-num: #052e16;/* 6.5:1 */
+  --op-stage-accent: #0f766e;    --op-on-stage-accent: #ffffff; /* edge 4.4:1 on the tile; number 5.5:1 */
   --op-step-todo-num: #3a3836;   --op-on-step-todo-num: #e8e4df;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --op-stage-bg: #e2e8f0;      --op-stage-ink: #0b1220;
-    --op-stage-muted: #334155;
-    --op-stage-accent: #4d7c0f;  --op-on-stage-accent: #ffffff;
-    --op-step-done-bg: #11301f;  --op-step-done-line: #1f5a38;
-    --op-step-done-num: #22c55e; --op-on-step-done-num: #052e16;
+    --op-stage-accent: #0f766e;  --op-on-stage-accent: #ffffff;
     --op-step-todo-num: #3a3836; --op-on-step-todo-num: #e8e4df;
   }
 }

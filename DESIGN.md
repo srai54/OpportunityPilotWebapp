@@ -232,8 +232,8 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 - **Schedule interview** (`ScheduleInterviewDialog`): round · date · time, zone · length (45 min default), How (Video / Phone / Onsite) as the same choice buttons, then only the field that mode needs. "Tell the candidate" (Sales) shows the exact text; WhatsApp and email open with it and the person presses Send. The interview is marked "told" only after they tap "I sent it".
 - **Overview**: the "Interview in N min" card is the tinted signature card (Call / Join / Snooze) and shows only when one starts within 2 h; "Calls today" lists open Call next actions with "n of m done". Both are absent when empty.
 
-## 20. Journey stepper v6 — tiles (2026-10-16)
-- The five steps are **tiles** (`JourneyBar`, styles at the end of `v5.css`): number badge + tick when done, the step's icon, the label. **Done** = green tint (`--op-step-done-*`), **current stage** = the dark tile (`--op-stage-*`) with a 4px accent edge and an arrow — it is the step the app recommends next (`currentStage`), **to do** = neutral grey. The page you are on gets a 2px primary outline (`aria-current="step"`).
-- Below the tiles: one progress bar (green, `--op-step-done-num`) and "n of 5 stages completed". The heading ("Your outreach workflow" / "Your job search" + one line) shows on Overview only, so other screens keep their height.
-- Phones (≤ 860px): labels, badges and the arrow are visually hidden (names stay for screen readers), tiles show number + icon, the line "Step n of 5 · Label" names the page.
-- Dark theme inverts the stage tile (light tile, dark text). Every pair is measured in `tokens.css`.
+## 20. Journey stepper v6 — compact tiles (2026-10-16)
+- **One row, 40px tiles, max 900px wide**, progress bar and `n/5` on the same line. The stepper must never take more than ~50px of height (the first v6 draft was 150px tall and was rejected). No heading. Each tile has the step's icon beside the label.
+- Tile = number badge (a tick when done) + label (+ amber count on Review). **Done** = the app's primary blue tint (`--op-step-done-*` alias the primary tokens), **current stage** = the navy tile of the app bar (`--op-stage-*`) with a 4px teal edge, the step the app recommends next (`currentStage`); **to do** = neutral grey. The page you are on gets a 2px primary outline (`aria-current="step"`).
+- Phones (860px or narrower): tiles show the icon only (names stay for screen readers); the bar is 40px. The progress bar runs blue to teal like the rest of v5.
+- Dark theme inverts the stage tile. Every colour pair is measured in `tokens.css`.
