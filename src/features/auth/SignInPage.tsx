@@ -89,13 +89,13 @@ export function SignInPage() {
     <AuthLayout
       headline={
         <>
-          Opportunities that fit you —<br />
-          with the evidence attached.
+          Your next role or client —{' '}<br />
+          <span className="auth-hl">found on autopilot.</span>
         </>
       }
-      lead="It reads the sources you choose, scores what it finds against criteria you set, and shows why. You approve what happens next. Nothing is sent or applied on its own."
+      lead="Searches 20+ sites, scores every match and acts within the limits you set."
       asideTitle="Built for"
-      asideItems={['Candidates looking for roles', 'Sales teams looking for customers']}
+      asideItems={['Job seekers', 'Staffing & sales teams', 'You stay in control']}
       footnote={WAKE_NOTE}
     >
       {accounts && classic && <AuthTabs active="signin" />}

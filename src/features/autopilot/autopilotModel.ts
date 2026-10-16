@@ -6,7 +6,7 @@ import type { RepeatSchedule } from '../campaigns/campaignModel'
  */
 export type RepeatChoice = 'off' | 'daily' | 'weekly' | 'custom'
 export const REPEAT_MINUTES = { daily: 1440, weekly: 10080 } as const
-export const AUTO_APPROVE_CHOICES = [null, 60, 70, 80] as const
+export const AUTO_APPROVE_CHOICES = [null, 50, 60, 70, 80] as const
 
 /** What the repeat select shows: Off when there is no schedule or it is paused; Custom for a cadence set in the builder. */
 export function repeatChoice(s: Pick<RepeatSchedule, 'cadenceMinutes' | 'paused'> | undefined): RepeatChoice {

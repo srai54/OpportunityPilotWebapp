@@ -20,7 +20,9 @@ export interface QuickOptions {
 
 export const NO_OPTIONS: QuickOptions = { techStack: [], niceToHave: [], workMode: '', years: '', postedDays: '', exclude: [], noAgencies: false, industries: [], signals: [], autoApprove: 0 }
 
-export const AUTO_APPROVE_CHOICES = [0, 60, 70, 80] as const
+export const AUTO_APPROVE_CHOICES = [0, 50, 60, 70, 80] as const
+/** New quick campaigns approve matches scoring 50+ for you (decided 2026-10-16); the person can turn it off. */
+export const DEFAULT_AUTO_APPROVE = 50
 
 export const POSTED_CHOICES = [
   { days: '', label: 'Any time' }, { days: '1', label: 'Past 24 hours' }, { days: '3', label: 'Past 3 days' }, { days: '7', label: 'Past week' }, { days: '14', label: 'Past 2 weeks' }, { days: '30', label: 'Past month' },

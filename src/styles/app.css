@@ -1513,21 +1513,6 @@ a.menu-item { color: var(--op-ink); text-decoration: none; }
 a.menu-item:hover { text-decoration: none; }
 .help-btn:disabled { opacity: 0.4; cursor: default; }
 
-.journey { display: flex; align-items: center; justify-content: center; padding: 0 22px 10px; }
-.journey-list { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; gap: 4px; max-width: 100%; overflow-x: auto; }
-.journey-step { display: flex; align-items: center; flex: 0 0 auto; }
-.journey-step + .journey-step::before { content: ""; width: 22px; height: 1px; background: var(--op-line); margin-right: 4px; }
-.journey-link { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px 0 8px; border-radius: 999px; color: var(--op-muted); font-size: var(--op-text-body); font-weight: 500; text-decoration: none; white-space: nowrap; border: 1px solid transparent; }
-.journey-link:hover { color: var(--op-ink); background: var(--op-neutral-tint); text-decoration: none; }
-.journey-num { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--op-hair); color: var(--op-muted); }
-.journey-step.is-done .journey-num { background: var(--op-green-tint); color: var(--op-on-green-tint); }
-.journey-step.is-done .journey-link { color: var(--op-ink); }
-.journey-step.is-here .journey-link { background: var(--op-primary-tint); color: var(--op-on-primary-tint); border-color: var(--op-primary-tint-border); font-weight: 650; }
-.journey-step.is-here .journey-num { background: var(--op-primary); color: var(--op-on-primary); }
-.journey-step.is-next .journey-link { border-color: var(--op-primary); color: var(--op-ink); }
-.journey-badge { min-width: 20px; padding: 0 6px; border-radius: 999px; background: var(--op-amber-tint); color: var(--op-on-amber-tint); font-size: 11.5px; font-weight: 700; text-align: center; line-height: 20px; }
-.journey-next { padding: 0 7px; border-radius: 999px; background: var(--op-primary); color: var(--op-on-primary); font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 18px; }
-.journey-compact { display: none; font-size: var(--op-text-meta); font-weight: 600; color: var(--op-ink); }
 
 .next-bar { display: flex; align-items: center; gap: 12px; padding: 10px 22px; background: var(--op-primary-tint); border-bottom: 1px solid var(--op-primary-tint-border); color: var(--op-on-primary-tint); }
 .next-bar-tag { flex: 0 0 auto; padding: 0 8px; border-radius: 999px; background: var(--op-primary); color: var(--op-on-primary); font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; line-height: 20px; }
@@ -1541,14 +1526,7 @@ a.menu-item:hover { text-decoration: none; }
 @media (max-width: 860px) {
   .brand { display: none; }
   .topbar-wrap .topbar { gap: 8px; padding: 0 12px; }
-  .journey { padding: 0 12px 8px; }
-  .journey-step + .journey-step::before { width: 8px; margin-right: 2px; }
-  .journey-link { padding: 0 6px; gap: 0; }
   /* Visually hidden, not display:none: the link keeps its name for screen readers. */
-  .journey-label, .journey-next { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .journey-step.is-here .journey-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; margin-left: 6px; }
-  .journey-step.is-here .journey-link { padding: 0 12px 0 6px; }
-  .journey-list { overflow: visible; }
   .next-bar { flex-wrap: wrap; padding: 10px 14px; }
   .next-bar-text { flex-basis: 100%; order: 3; }
   .next-bar .btn { margin-left: auto; }
@@ -1725,12 +1703,12 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .followup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Motion polish (DESIGN.md section 14): press feedback, explicit transitions, hover only where hover exists */
-.btn, .legend-btn, .ready-chip, .top-switch, .journey-link, .menu-item { transition: transform 160ms var(--op-ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease; }
-.btn:active:not(:disabled), .legend-btn:active, .ready-chip:active, .journey-link:active { transform: scale(0.97); }
+.btn, .legend-btn, .ready-chip, .top-switch, .menu-item { transition: transform 160ms var(--op-ease-out), background-color 150ms ease, border-color 150ms ease, color 150ms ease; }
+.btn:active:not(:disabled), .legend-btn:active, .ready-chip:active { transform: scale(0.97); }
 .lead-card, .message-card { transition: transform 160ms var(--op-ease-out), box-shadow 160ms var(--op-ease-out), border-color 150ms ease; }
 @media (hover: none) { .lead-card:hover { transform: none; box-shadow: var(--op-shadow-card); } .message-open:hover { background: none; } }
 .menu, .coach, .suggest-list, .rail { overscroll-behavior: contain; }
-@media (prefers-reduced-motion: reduce) { .btn, .legend-btn, .ready-chip, .journey-link, .lead-card, .message-card { transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease; } .btn:active:not(:disabled), .journey-link:active, .legend-btn:active, .ready-chip:active { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .btn, .legend-btn, .ready-chip, .lead-card, .message-card { transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease; } .btn:active:not(:disabled), .legend-btn:active, .ready-chip:active { transform: none; } }
 
 /* Connectors */
 .connector-tools { align-items: center; }
@@ -1864,7 +1842,6 @@ html { -webkit-text-size-adjust: 100%; }
 @media (max-width: 860px) {
   .ws-seg-btn, .help-btn, .theme-toggle, .brand { min-height: 44px; }
   .help-btn, .theme-toggle { min-width: 44px; }
-  .journey-link, .segmented button { min-height: 44px; }
 }
 
 /* Q2: opportunity detail as cards: one hero card, one "what to do now" card */
@@ -2174,7 +2151,6 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
 .crumb-slash { padding: 0 2px; }
 .crumb-page { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--op-text-body); font-weight: 600; color: var(--op-ink); letter-spacing: 0; }
 .ws-seg-top { flex: 0 0 auto; }
-.journey { padding-top: 0; }
 
 .shell-body { display: flex; align-items: flex-start; }
 .shell-body > .main-col { flex: 1 1 auto; min-width: 0; }
@@ -2221,13 +2197,6 @@ th[data-coach-active], td[data-coach-active] { outline-offset: -3px; border-radi
   .ab-burger, .theme-toggle, .help-btn { width: 36px; height: 36px; }
   .theme-toggle { margin-right: 0; }
   .ab-sep { display: none; }
-}
-@media (max-width: 420px) {
-  .journey { padding: 0 8px 8px; }
-  .journey-step + .journey-step::before { display: none; }
-  .journey-link { padding: 0 4px; }
-  .journey-step.is-here .journey-link { padding: 0 10px 0 4px; }
-  .journey-list { gap: 2px; justify-content: space-between; width: 100%; }
 }
 .crumb-slash { padding: 0 6px; }
 
@@ -2468,13 +2437,6 @@ html { scroll-padding-bottom: 96px; }
 @keyframes island-wave { 50% { transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .voice-island, .voice-island-dot, .voice-island-wave i { animation: none; } .voice-island-wave i { transform: scaleY(0.6); } }
 
-.journey { gap: 12px; flex-wrap: wrap; }
-.journey-progress { width: 120px; height: 6px; border-radius: 999px; background: var(--op-hair); overflow: hidden; }
-.journey-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--op-primary), #14b8a6); transition: width 0.6s cubic-bezier(.23,1,.32,1); animation: jp-grow 0.9s cubic-bezier(.23,1,.32,1); }
-@keyframes jp-grow { from { width: 0 !important; } }
-.journey-pct { font-size: 12px; font-weight: 700; color: var(--op-muted); }
-@media (max-width: 860px) { .journey-progress { width: 64px; } }
-@media (prefers-reduced-motion: reduce) { .journey-progress i { animation: none; transition: none; } }
 
 .app-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 24px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--op-line); font-size: 12px; color: var(--op-muted); }
 .app-footer a { color: var(--op-muted); text-decoration: none; }

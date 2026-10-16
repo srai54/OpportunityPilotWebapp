@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Overview } from '../../lib/types'
-import { journeySteps, nextStep, stepForPath } from './journeyModel'
+import { currentStage, journeySteps, nextStep, stepForPath } from './journeyModel'
 
 const base: Overview = {
   profiles: 1, applied: 0, needsManual: 0, campaigns: 1, shortlisted: 0, awaitingApproval: 0,
@@ -68,4 +68,11 @@ describe('journeySteps / stepForPath', () => {
     expect(stepForPath('/follow-ups')).toBe('follow')
     expect(stepForPath('/settings')).toBeNull()
   })
+})
+
+describe('currentStage', () => {
+  const steps = [{ id: 'profile', done: true }, { id: 'find', done: true }, { id: 'review', done: false }, { id: 'reach', done: false }, { id: 'follow', done: false }] as const
+  it('is the recommended step when there is one', () => expect(currentStage(steps, 'reach')).toBe('reach'))
+  it('else the first step not done', () => expect(currentStage(steps, null)).toBe('review'))
+  it('is none when every step is done', () => expect(currentStage(steps.map((s) => ({ ...s, done: true })), null)).toBeNull())
 })

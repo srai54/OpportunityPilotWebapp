@@ -131,6 +131,7 @@ export function AppShell() {
 
   const [collapsedPref, setCollapsedPref] = useState(readNavCollapsed)
   const [workspace, setWorkspaceState] = useState<Workspace>(readWorkspace)
+  const agent = useApi<{ connected: boolean; online: boolean }>(apiStatus === 'ready' && workspace !== 'sales' ? '/api/v1/agent-keys/status' : null)
   const setWorkspace = useCallback((ws: Workspace) => {
     setWorkspaceState(ws)
     writeWorkspace(ws)
@@ -187,7 +188,8 @@ export function AppShell() {
   }, [])
 
   // The journey bar and Next bar read these counts, so refresh them whenever the person moves to another screen.
-  useEffect(() => { reloadOverview() }, [location.pathname, reloadOverview])
+  const reloadAgent = agent.reload
+  useEffect(() => { reloadOverview(); reloadAgent() }, [location.pathname, reloadOverview, reloadAgent])
 
   const closeDrawer = useCallback(() => setDrawerPath(null), [])
   const closeMenu = useCallback(() => setMenuPath(null), [])
@@ -249,10 +251,14 @@ export function AppShell() {
   const gmail = caps?.items.find((i) => i.key === 'gmail')
   const apiLabel = API_STATUS_LABELS[apiStatus]
   const gmailStatus = gmail && gmailLabel(gmail)
+  // The desktop agent (Candidate): always visible in the rail so "is it applying?" has an answer on every screen (U17-14).
+  const agentStatus = workspace !== 'sales' && agent.data
+    ? agent.data.online ? { text: 'Agent · running', tone: 'success' as const } : agent.data.connected ? { text: 'Agent · not running', tone: 'warning' as const } : { text: 'Agent · not set up', tone: 'neutral' as const }
+    : null
   const aiMode = gemini && aiModeLabel(gemini)
   const pathSteps = journeySteps(workspace, overview.data)
   const pathDone = pathSteps.filter((s) => s.done).length
-  const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : [])]
+  const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : []), ...(agentStatus ? [agentStatus] : [])]
 
   const burgerLabel = railVisible ? (collapsed ? 'Expand the menu' : 'Collapse the menu') : drawerOpen ? 'Close the menu' : 'Open the menu'
   const onBurger = railVisible ? toggleCollapsed : () => setDrawerPath(drawerOpen ? null : location.pathname)
@@ -378,7 +384,8 @@ export function AppShell() {
                 </span>
               )}
               <div className="top-switches" aria-label="View preferences">
-                {/* Guide lives in the account menu only (one help entry in the bar: the (?) button). */}
+                {/* Guide is back in the bar next to Advanced (user, 2026-10-16); the account menu keeps a copy for phones. */}
+                <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and the Next bar on every screen" testId="toggle-guide" />
                 <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
               <VoiceLaunch workspace={workspace} />

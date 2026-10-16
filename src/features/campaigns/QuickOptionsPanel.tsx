@@ -39,13 +39,11 @@ export function QuickOptionsPanel({ value, onChange, jobs }: Readonly<{ value: Q
         </>
       )}
       <TagInput id="qo-exclude" label="Leave out words" values={value.exclude} onChange={(v) => set('exclude', v)} placeholder="e.g. intern, unpaid" />
-      {jobs && (
-        <label className="field"><span>Approval</span>
+      <label className="field"><span>Approval</span>
           <select value={value.autoApprove} onChange={(e) => set('autoApprove', Number(e.target.value))}>
-            {AUTO_APPROVE_CHOICES.map((n) => <option key={n} value={n}>{n === 0 ? 'I approve each job myself' : `Approve matches scoring ${n}+ automatically`}</option>)}
+            {AUTO_APPROVE_CHOICES.map((n) => <option key={n} value={n}>{n === 0 ? 'I approve each one myself' : `Approve matches scoring ${n}+ automatically`}</option>)}
           </select>
-          <span className="hint">Automatic approval only marks a job approved. Jobs on LinkedIn, Naukri and Instahyre are then applied for by your agent; for other sites you open the apply queue.</span></label>
-      )}
+          <span className="hint">{jobs ? 'Automatic approval only marks a job approved. Jobs on LinkedIn, Naukri and Instahyre are then applied for by your agent; for other sites you open the apply queue.' : 'Automatic approval only marks a company approved. In Outreach, one tap writes their emails and one more sends them.'}</span></label>
     </div>
   )
 }

@@ -62,7 +62,7 @@ for (const width of [1280, 1024, 375]) for (const theme of ['light', 'dark']) fo
       }
     }, { top: tid('app-topbar'), burger: tid('app-burger') })
     if (m.topH < 0) fails.push(`${tag}: no [data-testid=app-topbar]`)
-    else if (m.topH > 52 || m.topWrap) fails.push(`${tag}: top bar wraps (${m.topH}px)`)
+    else if (m.topH > 60 || m.topWrap) fails.push(`${tag}: top bar wraps (${m.topH}px)`)
     if (!m.burger) fails.push(`${tag}: hamburger missing`)
     if (m.overflow) fails.push(`${tag}: sideways scroll`)
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()

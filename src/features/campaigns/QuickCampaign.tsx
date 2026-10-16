@@ -3,7 +3,7 @@ import { ROLE_LIST_ID, RoleList } from '../suggest/RoleList'
 import { placeFor } from '../suggest/picks'
 import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
 import { QuickOptionsPanel } from './QuickOptionsPanel'
-import { applyOptions, NO_OPTIONS, optionsSummary, type QuickOptions } from './quickOptions'
+import { applyOptions, DEFAULT_AUTO_APPROVE, NO_OPTIONS, optionsSummary, type QuickOptions } from './quickOptions'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
@@ -65,7 +65,7 @@ export function QuickCampaign() {
   const [repeat, setRepeat] = useState(() => (CADENCES.some((c) => c.minutes === Number(params.get('repeat'))) ? Number(params.get('repeat')) : 0))
   const autoStarted = useRef(false)
   const [more, setMore] = useState(false)
-  const [opts, setOpts] = useState<QuickOptions>(NO_OPTIONS)
+  const [opts, setOpts] = useState<QuickOptions>({ ...NO_OPTIONS, autoApprove: DEFAULT_AUTO_APPROVE })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
 
@@ -108,7 +108,7 @@ export function QuickCampaign() {
       draft.criteria = applyOptions({ ...draft.criteria, keywords, preferredSkills: mode === 'Job' ? skills : [], locations: place.trim() ? [place.trim().slice(0, 100)] : [] }, opts, mode)
       // Suggest anything reasonable for approval so the first run has something to approve.
       draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
-      const hands = mode === 'Job' && opts.autoApprove > 0 ? { autoApproveMinScore: opts.autoApprove } : {}
+      const hands = opts.autoApprove > 0 ? { autoApproveMinScore: opts.autoApprove } : {}
       const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: chosen.id, mode, ...campaignPayload(draft, mode), ...hands }) })
       const sourceBodies = quickSourceBodies(source, (board && 'token' in board ? board.token : undefined) ?? token.trim())
       try {
@@ -170,7 +170,7 @@ export function QuickCampaign() {
       <div className="row wrap">
         <button className="btn btn-primary" type="submit" data-coach="quick-run" disabled={busy || problems.length > 0}>{busy ? 'Starting…' : 'Create & run'}</button>
         <Link className="btn btn-ghost btn-sm" to={fullPath}>Advanced: weights, filters, more sources</Link>
-        <span className="muted-small grow">{problems[0] ?? (opts.autoApprove > 0 ? `Matches scoring ${opts.autoApprove}+ are approved for you. Nothing is submitted without your agent or your tap.` : 'Nothing is applied or sent: you approve what it suggests.')}</span>
+        <span className="muted-small grow">{problems[0] ?? (opts.autoApprove > 0 ? `Matches scoring ${opts.autoApprove}+ are approved for you. Nothing is applied or sent without your agent or your tap.` : 'Nothing is applied or sent: you approve what it suggests.')}</span>
       </div>
     </form>}
   </div>

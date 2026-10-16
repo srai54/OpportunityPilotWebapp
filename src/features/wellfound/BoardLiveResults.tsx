@@ -11,6 +11,7 @@ import type { ProfileSummary } from '../../lib/types'
 import { bulkFromSearch, sameCompany, type BulkResult } from './bulkFromSearch'
 import { safeHref } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
+import { hiringPostsUrl } from '../opportunities/reachPlan'
 import { BOARDS, campaignFromSearchPath, employmentLabel, recruiterSearchUrl, formatSalary, applyView, type BoardJob, type BoardSearchResult, type JobBoard, type ResultView } from './boardModel'
 
 const SALES_STEPS = [
@@ -113,7 +114,9 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
           ? 'Start a campaign from this search: each hiring company becomes a scored lead with its postings as evidence, then outreach drafts, follow-ups and a staffing deal.'
           : 'Start a campaign from this search: jobs are scored against your profile, suggested for approval, and tracked until applied.'}</p>
       </div>
-      <div className="row wrap hero-strip-actions"><Link className="btn btn-primary btn-sm" data-coach="find-campaign" to={campaignFromSearchPath(workspace, { query, location }, board, name)}>Start a campaign from this search</Link></div>
+      <div className="row wrap hero-strip-actions"><Link className="btn btn-primary btn-sm" data-coach="find-campaign" to={campaignFromSearchPath(workspace, { query, location }, board, name)}>Start a campaign from this search</Link>
+        <a className="btn btn-secondary btn-sm" href={hiringPostsUrl(query, '', location)} target="_blank" rel="noopener noreferrer">Hiring posts on LinkedIn ↗<span className="sr-only"> (opens a new tab)</span></a>
+        <a className="btn btn-ghost btn-sm" href={recruiterSearchUrl('', query, true)} target="_blank" rel="noopener noreferrer">Recruiters in my network ↗<span className="sr-only"> (opens LinkedIn in a new tab)</span></a></div>
     </div>}
     {jobs.length > 0 && <HowItWorks summary="What happens next — step by step">
       <ol className="guide-steps">{(workspace === 'sales' ? SALES_STEPS : CANDIDATE_STEPS).map((step) => <li key={step}>{step}</li>)}</ol>

@@ -37,9 +37,21 @@ const clean = (s: string, max: number) => s.trim().replaceAll('"', '').slice(0, 
 const people = (keywords: string, extra: Record<string, string> = {}) =>
   `https://www.linkedin.com/search/results/people/?${new URLSearchParams({ keywords, ...extra })}`
 
-/** Recruiters and hiring managers at the company (for a job). */
-export function hiringPeopleUrl(company: string): string {
-  return people(`"${clean(company, 80)}" (recruiter OR "talent acquisition" OR "hiring manager")`)
+const HIRING_PEOPLE = '(recruiter OR "talent acquisition" OR "hiring manager" OR hiring)'
+
+/**
+ * Recruiters and hiring managers at the company, narrowed by the role (U17-17): "hiring" also matches people whose headline says
+ * "we're hiring". inNetwork keeps 1st and 2nd-degree connections only, who are the ones likely to accept a note.
+ */
+export function hiringPeopleUrl(company: string, role = '', inNetwork = false): string {
+  const c = clean(company, 80), r = clean(role, 60)
+  return people(`${c ? `"${c}" ` : ''}${HIRING_PEOPLE}${r ? ` ${r}` : ''}`, inNetwork ? { network: '["F","S"]' } : {})
+}
+
+/** LinkedIn posts that say "hiring" for the role (and company), newest first: hiring posts name the person to write to. */
+export function hiringPostsUrl(role: string, company = '', location = ''): string {
+  const words = [clean(role, 60), clean(company, 80) ? `"${clean(company, 80)}"` : '', clean(location, 60)].filter(Boolean).join(' ')
+  return `https://www.linkedin.com/search/results/content/?${new URLSearchParams({ keywords: `hiring ${words}`.trim(), sortBy: '"date_posted"' })}`
 }
 
 /** People who decide on a purchase at the company (for a sales lead). */
@@ -85,8 +97,14 @@ export function reachRoutes(input: ReachInput): ReachRoute[] {
   }
 
   routes.push(job
-    ? { id: 'recruiter', title: 'Message the recruiter or hiring manager on LinkedIn', why: 'Opens LinkedIn people search at the company and writes a short connection note (300 characters) for you to send.', action: { kind: 'linkedin', href: hiringPeopleUrl(org), then: 'note' } }
+    ? { id: 'recruiter', title: 'Message the recruiter or hiring manager on LinkedIn', why: 'Opens LinkedIn people search at the company for this role and writes a short connection note (300 characters) for you to send.', action: { kind: 'linkedin', href: hiringPeopleUrl(org, input.title), then: 'note' } }
     : { id: 'decision-maker', title: 'Message a decision maker on LinkedIn', why: 'Opens LinkedIn people search for founders, heads and directors at the company and writes a short connection note.', action: { kind: 'linkedin', href: decisionMakersUrl(org), then: 'note' } })
+
+  routes.push({
+    id: 'hiring-posts', title: job ? 'Read hiring posts for this role' : 'Read their hiring posts',
+    why: 'Opens LinkedIn posts that say "hiring" for this role at the company, newest first. The person who posted is the one to write to.',
+    action: { kind: 'open', href: hiringPostsUrl(job ? input.title : '', org) },
+  })
 
   routes.push({
     id: 'referral', title: job ? 'Ask someone you know there for a referral' : 'Ask a connection for an introduction',
