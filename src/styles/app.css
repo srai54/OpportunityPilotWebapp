@@ -2723,3 +2723,10 @@ html { scroll-padding-bottom: 96px; }
 .profile-suggestions { display: grid; gap: 8px; }
 .profile-suggestion { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; background: var(--op-surface-raised, var(--op-bg)); border: 1px solid var(--op-line); }
 .profile-suggestion p { margin: 4px 0 0; white-space: pre-wrap; }
+/* Follow up: Replies | Reminders tabs above the two original pages. */
+.followup-tabs { display: flex; gap: 6px; padding-bottom: 0; }
+/* One voice entry per screen size: the pill (wide), the mic icon (mid), the round button (phones) — the icon no longer doubles the button. */
+@media (max-width: 860px) { .appbar .voice-btn { display: none; } }
+.reach-subhead { margin: 6px 0 0; font-size: 14px; font-weight: 650; }
+.reach-followup { border-top: 1px solid var(--op-line); padding-top: 10px; }
+.reach-followup summary { cursor: pointer; font-weight: 600; font-size: 13.5px; min-height: 32px; display: flex; align-items: center; }

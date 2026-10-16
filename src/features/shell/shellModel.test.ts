@@ -51,12 +51,12 @@ describe('NAV_GROUPS', () => {
   const labels = (advanced: boolean, ws: 'candidate' | 'sales' = 'candidate') => navGroupsFor(ws, advanced).flatMap((g) => g.items.map((i) => i.label))
 
   it('keeps the simple menu to the essentials', () => {
-    expect(labels(false)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Inbox', 'Profiles', 'Settings'])
-    expect(labels(false, 'sales')).toEqual(['Overview', 'Find companies', 'Companies', 'Outreach', 'Inbox', 'Profiles', 'Settings'])
+    expect(labels(false)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Follow up', 'Profiles', 'Settings'])
+    expect(labels(false, 'sales')).toEqual(['Overview', 'Find companies', 'Companies', 'Outreach', 'Follow up', 'Profiles', 'Settings'])
   })
 
   it('adds campaigns, follow-ups, insights, staffing and help only with Advanced on, each route once', () => {
-    expect(labels(true)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Inbox', 'Campaigns', 'Follow-ups', 'My interviews', 'Autopilot', 'Insights', 'Profiles', 'Settings', 'Connectors', 'How it works'])
+    expect(labels(true)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Follow up', 'Campaigns', 'My interviews', 'Autopilot', 'Insights', 'Profiles', 'Settings', 'Connectors', 'How it works'])
     expect(labels(true, 'sales')).toContain('Deals')
     expect(labels(true, 'sales')).toContain('Interviews')
     expect(labels(true, 'sales')).not.toContain('My interviews')

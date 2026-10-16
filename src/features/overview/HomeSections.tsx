@@ -1,4 +1,3 @@
-import { AgentStatusCard } from './AgentStatusCard'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CardList, LeadCard } from '../../components/cards'
@@ -91,7 +90,7 @@ export function HomeSide({ a, workspace }: Readonly<{ a: AnalyticsOverview; work
   return (
     <div className="stack-4">
       <SourcesCard rows={a.sources.map((s) => ({ id: s.sourceId, label: s.label, read: s.read, qualified: s.qualified, lastRun: s.lastFetchedAt, failing: s.failing }))} when={formatWhen} />
-      {!sales && <AgentStatusCard />}
+      {/* The desktop agent card lives on Campaigns (it was shown twice). */}
       <ActivityCard rows={rows} when={formatWhen} />
     </div>
   )

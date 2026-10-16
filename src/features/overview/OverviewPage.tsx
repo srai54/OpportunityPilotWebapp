@@ -2,7 +2,6 @@ import { AutomationProgress } from './AutomationProgress'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNotice } from '../../components/ErrorNotice'
-import { CommandBar } from '../command/CommandBar'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
 import { SampleDataButton } from '../sample/SampleDataButton'
@@ -189,7 +188,6 @@ function CandidateOverview({ a, overview, trend }: { a: AnalyticsOverview; overv
       <HomeHero a={a} workspace="candidate" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="candidate" />
-      <CommandBar />
       <AutomationProgress workspace="candidate" />
       <div className="two">
         <div className="stack-4">
@@ -302,7 +300,6 @@ function SalesOverview({ a, overview, trend }: { a: AnalyticsOverview; overview:
       <HomeHero a={a} workspace="sales" trend={trend} />
       <StopAllCard />
       <HomeKpis a={a} trend={trend} workspace="sales" />
-      <CommandBar />
       <AutomationProgress workspace="sales" />
       <div className="two">
         <div className="stack-4">
@@ -397,7 +394,6 @@ function FirstRun({ overview, onSample }: { overview: Overview; onSample: () => 
   return (
     <div className="page stack-4">
       <PageHeader title="Welcome to OpportunityPilot" subtitle="Pick a workspace, then say what to find." />
-      <CommandBar />
       <GuidedStart overview={overview} workspace={workspace} />
       <SampleDataButton workspace={workspace === 'sales' ? 'Sales' : 'Candidate'} onLoaded={onSample} />
       {workspace === 'candidate' && <SampleRunCard />}

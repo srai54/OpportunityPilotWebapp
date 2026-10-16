@@ -22,8 +22,7 @@ const OpportunityDetailPage = lazyPage(() => import('./features/opportunities/Op
 const OverviewPage = lazyPage(() => import('./features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })))
 const OutreachPage = lazyPage(() => import('./features/outreach/OutreachPage').then((m) => ({ default: m.OutreachPage })))
 const AutopilotPage = lazyPage(() => import('./features/autopilot/AutopilotPage').then((m) => ({ default: m.AutopilotPage })))
-const InboxPage = lazyPage(() => import('./features/inbox/InboxPage').then((m) => ({ default: m.InboxPage })))
-const FollowUpsPage = lazyPage(() => import('./features/follow-ups/FollowUpsPage').then((m) => ({ default: m.FollowUpsPage })))
+const FollowUpHub = lazyPage(() => import('./features/follow-ups/FollowUpHub').then((m) => ({ default: m.FollowUpHub })))
 const ProfilesPage = lazyPage(() => import('./features/profiles/ProfilesPage').then((m) => ({ default: m.ProfilesPage })))
 const ResearchProgressPage = lazyPage(() => import('./features/research/ResearchProgressPage').then((m) => ({ default: m.ResearchProgressPage })))
 const SettingsPage = lazyPage(() => import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
@@ -120,9 +119,10 @@ const router = createBrowserRouter([
       { path: 'opportunities/:id', element: <OpportunityDetailPage />, handle: { title: 'Opportunity' } },
       { path: 'approvals', element: <Navigate to="/opportunities?view=approvals" replace />, handle: { title: 'Opportunities' } },
       { path: 'outreach', handle: { title: 'Outreach' }, element: <OutreachPage /> },
-      { path: 'inbox', handle: { title: 'Inbox' }, element: <InboxPage /> },
+      // Inbox and Follow-ups are one Follow up screen now; the old address opens its Replies tab.
+      { path: 'inbox', element: <Navigate to="/follow-ups?tab=replies" replace />, handle: { title: 'Follow up' } },
       { path: 'autopilot', handle: { title: 'Autopilot' }, element: <AutopilotPage /> },
-      { path: 'follow-ups', handle: { title: 'Follow-ups' }, element: <FollowUpsPage /> },
+      { path: 'follow-ups', handle: { title: 'Follow up' }, element: <FollowUpHub /> },
       { path: 'staffing', element: <StaffingDealsPage />, handle: { title: 'Staffing deals' } },
       { path: 'staffing/deals/:id', element: <StaffingDealPage />, handle: { title: 'Staffing deal' } },
       { path: 'staffing/candidates', element: <StaffingCandidatesPage />, handle: { title: 'Candidates' } },

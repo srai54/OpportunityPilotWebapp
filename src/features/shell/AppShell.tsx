@@ -378,7 +378,7 @@ export function AppShell() {
                 </span>
               )}
               <div className="top-switches" aria-label="View preferences">
-                <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and a Next bar on every step" testId="toggle-guide" />
+                {/* Guide lives in the account menu only (one help entry in the bar: the (?) button). */}
                 <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
               <VoiceLaunch workspace={workspace} />
