@@ -151,40 +151,65 @@ function review(sales: boolean, campaignId: string | null = null) {
 }
 
 /** Sales: write emails for the approved leads of the latest campaign, then (after a yes) approve and send them from the connected mailbox. */
+/** Which campaigns "send the outreach" covers: the one named, else the one of the lead on screen, else every Sales campaign. */
+async function outreachCampaigns(campaignId: string | null): Promise<string[]> {
+  if (campaignId) return [campaignId]
+  const onLead = /^\/opportunities\/([0-9a-f-]{36})/i.exec(window.location.pathname)?.[1]
+  if (onLead) { try { return [(await api<{ campaignId: string }>(`/api/v1/opportunities/${onLead}`)).campaignId] } catch { /* fall through */ } }
+  const all = await api<{ id: string; mode: string }[]>('/api/v1/campaigns')
+  return all.filter((c) => c.mode !== 'Job').map((c) => c.id)
+}
+
+/**
+ * Sales: write an email for every approved company that has none yet (with or without a known address), then — after a yes — send the
+ * ones with an address from the connected mailbox; the rest open in Outreach to send through Gmail, where the address is typed.
+ */
 async function outreach(campaignId: string | null = null): Promise<void> {
-  const id = campaignId ?? lastCampaign()
-  if (!id) throw new Error('Start a campaign first, then approve the companies you want to email.')
-  const labels = ['Write the emails', 'Your OK', 'Send from your mailbox']
-  setFlow({ phase: 'running', title: 'Writing emails', steps: steps(labels, 0), progress: 30 })
-  const r = await api<{ written: number; skipped: number; items: { draftId: string | null }[] }>(`/api/v1/campaigns/${id}/drafts/prepare`, { method: 'POST' })
-  const ids = new Set(r.items.map((x) => x.draftId).filter(Boolean) as string[])
-  const page = await api<DraftPage>('/api/v1/drafts?take=200')
-  const ready = page.items.filter((d) => d.campaignId === id && d.channel === 'Email' && d.recipient && d.state !== 'Sent' && (ids.has(d.id) || d.state === 'Draft' || d.state === 'Approved'))
-  if (ready.length === 0) {
-    setFlow({ phase: 'done', title: 'No emails to send', detail: r.skipped ? `${r.skipped} approved lead${r.skipped === 1 ? ' has' : 's have'} no published address yet.` : 'Approve some companies first.', steps: steps(labels, 3), link: { to: '/outreach', label: 'Open Outreach' } })
+  const ids = await outreachCampaigns(campaignId)
+  if (ids.length === 0) throw new Error('Start a campaign first, then approve the companies you want to email.')
+  const labels = ['Write the emails', 'Your OK', 'Send']
+  setFlow({ phase: 'running', title: 'Writing emails', steps: steps(labels, 0), progress: 20 })
+  const existing = await api<DraftPage>('/api/v1/drafts?take=200')
+  const hasDraft = new Set(existing.items.filter((d) => d.channel === 'Email' && d.state !== 'Sent').map((d) => d.opportunityId))
+  let approved = 0, written = 0
+  for (const id of ids) {
+    const page = await api<OpportunityPage>(`/api/v1/campaigns/${id}/opportunities?take=200`)
+    for (const o of page.items.filter((x) => x.status === 'Shortlisted')) {
+      approved++
+      if (hasDraft.has(o.id)) continue
+      try { await api(`/api/v1/opportunities/${o.id}/drafts`, { method: 'POST', body: JSON.stringify({ channel: 'Email', recipient: null }) }); written++ } catch { /* e.g. profile not confirmed: shown in Outreach */ }
+      set({ progress: Math.min(80, 20 + written * 5), detail: `${written} written` })
+    }
+  }
+  if (approved === 0) {
+    setFlow({ phase: 'done', title: 'No approved companies yet', detail: 'Approve the companies you want to email, then say "send the outreach".', steps: steps(labels, 3), link: { to: '/opportunities', label: 'Review leads' } })
     return
   }
-  const boxes = await api<Mailbox[]>('/api/v1/mailboxes')
+  const page = await api<DraftPage>('/api/v1/drafts?take=200')
+  const toSend = page.items.filter((d) => d.channel === 'Email' && d.state !== 'Sent')
+  const withAddress = toSend.filter((d) => d.recipient)
+  const boxes = await api<Mailbox[]>('/api/v1/mailboxes').catch(() => [] as Mailbox[])
   const box = boxes.find((b) => b.connected)
-  if (!box) {
-    setFlow({ phase: 'done', title: `${ready.length} email${ready.length === 1 ? '' : 's'} written`, detail: 'Connect your mailbox to send them from here, or send each from Outreach.', steps: steps(labels, 1), link: { to: '/outreach', label: 'Check and send' } })
+  if (!box || withAddress.length === 0) {
+    setFlow({ phase: 'done', title: `${toSend.length} email${toSend.length === 1 ? '' : 's'} ready`, detail: 'Open Outreach: each one opens in Gmail with the text filled in — add the address there and press Send.', steps: steps(labels, 2), progress: 100, link: { to: '/outreach', label: 'Send them in Gmail' } })
+    announce(`${toSend.length} email${toSend.length === 1 ? ' is' : 's are'} ready. Open Outreach and each one opens in Gmail for you to send.`)
     return
   }
   setFlow({
-    phase: 'confirm', title: `${ready.length} email${ready.length === 1 ? '' : 's'} ready`, detail: `Send them from ${box.emailAddress ?? 'your mailbox'}?`, steps: steps(labels, 1),
+    phase: 'confirm', title: `${withAddress.length} email${withAddress.length === 1 ? '' : 's'} ready`, detail: `Send them from ${box.emailAddress ?? 'your mailbox'}? ${toSend.length - withAddress.length ? `${toSend.length - withAddress.length} without an address wait in Outreach for Gmail.` : ''}`, steps: steps(labels, 1),
     link: { to: '/outreach', label: 'Read them first' },
     confirm: {
-      yes: `Send ${ready.length}`,
+      yes: `Send ${withAddress.length}`,
       run: async () => {
         setFlow({ phase: 'running', title: 'Sending', steps: steps(labels, 2), progress: 60 })
-        const toApprove = ready.filter((d) => d.state === 'Draft').map((d) => ({ id: d.id, version: d.version }))
-        const approved = toApprove.length ? await api<BatchApproveDraftResult[]>('/api/v1/drafts/batch-approve', { method: 'POST', body: JSON.stringify({ items: toApprove }) }) : []
-        const versions = new Map(approved.filter((a) => a.approved && a.draft).map((a) => [a.id, a.draft!.version]))
-        const items = ready.filter((d) => d.state === 'Approved' || versions.has(d.id)).slice(0, 25).map((d) => ({ id: d.id, version: versions.get(d.id) ?? d.version }))
+        const toApprove = withAddress.filter((d) => d.state === 'Draft').map((d) => ({ id: d.id, version: d.version }))
+        const approvedNow = toApprove.length ? await api<BatchApproveDraftResult[]>('/api/v1/drafts/batch-approve', { method: 'POST', body: JSON.stringify({ items: toApprove }) }) : []
+        const versions = new Map(approvedNow.filter((a) => a.approved && a.draft).map((a) => [a.id, a.draft!.version]))
+        const items = withAddress.filter((d) => d.state === 'Approved' || versions.has(d.id)).slice(0, 25).map((d) => ({ id: d.id, version: versions.get(d.id) ?? d.version }))
         const out = await api<BatchSendResult[]>('/api/v1/drafts/send-via-mailbox-batch', { method: 'POST', body: JSON.stringify({ provider: box.provider, items }) })
         const sent = out.filter((o) => o.outcome === 'Sent').length
         setFlow({ phase: 'done', title: `${sent} sent`, detail: sent < items.length ? `${items.length - sent} not sent — see Outreach.` : 'Replies show up in your Inbox.', steps: steps(labels, 3), progress: 100, link: { to: '/outreach', label: 'Open Outreach' } })
-        announce(`Done. ${sent} email${sent === 1 ? '' : 's'} sent. I will tell you when replies come in; check your Inbox.`)
+        announce(`Done. ${sent} email${sent === 1 ? '' : 's'} sent. Check your Inbox for replies.`)
       },
     },
   })

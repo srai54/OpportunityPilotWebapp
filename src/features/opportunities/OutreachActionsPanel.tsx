@@ -11,7 +11,7 @@ import { ReachPlanner } from './ReachPlanner'
 import { useShell } from '../shell/ShellContext'
 
 const CHANNELS: { value: DraftChannel; label: string }[] = [
-  { value: 'Email', label: 'Email' }, { value: 'LinkedInMessage', label: 'LinkedIn message' }, { value: 'ContactForm', label: 'Contact form' },
+  { value: 'Email', label: 'Email — opens in Gmail' }, { value: 'LinkedInMessage', label: 'LinkedIn message' }, { value: 'ContactForm', label: 'Contact form' },
 ]
 
 /** What "To" means for each channel, so a LinkedIn name or a contact page is never asked for as an email address. */
@@ -34,14 +34,16 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<Error>()
   const [message, setMessage] = useState('')
+  // A problem writing the message is shown under its button (the card's top is far above), so it is never missed.
+  const [draftError, setDraftError] = useState<Error>()
 
   async function createDraft() {
-    setBusy(true); setError(undefined)
+    setBusy(true); setError(undefined); setDraftError(undefined)
     try {
       const made = await api<OutreachDraft>(`/api/v1/opportunities/${opportunityId}/drafts`, { method: 'POST', body: JSON.stringify({ channel, recipient: recipient.trim() || null }) })
       // Straight to the written message, where Approve & send opens the mail app, LinkedIn or the contact form.
       navigate(`/outreach?draft=${made.id}`)
-    } catch (e) { setError(e as Error) } finally { setBusy(false) }
+    } catch (e) { setDraftError(e as Error) } finally { setBusy(false) }
   }
   async function createAction() {
     if (!dueAt) return
@@ -63,6 +65,11 @@ export function OutreachActionsPanel({ o }: { o: OpportunityDetail }) {
     <label className="field"><span>{TO[channel].label}</span><input value={recipient} onChange={(e) => setRecipient(e.target.value)} maxLength={320} placeholder={TO[channel].placeholder} /></label>
     {channel === 'Email' && <ContactFinder opportunityId={opportunityId} onUse={setRecipient} />}
     <button className="btn btn-primary btn-sm" type="button" disabled={busy} onClick={createDraft}>{busy ? 'Writing…' : TO[channel].button}</button>
+    {draftError && <div ref={(el) => el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })}>
+      {needsProfileConfirm(draftError)
+        ? <ProfileConfirmNotice opportunityId={opportunityId} onConfirmed={() => { setDraftError(undefined); void createDraft() }} />
+        : <ErrorNotice error={draftError} />}
+    </div>}
     <p className="muted-small">Opens the message to check; Approve &amp; send then opens {channel === 'Email' ? 'Gmail (or your mail app) — add the address there if it is empty' : channel === 'LinkedInMessage' ? 'LinkedIn on that person, text copied' : 'the contact page, text copied'}.</p>
     <hr />
     <label className="field"><span>Next action</span><select value={kind} onChange={(e) => setKind(e.target.value as NextActionKind)}><option value="FollowUp">Follow up</option><option value="CheckStatus">Check status</option><option value="Call">Call</option><option value="Other">Other</option></select></label>
