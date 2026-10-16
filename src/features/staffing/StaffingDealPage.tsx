@@ -49,8 +49,10 @@ export function StaffingDealPage() {
 
     <section className="panel">
       <header className="panel-head"><h3 className="eyebrow">Stage</h3><span className="grow" />
-        <span className="muted-small">Moves one step at a time. Submitting, interviewing, offers and placement also move it when you record them.</span></header>
+        <span className="muted-small stage-hint">Moves one step at a time. Submitting, interviewing, offers and placement also move it when you record them.</span></header>
       <div className="panel-body">
+        {(() => { const all = stageProgress(d.stage, d.stageBeforeHold); const at = Math.max(0, all.findIndex((s) => s.state === 'current'))
+          return <div className="stage-compact" aria-hidden="true"><span><strong>{STAGE_LABELS[d.stage]}</strong> · stage {at + 1} of {all.length}</span><span className="stage-compact-bar"><i style={{ width: `${Math.round(((at + 1) / all.length) * 100)}%` }} /></span></div> })()}
         <ol className="stage-track" aria-label="Deal stages">
           {stageProgress(d.stage, d.stageBeforeHold).map((s) => <li key={s.stage} className={`stage-${s.state}`} aria-current={s.state === 'current' ? 'step' : undefined}>
             <span className="stage-dot" aria-hidden="true" /><span className="stage-name">{STAGE_LABELS[s.stage]}</span>
@@ -120,8 +122,31 @@ function ActivityPanel({ deal, busy, onNote }: { deal: StaffingDeal; busy: boole
       <input className="grow" value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (call summary, client ask…)" aria-label="Note" />
       <button className="btn btn-secondary" type="submit" disabled={busy || !note.trim()}>Add note</button>
     </form>
-    <ul className="activity-list">{deal.activities.map((a) =>
-      <li key={a.id}><span className="muted-small">{new Date(a.occurredAt).toLocaleString()}</span> <Badge>{a.type.replace(/([a-z])([A-Z])/g, '$1 $2')}</Badge> {a.detail}</li>)}
-    </ul>
+    {deal.activities.length === 0 ? <p className="panel-body muted-small">Nothing recorded yet.</p> : (
+    <ol className="deal-timeline" aria-label="Deal history, newest first">{deal.activities.map((a) => (
+      <li key={a.id} className={`deal-event is-${activityTone(a.type)}`}>
+        <span className="deal-event-dot" aria-hidden="true" />
+        <div className="deal-event-card">
+          <div className="deal-event-head">
+            <Badge tone={activityTone(a.type) === 'stage' ? 'primary' : activityTone(a.type) === 'interview' ? 'warning' : activityTone(a.type) === 'done' ? 'success' : undefined}>{a.type.replace(/([a-z])([A-Z])/g, '$1 $2')}</Badge>
+            <time className="muted-small" dateTime={a.occurredAt}>{new Date(a.occurredAt).toLocaleString([], { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</time>
+          </div>
+          <p className="deal-event-text">{prettyDetail(a.detail)}</p>
+        </div>
+      </li>))}
+    </ol>)}
   </section>
+}
+
+/** Groups the activity types so each kind gets its own colour on the timeline. */
+function activityTone(type: string): 'stage' | 'interview' | 'done' | 'note' {
+  if (/Stage/i.test(type)) return 'stage'
+  if (/Interview/i.test(type)) return 'interview'
+  if (/Confirmed|Created|Won|Placed|Signed/i.test(type)) return 'done'
+  return 'note'
+}
+
+/** "RequirementConfirmed → CandidatesSubmitted" reads as "Requirement confirmed → Candidates submitted". */
+function prettyDetail(detail: string): string {
+  return detail.replace(/\b([A-Z][a-z]+)((?:[A-Z][a-z]+)+)\b/g, (_m, first: string, rest: string) => first + rest.replace(/([A-Z])/g, ' $1').toLowerCase())
 }

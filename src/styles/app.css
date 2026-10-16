@@ -2730,3 +2730,23 @@ html { scroll-padding-bottom: 96px; }
 .reach-subhead { margin: 6px 0 0; font-size: 14px; font-weight: 650; }
 .reach-followup { border-top: 1px solid var(--op-line); padding-top: 10px; }
 .reach-followup summary { cursor: pointer; font-weight: 600; font-size: 13.5px; min-height: 32px; display: flex; align-items: center; }
+
+/* Deal activity (2026-10-16): a timeline of small cards — badge + time on one line, the full text below, wrapping normally.
+   Replaces the flat list whose text was squeezed into a narrow column. */
+.deal-timeline { list-style: none; margin: 0; padding: 4px 16px 16px; display: grid; gap: 10px; position: relative; }
+.deal-timeline::before { content: ""; position: absolute; left: 25px; top: 10px; bottom: 16px; width: 2px; background: var(--op-line); border-radius: 2px; }
+.deal-event { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; position: relative; }
+.deal-event-dot { width: 12px; height: 12px; margin: 14px 0 0 4px; border-radius: 50%; background: var(--op-surface); border: 2px solid #94a3b8; position: relative; z-index: 1; }
+.deal-event.is-stage .deal-event-dot { border-color: var(--op-primary); background: var(--op-primary); }
+.deal-event.is-interview .deal-event-dot { border-color: #d97706; background: #f59e0b; }
+.deal-event.is-done .deal-event-dot { border-color: #059669; background: #10b981; }
+.deal-event-card { min-width: 0; padding: 10px 14px; border: 1px solid var(--op-line); border-radius: 12px; background: var(--op-surface); }
+.deal-event-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
+.deal-event-head .badge { width: auto; flex: 0 0 auto; }
+.deal-event-text { margin: 6px 0 0; font-size: 14px; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+@media (max-width: 640px) { .deal-timeline { padding: 4px 10px 12px; } .deal-timeline::before { left: 19px; } }
+/* Deal stage on phones: one line + progress bar instead of an 11-step strip that runs past the edge. */
+.stage-compact { display: none; gap: 6px; margin-bottom: 10px; font-size: 14px; }
+.stage-compact-bar { display: block; height: 6px; border-radius: 999px; background: var(--op-line); overflow: hidden; }
+.stage-compact-bar i { display: block; height: 100%; background: var(--op-primary); border-radius: 999px; }
+@media (max-width: 640px) { .stage-compact { display: grid; } .stage-track { display: none; } .stage-hint { display: none; } }
