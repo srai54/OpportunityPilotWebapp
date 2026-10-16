@@ -3,7 +3,7 @@ import { bestVoice, isYes, sentences, speechLang } from './assistantModel'
 
 describe('isYes', () => {
   it('accepts a spoken confirmation and nothing else', () => {
-    for (const t of ['yes', 'Yeah do it', 'ok run it', 'go ahead', 'haan']) expect(isYes(t)).toBe(true)
+    for (const t of ['yes', 'Yeah do it', 'run it', 'go ahead', 'haan']) expect(isYes(t)).toBe(true)
     for (const t of ['no', 'not yet', 'yesterday', 'cancel']) expect(isYes(t)).toBe(false)
   })
 })

@@ -5,8 +5,8 @@ import { commandPath, describeCommand, parseCommand, type ParsedCommand } from '
 import { listenOnce, recognitionCtor, type Recognition } from '../command/speech'
 import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, setVoiceLanguage, voiceLanguage, whisperAvailable, type Recording } from './whisper'
-import { api } from '../../lib/api'
-import { isEcho, isYes, speak, stopVoice, voiceEpoch, type AssistantReply } from './assistantModel'
+import { api, isSignInRequired, isTryLater } from '../../lib/api'
+import { isEcho, isNo, isYes, speak, stopVoice, voiceEpoch, type AssistantReply } from './assistantModel'
 import { addTurn, flowContext, getFlow, runAction, scheduleFlow, setFlow, useTurns } from './voiceFlow'
 import { schedulePlan, scheduleQuestion } from './scheduleModel'
 
@@ -44,15 +44,14 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const chatEnd = useRef<HTMLDivElement>(null)
   useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'end' }) }, [turns.length, thinking, plan])
 
-  function understand(value: string) {
+  function understand(value: string, spoken = false) {
     const said = value.trim()
     if (!said) return
     openEpoch.current = -1 // a question was asked: the window's opening listen is no longer wanted
-    // The mic picked up the assistant's own voice: ignore it instead of answering itself.
-    if (isEcho(said)) return
-    // A "yes" while an action is waiting confirms it; it is not a new question.
+    // Yes/no first (S5): a short yes is never mistaken for an echo. Then, for speech only, ignore the assistant's own voice.
     if ((reply?.action || plan) && isYes(said)) { addTurn({ role: 'you', text: said }); run(reply, plan); return }
-    if ((reply?.action || plan) && /^\s*(no|not now|cancel|stop|nahi)\b/i.test(said)) { addTurn({ role: 'you', text: said }); setReply(null); setPlan(null); addTurn({ role: 'assistant', text: 'Okay, not now.' }); speak('Okay, not now.'); return }
+    if ((reply?.action || plan) && isNo(said)) { addTurn({ role: 'you', text: said }); setReply(null); setPlan(null); addTurn({ role: 'assistant', text: 'Okay, not now.' }); speak('Okay, not now.'); return }
+    if (spoken && isEcho(said)) return
     const history = turns.slice(-8)
     addTurn({ role: 'you', text: said })
     setText(''); setReply(null); setPlan(null)
@@ -79,14 +78,19 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
           setTimeout(() => {
             if (voiceEpoch() !== started) return
             listen((t) => {
-              if (voiceEpoch() !== started || isEcho(t)) return
+              if (voiceEpoch() !== started) return
               if (isYes(t)) { addTurn({ role: 'you', text: t }); run(r, launch) }
-              else if (/^\s*(no|not now|cancel|stop|nahi)\b/i.test(t)) { addTurn({ role: 'you', text: t }); setReply(null); setPlan(null) }
+              else if (isNo(t)) { addTurn({ role: 'you', text: t }); setReply(null); setPlan(null) }
             }, 5_000)
           }, 600)
         })
       })
-      .catch(() => { const parsed = parseCommand(said, ws); setPlan(parsed); setTried(true) })
+      .catch((e: unknown) => {
+        // A guest or a busy hour gets a plain answer in the conversation; anything else falls back to the local parser.
+        if (isSignInRequired(e)) { addTurn({ role: 'assistant', text: 'Sign in to use the voice assistant. Guest mode covers browsing and the free features.' }); return }
+        if (isTryLater(e)) { addTurn({ role: 'assistant', text: 'I have answered a lot this hour. Try again later, or use the screens directly.' }); return }
+        const parsed = parseCommand(said, ws); setPlan(parsed); setTried(true)
+      })
       .finally(() => { setThinking(false); if (getFlow().phase === 'thinking') setFlow({ phase: 'idle', title: '', steps: [] }) })
   }
   /** Groq Whisper first (accurate, multilingual); the browser's own speech only when the server has no Whisper key. */
@@ -111,7 +115,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   function start() {
     setPlan(null); setTried(false); setErr(null)
     if (listening) { rec.current?.stop(); recording.current?.stop(); return }
-    if (canVoice) listen((t) => understand(t))
+    if (canVoice) listen((t) => understand(t, true))
   }
   function openSheet() {
     setOpen(true); setText(''); setPlan(null); setTried(false); setErr(null)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/icons'
-import { isEcho, isYes, speak, stopVoice, voiceEpoch } from './assistantModel'
+import { isYes, speak, stopVoice, voiceEpoch } from './assistantModel'
 import { resetFlow, setFlow, useFlow } from './voiceFlow'
 import { hearOnce } from './whisper'
 
@@ -23,7 +23,9 @@ export function VoicePill() {
     const started = voiceEpoch()
     speak(asking, () => {
       if (!live || voiceEpoch() !== started) return
-      setTimeout(() => { if (live && voiceEpoch() === started) void hearOnce((t) => { if (live && voiceEpoch() === started && !isEcho(t) && isYes(t)) void yes() }) }, 600)
+      // Sending (email) needs a tap: the question is spoken, but a spoken yes is not listened for.
+      if (flow.confirm?.tapOnly) return
+      setTimeout(() => { if (live && voiceEpoch() === started) void hearOnce((t) => { if (live && voiceEpoch() === started && isYes(t)) void yes() }) }, 600)
     })
     return () => { live = false }
   // eslint-disable-next-line react-hooks/exhaustive-deps

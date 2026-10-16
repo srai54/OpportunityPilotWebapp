@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from './icons'
-import { ApiError, ApiStillUnreachableError, ApiUnreachableError } from '../lib/api'
+import { ApiError, ApiStillUnreachableError, ApiUnreachableError, isSignInRequired, isTryLater } from '../lib/api'
 
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
 
@@ -26,6 +26,12 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
   const correlationId = error instanceof ApiError ? error.correlationId : undefined
   // When the failure was first shown, for the support reference.
   const [shownAt] = useState(() => timeFmt.format(new Date()))
+  if (isSignInRequired(error)) return (
+    <div className="notice notice-info row wrap" role="status">
+      <span className="grow"><strong>Sign in to use this.</strong> Voice, AI, live job boards and sending need an account; guest mode covers the rest.</span>
+      <a className="btn btn-primary btn-sm" href="/sign-in">Sign in</a>
+    </div>)
+  if (isTryLater(error)) return <p className="notice notice-warning" role="status"><strong>Used a lot just now.</strong> Try again later — this limit protects the free quota.</p>
 
   if (what) {
     return (

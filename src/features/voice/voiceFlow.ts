@@ -23,7 +23,8 @@ export interface FlowState {
   /** Where "Open" goes when the flow is done. */
   link?: { to: string; label: string }
   /** The question asked in the confirm phase, answered with yes/no. */
-  confirm?: { yes: string; run: () => Promise<void> }
+  /** tapOnly: the step sends something (email), so only a tap confirms it — a spoken yes never does (D2, 2026-10-16). */
+  confirm?: { yes: string; run: () => Promise<void>; tapOnly?: boolean }
   /** What can come next, offered as buttons when a step is done (the assistant keeps going instead of disappearing). */
   next?: { label: string; to?: string; run?: () => Promise<void> }[]
 }
@@ -155,7 +156,20 @@ function review(sales: boolean, campaignId: string | null = null) {
   setFlow({ phase: 'done', title: 'Your results', detail: id ? 'From your latest voice campaign' : 'Everything found so far', steps: [], link: { to: id ? `/opportunities?campaign=${id}` : '/opportunities', label: sales ? 'Review leads' : 'Review jobs' } })
 }
 
-/** Sales: write emails for the approved leads of the latest campaign, then (after a yes) approve and send them from the connected mailbox. */
+/** At most this many emails are sent from the mailbox in one go (the server's batch limit). */
+export const SEND_CAP = 25
+
+/**
+ * What voice may send: only emails written by this flow for the target campaigns (S1). toSend is everything this flow wrote that is not
+ * sent; withAddress the part that has an address (the rest is sent from Gmail by the person).
+ */
+export function sendableFromFlow<T extends { id: string; campaignId: string; channel: string; state: string; recipient: string | null }>(
+  drafts: readonly T[], campaignIds: readonly string[], writtenNow: ReadonlySet<string>,
+): { toSend: T[]; withAddress: T[] } {
+  const toSend = drafts.filter((d) => writtenNow.has(d.id) && campaignIds.includes(d.campaignId) && d.channel === 'Email' && d.state !== 'Sent')
+  return { toSend, withAddress: toSend.filter((d) => Boolean(d.recipient?.trim())) }
+}
+
 /** Which campaigns "send the outreach" covers: the one named, else the one of the lead on screen, else every Sales campaign. */
 async function outreachCampaigns(campaignId: string | null): Promise<string[]> {
   if (campaignId) return [campaignId]
@@ -177,12 +191,14 @@ async function outreach(campaignId: string | null = null): Promise<void> {
   const existing = await api<DraftPage>('/api/v1/drafts?take=200')
   const hasDraft = new Set(existing.items.filter((d) => d.channel === 'Email' && d.state !== 'Sent').map((d) => d.opportunityId))
   let approved = 0, written = 0
+  // Only what this flow writes, for these campaigns, may be sent from here (S1); older drafts wait in Outreach.
+  const writtenNow = new Set<string>()
   for (const id of ids) {
     const page = await api<OpportunityPage>(`/api/v1/campaigns/${id}/opportunities?take=200`)
     for (const o of page.items.filter((x) => x.status === 'Shortlisted')) {
       approved++
       if (hasDraft.has(o.id)) continue
-      try { await api(`/api/v1/opportunities/${o.id}/drafts`, { method: 'POST', body: JSON.stringify({ channel: 'Email', recipient: null }) }); written++ } catch { /* e.g. profile not confirmed: shown in Outreach */ }
+      try { const d = await api<{ id: string }>(`/api/v1/opportunities/${o.id}/drafts`, { method: 'POST', body: JSON.stringify({ channel: 'Email', recipient: null }) }); writtenNow.add(d.id); written++ } catch { /* e.g. profile not confirmed: shown in Outreach */ }
       set({ progress: Math.min(80, 20 + written * 5), detail: `${written} written` })
     }
   }
@@ -191,8 +207,7 @@ async function outreach(campaignId: string | null = null): Promise<void> {
     return
   }
   const page = await api<DraftPage>('/api/v1/drafts?take=200')
-  const toSend = page.items.filter((d) => d.channel === 'Email' && d.state !== 'Sent')
-  const withAddress = toSend.filter((d) => d.recipient)
+  const { toSend, withAddress } = sendableFromFlow(page.items, ids, writtenNow)
   const boxes = await api<Mailbox[]>('/api/v1/mailboxes').catch(() => [] as Mailbox[])
   const box = boxes.find((b) => b.connected)
   if (!box || withAddress.length === 0) {
@@ -201,16 +216,18 @@ async function outreach(campaignId: string | null = null): Promise<void> {
     return
   }
   setFlow({
-    phase: 'confirm', title: `${withAddress.length} email${withAddress.length === 1 ? '' : 's'} ready`, detail: `Send them from ${box.emailAddress ?? 'your mailbox'}? ${toSend.length - withAddress.length ? `${toSend.length - withAddress.length} without an address wait in Outreach for Gmail.` : ''}`, steps: steps(labels, 1),
+    phase: 'confirm', title: `${withAddress.length} email${withAddress.length === 1 ? '' : 's'} ready`,
+    detail: `Tap Send to send ${Math.min(withAddress.length, SEND_CAP)} from ${box.emailAddress ?? 'your mailbox'}.${withAddress.length > SEND_CAP ? ` ${withAddress.length - SEND_CAP} more wait in Outreach (${SEND_CAP} at a time).` : ''}${toSend.length - withAddress.length ? ` ${toSend.length - withAddress.length} without an address wait in Outreach for Gmail.` : ''}`, steps: steps(labels, 1),
     link: { to: '/outreach', label: 'Read them first' },
     confirm: {
-      yes: `Send ${withAddress.length}`,
+      yes: `Send ${Math.min(withAddress.length, SEND_CAP)}`,
+      tapOnly: true,
       run: async () => {
         setFlow({ phase: 'running', title: 'Sending', steps: steps(labels, 2), progress: 60 })
         const toApprove = withAddress.filter((d) => d.state === 'Draft').map((d) => ({ id: d.id, version: d.version }))
         const approvedNow = toApprove.length ? await api<BatchApproveDraftResult[]>('/api/v1/drafts/batch-approve', { method: 'POST', body: JSON.stringify({ items: toApprove }) }) : []
         const versions = new Map(approvedNow.filter((a) => a.approved && a.draft).map((a) => [a.id, a.draft!.version]))
-        const items = withAddress.filter((d) => d.state === 'Approved' || versions.has(d.id)).slice(0, 25).map((d) => ({ id: d.id, version: versions.get(d.id) ?? d.version }))
+        const items = withAddress.filter((d) => d.state === 'Approved' || versions.has(d.id)).slice(0, SEND_CAP).map((d) => ({ id: d.id, version: versions.get(d.id) ?? d.version }))
         const out = await api<BatchSendResult[]>('/api/v1/drafts/send-via-mailbox-batch', { method: 'POST', body: JSON.stringify({ provider: box.provider, items }) })
         const sent = out.filter((o) => o.outcome === 'Sent').length
         setFlow({ phase: 'done', title: `${sent} sent`, detail: sent < items.length ? `${items.length - sent} not sent — see Outreach.` : 'Replies show up in your Inbox.', steps: steps(labels, 3), progress: 100, link: { to: '/outreach', label: 'Open Outreach' } })

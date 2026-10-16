@@ -31,8 +31,23 @@ export interface AssistantAction {
 }
 
 /** "yes", "yeah, do it", "ok run it" confirm; anything else does not. */
+const YES = ['yes', 'yeah', 'yep', 'yes please', 'yes do it', 'yeah do it', 'do it', 'run it', 'go ahead', 'sure', 'confirm', 'haan', 'haan ji', 'ji haan',
+  'हाँ', 'हां', 'जी', 'जी हाँ', 'जी हां', 'हाँ जी', 'ठीक है', 'हाँ करो', 'कर दो']
+const NO = ['no', 'nope', 'not now', 'cancel', 'stop', 'nahi', 'nahin', 'नहीं', 'नही', 'मत करो', 'रुको']
+
+/** Lower-case words only: punctuation, Hindi danda and extra spaces removed, so "Yes!" and "हाँ।" compare as phrases. */
+function phrase(heard: string): string {
+  return heard.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/** The whole answer must be a yes phrase (S5): "yes", "yeah do it", "हाँ" confirm; "yes but search Pune" or a stray "ok" does not. */
 export function isYes(heard: string): boolean {
-  return /^\s*(yes|yeah|yep|ok|okay|sure|do it|run it|go ahead|haan|ha)\b/i.test(heard)
+  return YES.includes(phrase(heard))
+}
+
+/** The whole answer is a no phrase, in English or Hindi. */
+export function isNo(heard: string): boolean {
+  return NO.includes(phrase(heard))
 }
 
 let playing: HTMLAudioElement | null = null

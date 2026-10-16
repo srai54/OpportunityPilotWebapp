@@ -1,4 +1,5 @@
-import { api } from '../../lib/api'
+import { api, isSignInRequired, isTryLater } from '../../lib/api'
+import { voiceEpoch } from './assistantModel'
 
 /** Voice through Groq Whisper (multilingual, Hindi and Hinglish included): record a short clip, the API transcribes it (key stays on the server). */
 export function canRecord(): boolean {
@@ -13,21 +14,28 @@ export interface Recording { stop: () => void }
 
 /** Starts recording; stops by itself after you finish talking (or at maxMs), then the server transcribes it with Whisper. */
 export async function recordAndTranscribe(onText: (t: string) => void, onError: (m: string) => void, onEnd: () => void, maxMs = 15_000): Promise<Recording | null> {
+  // Stop or close bumps the voice epoch: a recording started before it is never uploaded, and a late answer is dropped (S4).
+  const started = voiceEpoch()
   let stream: MediaStream
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }) } catch { onError('Microphone permission was refused.'); onEnd(); return null }
+  if (voiceEpoch() !== started) { stream.getTracks().forEach((t) => t.stop()); onEnd(); return null }
   const rec = new MediaRecorder(stream)
   const chunks: Blob[] = []
   rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data) }
   rec.onstop = async () => {
     stream.getTracks().forEach((t) => t.stop())
+    if (voiceEpoch() !== started) { onEnd(); return }
     try {
       const type = rec.mimeType || 'audio/webm'
       const form = new FormData()
       form.append('audio', new Blob(chunks, { type }), type.includes('ogg') ? 'voice.ogg' : type.includes('mp4') ? 'voice.mp4' : 'voice.webm')
       form.append('language', voiceLanguage())
       const r = await api<{ text: string }>('/api/v1/voice/transcribe', { method: 'POST', body: form })
+      if (voiceEpoch() !== started) return
       if (r.text) onText(r.text); else onError('Nothing was heard. Try again or type it.')
-    } catch { onError('Could not transcribe. Type the command instead.') } finally { onEnd() }
+    } catch (e) {
+      onError(isSignInRequired(e) ? 'Sign in to use voice. You can still type.' : isTryLater(e) ? 'Voice is busy this hour. Type instead, or try later.' : 'Could not transcribe. Type the command instead.')
+    } finally { onEnd() }
   }
   rec.start()
   const finish = () => { window.clearTimeout(timer); stopSilence(); if (rec.state === 'recording') rec.stop() }

@@ -13,6 +13,16 @@ export class ApiError extends Error {
   }
 }
 
+/** A guest asked for a paid feature (AI, voice, live job boards, sending): the server says "Sign in to use this". */
+export function isSignInRequired(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 403 && /sign in to use/i.test(error.message)
+}
+
+/** The per-person hourly limit or a daily provider budget was reached. */
+export function isTryLater(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 429
+}
+
 /** Thrown when the API cannot be reached at all, e.g. while the free Render host is waking up. */
 export class ApiUnreachableError extends Error {}
 
