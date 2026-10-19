@@ -20,6 +20,7 @@ export const FREE_SITES = [
   { id: 'Remotive', label: 'Remotive', note: 'Remote' },
   { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
   { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
+  { id: 'WorkingNomads', label: 'Working Nomads', note: 'Remote, worldwide' },
   { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
   { id: 'Instahyre', label: 'Instahyre', note: 'India tech jobs' },
   { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
@@ -172,4 +173,23 @@ export function siteCounts(feed: FeedSearchResult | undefined, boards: readonly 
   for (const s of feed?.sites ?? []) out[SOURCES.find((x) => x.label === s.site || x.id === s.site)?.id ?? s.site] = s.status === 'Ready' ? s.matched : null
   for (const b of boards) out[b.board] = b.result instanceof Error || b.result.status !== 'Ready' ? null : b.result.jobs.length
   return out
+}
+
+const csvCell = (v: string) => {
+  // Quote every cell; a leading = + - @ is prefixed so a spreadsheet never runs it as a formula (CSV injection).
+  const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+  return `"${safe.replace(/"/g, '""')}"`
+}
+
+/**
+ * Companies hiring, as a CSV the Sales team imports into Apollo (Accounts → Import): one row per company, with its roles, whether
+ * any role is remote or contract, places, the sites it was found on and a link to one posting. No domain: the sites do not give one.
+ */
+export function companiesCsv(companies: readonly HiringCompany[]): string {
+  const head = ['Company Name', 'Job Titles', 'Open Roles', 'Remote', 'Contract', 'Locations', 'Found On', 'Job Posting URL', 'Newest Posting']
+  const rows = companies.map((c) => [
+    c.company, [...new Set(c.roles.map((r) => r.job.title))].join('; '), String(c.roles.length), c.remote ? 'Yes' : 'No', c.contract ? 'Yes' : 'No',
+    c.places.join('; '), c.sites.join('; '), c.roles[0]?.job.boardUrl ?? '', c.newest ? c.newest.slice(0, 10) : '',
+  ])
+  return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'
 }

@@ -597,3 +597,8 @@ html { scroll-padding-bottom: 96px; }
 .stage-compact-bar i { display: block; height: 100%; background: var(--op-primary); border-radius: 999px; }
 @media (max-width: 640px) { .stage-compact { display: grid; } .stage-track { display: none; } .stage-hint { display: none; } }
 
+
+/* Settings → Demo readiness (HR-5) */
+.readiness-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--op-text-meta); }
+.readiness-list .is-ok span[aria-hidden] { color: var(--op-on-green-tint); }
+.readiness-list .is-off { color: var(--op-on-amber-tint); }

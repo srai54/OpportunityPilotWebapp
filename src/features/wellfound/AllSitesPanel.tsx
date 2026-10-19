@@ -13,9 +13,10 @@ import { bulkFromSearch } from './bulkFromSearch'
 import { runAction } from '../voice/voiceFlow'
 import type { ProfileSummary } from '../../lib/types'
 import type { Workspace } from '../shell/shellModel'
-import { chosenSites, COUNTRIES, COUNTRY_GROUPS, feedsPath, isContract, isRemote, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteCounts, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, companiesCsv, COUNTRIES, COUNTRY_GROUPS, feedsPath, isContract, isRemote, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteCounts, siteLines, type FeedSearchResult } from './allSitesModel'
 import { offForRegion, REGIONS, type RegionId } from './sourcesModel'
 import { useShell } from '../shell/ShellContext'
+import { saveBlob, safeFilename } from '../../lib/download'
 import { boardJobsPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
 const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
@@ -142,6 +143,11 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
           {lines.map((l) => <li key={l.name} className={l.ok ? 'is-ok' : 'is-off'}><span aria-hidden="true">{l.ok ? '✓' : '○'}</span> <strong>{l.name}</strong> {l.text}</li>)}
         </ul>
       </Card>
+      {sales && companies.length > 0 && <div className="row wrap">
+        <button type="button" className="btn btn-secondary btn-sm" onClick={() => saveBlob(new Blob([companiesCsv(companies)], { type: 'text/csv;charset=utf-8' }), safeFilename(`companies-${found.query}`, 'csv'))}>
+          Download {companies.length} for Apollo (CSV)</button>
+        <span className="muted-small">Import in Apollo under Accounts, then add them to a sequence.</span>
+      </div>}
       {added && <p className="muted-small" role="status">{added}</p>}
       {addError && <ErrorNotice error={addError} what="adding these results" />}
       {count === 0

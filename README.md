@@ -20,7 +20,7 @@ Both are the same job: **find → score → shortlist → act → follow up.**
 
 | Step | Candidate workspace | Sales workspace |
 |---|---|---|
-| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, The Muse, Instahyre, Adzuna), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default** |
+| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, The Muse, Instahyre, Adzuna), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; CSV export for Apollo |
 | **Score** | Fit out of 100 with the evidence quoted from the posting (rules engine, no black box) | Lead score from hiring signals |
 | **Approve** | Batch approval queue; optional auto-approve above a score | Same, per company |
 | **Act** | Apply link, tailored resume (.docx), or the local desktop agent (stops at any login/CAPTCHA) | Drafted emails per lead, approve, send from Gmail/Outlook/SMTP, or export |
@@ -63,16 +63,28 @@ More: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 4. `npm run dev` → http://localhost:5173
 5. Click **Continue as guest**, then **Find** → type a role → **Search**.
 
+**Or with Docker:** `docker compose up` in this folder (API repo next to it) → http://localhost:5173.
+
+## Judge walkthrough (2 minutes)
+
+1. Open the live demo → **Continue as guest**.
+2. Switch to **Sales** (top left). Go to **Find companies**.
+3. Pick region **Global remote**, type `React developer`, **Search**. Contract only and Remote only are on by default for Sales.
+4. Open **Sites** to see every source as a card: free or credits, where Remote/Contract come from, and how many results each gave.
+5. **Download for Apollo (CSV)**, or **Turn into leads and write emails** → review the drafted emails in **Outreach** (nothing is sent without a tap).
+6. Press the **mic** (or type) and say *"What should I do next?"* — the assistant answers from your own numbers.
+7. **Settings → Demo readiness** shows what is live on this server (AI, data, every source).
+
 ## Quality
 
 | Check | Command | Today |
 |---|---|---|
 | Typecheck | `npm run typecheck` | 0 errors |
 | Lint (oxlint) | `npm run lint` | 0 warnings |
-| Unit tests (Vitest) | `npm test` | 590+ tests |
+| Unit tests (Vitest) | `npm test` | 598 tests |
 | Build | `npm run build` | lazy-loaded routes; `docx` loaded only when a resume is exported |
 | Layout + accessibility | `npm run check:shell`, `npm run check:devices` | every route × 1280/1024/375 × light/dark, axe WCAG 2.1 AA 0 violations |
-| API | `dotnet test` in the API repo | 580+ xUnit tests incl. Postgres integration tests (Testcontainers) |
+| API | `dotnet test` in the API repo | 825 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
 
 ## Security and data honesty
 

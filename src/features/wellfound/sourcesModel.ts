@@ -45,6 +45,7 @@ export const SOURCES: readonly Source[] = [
   { id: 'Remotive', label: 'Remotive', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Text', paid: false },
   { id: 'RemoteOk', label: 'Remote OK', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Text', paid: false },
   { id: 'Himalayas', label: 'Himalayas', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Text', paid: false },
+  { id: 'WorkingNomads', label: 'Working Nomads', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Text', paid: false },
   { id: 'TheMuse', label: 'The Muse', regions: ['us-canada'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
   { id: 'Instahyre', label: 'Instahyre', regions: ['india'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
   { id: 'Adzuna', label: 'Adzuna', regions: ['india', 'europe', 'uk', 'us-canada', 'anz', 'apac'], access: 'Needs key', remote: 'Text', contract: 'Text', paid: false },

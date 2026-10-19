@@ -1,3 +1,4 @@
+import { DemoReadinessCard } from '../readiness/DemoReadinessCard'
 import { OauthFinish } from '../connectors/OauthFinish'
 import { useState } from 'react'
 import { Card } from '../../components/cards'
@@ -153,6 +154,8 @@ export function SettingsPage() {
               ))}
             </ul>
           </Card>
+
+          <DemoReadinessCard />
 
           <Card title="This deployment">
             <dl className="settings-rows">

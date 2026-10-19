@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { chosenSites, COUNTRIES, isContract, siteCounts, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, companiesCsv, COUNTRIES, isContract, siteCounts, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -74,7 +74,7 @@ describe('siteLines', () => {
 
 describe('site choice', () => {
   it('lists the free sites and five search sites (with Naukri and Instahyre) and searches all unless some are off', () => {
-    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'TheMuse', 'Instahyre', 'Adzuna'])
+    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'WorkingNomads', 'TheMuse', 'Instahyre', 'Adzuna'])
     expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek', 'Naukri'])
     expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek', 'Naukri'] })
     expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek', 'Naukri'] })
@@ -131,5 +131,16 @@ describe('siteCounts', () => {
   it('groups a remote role found only by its place as remote', () => {
     const [c] = groupByCompany([{ site: 'x', siteName: 'x', job: job({ location: 'Remote (worldwide)' }) }])
     expect(c.remote).toBe(true)
+  })
+})
+
+describe('companiesCsv (U3, Apollo import)', () => {
+  it('writes one quoted row per company and neutralises formulas', () => {
+    const [c] = groupByCompany([{ site: 'x', siteName: 'Jobicy', job: job({ companyName: '=HYPERLINK("x")', title: 'Contract "React" dev' }) }])
+    const csv = companiesCsv([c])
+    const [head, row] = csv.trim().split('\r\n')
+    expect(head).toBe('"Company Name","Job Titles","Open Roles","Remote","Contract","Locations","Found On","Job Posting URL","Newest Posting"')
+    expect(row).toContain(`"'=HYPERLINK(""x"")"`)
+    expect(row).toContain('"Contract ""React"" dev","1","No","Yes","Berlin","Jobicy","https://x.test/1"')
   })
 })
