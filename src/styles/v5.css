@@ -114,3 +114,10 @@
 /* Already searched: earlier board searches with date and time (open for free) */
 .saved-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .saved-list .btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }
+
+/* App bar: under 1360px the breadcrumb (page title, also an h1) is visually hidden so the Candidate/Sales switch and the
+   Guide/Advanced switches never get squeezed; screen readers still read it. */
+@media (max-width: 1360px) {
+  .crumb { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .ab-sep-crumb { display: none; }
+}

@@ -220,7 +220,7 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 
 ## 18. v5 — colour, header, footer, progress and voice (2026-10-15)
 - **Colour:** primary is the industry SaaS blue `#2563eb` (5.2:1 on white; hover `#1d4ed8`), dark mode `#60a5fa`. Progress fills run blue → teal. Status colours keep words or icons beside them.
-- **Header:** one 60px bar (v5; `check:shell` fails above 60px or on wrap). A mic button (`voice-launch`) sits before help; on phones a round 56px mic button floats bottom-right.
+- **Header:** status chips (AI mode and the like) never sit in the app bar; they go in the rail footer with API status. Under 1360px the breadcrumb is visually hidden (still read by screen readers) so the Candidate/Sales and Guide/Advanced switches never get squeezed. One 60px bar (v5; `check:shell` fails above 60px or on wrap). A mic button (`voice-launch`) sits before help; on phones a round 56px mic button floats bottom-right.
 - **Progress tracker:** the journey bar shows the five steps plus an animated progress bar and `n/5`. KPI numbers count up once on first view (`AnimatedValue`, 0.7s ease-out, instant with reduced motion; screen readers get the final value).
 - **Footer:** every screen ends with API status, workspace, the approval promise, How it works and Settings.
 - **Voice:** say a command → see what it understood → "Yes, run it". Nothing runs without that tap. Groq Whisper transcribes on the server; the browser's own speech is the fallback.

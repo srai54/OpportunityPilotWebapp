@@ -258,7 +258,9 @@ export function AppShell() {
   const aiMode = gemini && aiModeLabel(gemini)
   const pathSteps = journeySteps(workspace, overview.data)
   const pathDone = pathSteps.filter((s) => s.done).length
-  const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : []), ...(agentStatus ? [agentStatus] : [])]
+  // AI status sits with the other statuses in the rail footer (Advanced): in the app bar it squeezed the Candidate/Sales switch.
+  const aiStatus = advanced && aiMode ? { text: `AI · ${aiMode.text.replace(/^Gemini /, '')}`, tone: (gemini?.status === 'Ready' ? 'success' : gemini?.status === 'Configured' ? 'warning' : 'neutral') as 'success' | 'warning' | 'neutral' } : null
+  const statuses = [apiLabel, ...(gmailStatus ? [gmailStatus] : []), ...(agentStatus ? [agentStatus] : []), ...(aiStatus ? [aiStatus] : [])]
 
   const burgerLabel = railVisible ? (collapsed ? 'Expand the menu' : 'Collapse the menu') : drawerOpen ? 'Close the menu' : 'Open the menu'
   const onBurger = railVisible ? toggleCollapsed : () => setDrawerPath(drawerOpen ? null : location.pathname)
@@ -377,12 +379,6 @@ export function AppShell() {
               )}
             </div>
             <div className="ab-r">
-              {advanced && aiMode && (
-                <span className="pill pill-neutral ab-status">
-                  <Icon name="sparkles" size={13} />
-                  {aiMode.text}
-                </span>
-              )}
               <div className="top-switches" aria-label="View preferences">
                 {/* Guide is back in the bar next to Advanced (user, 2026-10-16); the account menu keeps a copy for phones. */}
                 <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and the Next bar on every screen" testId="toggle-guide" />
