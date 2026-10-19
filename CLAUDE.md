@@ -35,7 +35,7 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | Start the API first | `dotnet run --project src/OpportunityPilot.Api` in `../OpportunityPilotWebApi` | Listens on 5051; the shell shows "API · starting" until it answers |
 | Dev server | `npm run dev` | http://localhost:5173 |
 | Typecheck | `npm run typecheck` (same as `npx tsc -b`) | |
-| Lint | `npm run lint` | Baseline: 0 errors, 3 known warnings (see `docs/open-questions.md`) — do not add more |
+| Lint | `npm run lint` | Baseline: 0 errors, 0 warnings — keep it there |
 | Test | `npm test` | Vitest, runs once |
 | Single test file | `npx vitest run src/features/campaigns/campaignModel.test.ts` | |
 | Production build | `npm run build` | `tsc -b && vite build` → `dist/`; currently warns that the bundle is > 500 kB (tracked) |

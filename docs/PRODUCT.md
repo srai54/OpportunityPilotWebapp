@@ -3,13 +3,11 @@
 What the product must do (functional and software requirements) and the project reference, merged on 2026-10-19. Screen-by-screen behaviour lives in the flow docs (CANDIDATE_FLOW, SALES_FLOW, SHARED_FLOW, SCREEN_MAP).
 
 Contents:
-- [FUNCTIONAL_REQUIREMENTS.md](#functional-requirements-md)
-- [SOFTWARE_REQUIREMENTS.md](#software-requirements-md)
-- [PROJECT_REF.md](#project-ref-md)
+- [Functional requirements (FRD)](#functional-requirements-frd)
+- [Software requirements (SRS)](#software-requirements-srs)
+- [Project reference](#project-reference)
 
 ---
-
-## FUNCTIONAL_REQUIREMENTS.md
 
 <!-- merged from docs/FUNCTIONAL_REQUIREMENTS.md on 2026-10-19 -->
 
@@ -109,8 +107,6 @@ No automatic sending or applying without approval; no scraping of LinkedIn/Indee
 
 ---
 
-## SOFTWARE_REQUIREMENTS.md
-
 <!-- merged from docs/SOFTWARE_REQUIREMENTS.md on 2026-10-19 -->
 
 ## Software requirements (SRS)
@@ -200,8 +196,6 @@ Adding another RapidAPI provider is configuration only (host must be `*.p.rapida
 
 ---
 
-## PROJECT_REF.md
-
 <!-- merged from docs/PROJECT_REF.md on 2026-10-19 -->
 
 ## Project reference
@@ -219,7 +213,7 @@ All are `VITE_` build-time values compiled into the public bundle — public val
 | `VITE_API_BASE_URL` | API origin, no trailing slash | `http://localhost:5051` (also the code default) | `https://opportunitypilotwebapi.onrender.com` — committed in `.env.production` and `render.yaml`; a value set in the Vercel/Render dashboard overrides `.env.production` | `src/lib/config.ts` |
 | `VITE_SUPABASE_URL` | Supabase project URL (auth only) | empty → no Supabase | Not set yet (Vercel dashboard; `render.yaml` prompts with `sync: false`) → production runs guest mode (OQ-FE-014) | `src/lib/config.ts` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable (anon) key — never the service-role key | empty | Not set yet (as above) | `src/lib/config.ts` |
-| `VITE_HANKO_API_URL` | Hanko project API URL (public; https, or http on localhost). When set, Hanko is the main sign-in | empty → no Hanko (the package is never loaded) | Not set yet (Vercel dashboard; `render.yaml` prompts with `sync: false`). Must match the API's `Auth__HankoApiUrl`; owner steps in `docs/AUTH_SETUP.md` | `src/lib/config.ts` |
+| `VITE_HANKO_API_URL` | Hanko project API URL (public; https, or http on localhost). When set, Hanko is the main sign-in | empty → no Hanko (the package is never loaded) | Not set yet (Vercel dashboard; `render.yaml` prompts with `sync: false`). Must match the API's `Auth__HankoApiUrl`; owner steps in `docs/SETUP.md` (Sign-in setup) | `src/lib/config.ts` |
 | `VITE_DEV_AUTH` | `true` enables development sign-in (`X-Dev-User`); needs the API in Development with `Auth:DevBypass=true` | `true` | Ignored: gated by `import.meta.env.DEV`, so it is compiled out of production builds | `src/lib/config.ts` |
 | `NODE_VERSION` | Node for the Render build | — | `22.12.0` in `render.yaml` | Render |
 
