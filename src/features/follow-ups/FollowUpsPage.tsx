@@ -44,7 +44,7 @@ export function FollowUpsPage() {
 
   return <div className="page page-wide stack-4">
     <PageHeader title="Follow-ups" subtitle="Sent messages and nudges due." />
-    {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="follow-ups" />}
+    {error && <ErrorNotice error={error} onDismiss={() => setError(undefined)} what="follow-ups" />}
     {actions.data && (
       <KpiBand label="Your follow-ups">
         <KpiCard icon="followUps" tone="danger" label="Overdue" value={actions.data.filter((a) => a.overdue).length} sub="past their date" />

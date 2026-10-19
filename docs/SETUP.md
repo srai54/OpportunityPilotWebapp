@@ -3,13 +3,11 @@
 Everything needed to switch on sign-in, connectors and mail, merged on 2026-10-19.
 
 Contents:
-- [AUTH_SETUP.md](#auth-setup-md)
-- [CONNECTOR_OAUTH_SETUP.md](#connector-oauth-setup-md)
-- [MAIL_SETUP.md](#mail-setup-md)
+- [Sign-in setup — Hanko (main) with Supabase as the fallback](#sign-in-setup--hanko-main-with-supabase-as-the-fallback)
+- [One-click connectors — one-time setup](#one-click-connectors--one-time-setup)
+- [Sending from your own Outlook or Gmail — one-time setup](#sending-from-your-own-outlook-or-gmail--one-time-setup)
 
 ---
-
-## AUTH_SETUP.md
 
 <!-- merged from docs/AUTH_SETUP.md on 2026-10-19 -->
 
@@ -93,11 +91,9 @@ Local development: put `VITE_HANKO_API_URL=<dev project URL>` in `.env.local`, a
 
 Web: `src/lib/config.ts` (`hankoApiUrl`), `src/lib/hanko.ts` (on-demand `register`), `src/features/auth/AuthProvider.tsx`
 (session, token for API calls, sign-out), `HankoElements.tsx` (`<hanko-auth>`, `<hanko-profile>`), styling `.op-hanko` in
-`src/styles/app.css`. API: `Auth/HankoAuth.cs`, `Auth/AuthSetup.cs` (see `../OpportunityPilotWebApi/docs/SETUP.md`).
+`src/styles/app/accounts.css`. API: `Auth/HankoAuth.cs`, `Auth/AuthSetup.cs` (see `../OpportunityPilotWebApi/docs/SETUP.md`).
 
 ---
-
-## CONNECTOR_OAUTH_SETUP.md
 
 <!-- merged from docs/CONNECTOR_OAUTH_SETUP.md on 2026-10-19 -->
 
@@ -216,8 +212,6 @@ If you land back with "did not finish connecting", the Render log has a line `Co
 | `Integrations__PublicApiBase` (optional) | a different API address for the redirect URIs |
 
 ---
-
-## MAIL_SETUP.md
 
 <!-- merged from docs/MAIL_SETUP.md on 2026-10-19 -->
 

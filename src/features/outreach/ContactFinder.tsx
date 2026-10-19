@@ -1,3 +1,4 @@
+import { safeHref } from '../opportunities/opportunityModel'
 import { useState } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { api } from '../../lib/api'
@@ -43,11 +44,11 @@ export function ContactFinder({ opportunityId, onUse, disabled }: Readonly<{ opp
                 <li key={`${c.kind}-${c.value}`} className="contact-row">
                   <div className="grow">
                     <strong className="break">{c.value}</strong>
-                    <div className="muted-small">{contactBadge(c)} · <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer">{c.sourceNote}<span className="sr-only"> (opens in a new tab)</span></a></div>
+                    <div className="muted-small">{contactBadge(c)} · <a href={safeHref(c.sourceUrl) ?? undefined} target="_blank" rel="noopener noreferrer">{c.sourceNote}<span className="sr-only"> (opens in a new tab)</span></a></div>
                   </div>
                   {c.kind === 'Email'
                     ? <button type="button" className="btn btn-primary btn-sm" onClick={() => onUse(c.value)}>Use<span className="sr-only"> {c.value}</span></button>
-                    : <a className="btn btn-secondary btn-sm" href={c.value} target="_blank" rel="noopener noreferrer">Open<span className="sr-only"> company page (opens in a new tab)</span></a>}
+                    : <a className="btn btn-secondary btn-sm" href={safeHref(c.value) ?? undefined} target="_blank" rel="noopener noreferrer">Open<span className="sr-only"> company page (opens in a new tab)</span></a>}
                 </li>
               ))}
             </ul>

@@ -39,7 +39,7 @@ import {
   writeWorkspace,
 } from './shellModel'
 
-/** Below this width the rail is always a drawer (matches --op-nav-drawer-breakpoint and the 860 px rules in app.css). */
+/** Below this width the rail is always a drawer (matches --op-nav-drawer-breakpoint and the 860 px rules in styles/app/*.css). */
 const DRAWER_QUERY = '(max-width: 860px)'
 
 function subscribeDrawerQuery(onChange: () => void) {
@@ -62,7 +62,11 @@ function useApiStatus(): ApiStatus {
     const check = async () => {
       try {
         await api('/health/ready')
-        if (!cancelled) setStatus('ready')
+        if (cancelled) return
+        setStatus('ready')
+        attempt = 0
+        // Keep watching once ready (every 60 s while the tab is visible), so a later outage shows instead of a stale "ready".
+        timer = setTimeout(function again() { if (document.visibilityState === 'visible') void check(); else timer = setTimeout(again, 60000) }, 60000)
       } catch (e) {
         if (cancelled) return
         // A 429 or other 4xx is this browser being throttled, not a database outage: keep the last known state.

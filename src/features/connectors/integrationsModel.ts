@@ -57,6 +57,8 @@ export interface OauthReturn { kind: IntegrationKind; ok: boolean; text: string 
  * Null when the address is not such a return.
  */
 export function oauthReturn(params: URLSearchParams): OauthReturn | null {
+  // A sign-in still being finished (OauthFinish) is not a result yet.
+  if (params.get('oauthCode')) return null
   const connected = params.get('connected')
   const kind = (connected ?? params.get('service')) as IntegrationKind | null
   if (!kind || !(OAUTH_KINDS.includes(kind) || PLUGIN_KINDS.includes(kind))) return null

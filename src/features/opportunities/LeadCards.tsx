@@ -1,3 +1,4 @@
+import { safeHref } from './opportunityModel'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardList, LeadCard } from '../../components/cards'
@@ -30,9 +31,9 @@ export function LeadCardList({ items, selected, onToggle, busy, onStatus, label 
         let action
         if (next.to) action = <button type="button" className="btn btn-primary btn-sm" disabled={busy === o.id} onClick={() => onStatus(o, next.to!)}>{next.label}<span className="sr-only"> {o.title}</span></button>
         else if (next.label === 'Draft outreach') action = <Link className="btn btn-primary btn-sm" to={`/opportunities/${o.id}#outreach`}>Reach out<span className="sr-only"> to {o.organization}</span></Link>
-        else if (next.label === 'Open posting' && (o.applyUrl || o.url)) action = (
+        else if (next.label === 'Open posting' && safeHref(o.applyUrl ?? o.url)) action = (
           <>
-            <a className="btn btn-primary btn-sm" href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">{applyLabel(o.platform)}<span className="sr-only"> for {o.title} (opens in a new tab)</span></a>
+            <a className="btn btn-primary btn-sm" href={safeHref(o.applyUrl ?? o.url)!} target="_blank" rel="noopener noreferrer">{applyLabel(o.platform)}<span className="sr-only"> for {o.title} (opens in a new tab)</span></a>
             <button type="button" className="btn btn-ghost btn-sm" disabled={busy === o.id} onClick={() => onStatus(o, 'Applied')}>I applied<span className="sr-only"> to {o.title}</span></button>
           </>
         )

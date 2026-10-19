@@ -44,7 +44,7 @@ export function StaffingDealPage() {
       badges={<><Badge tone={d.stage === 'Won' ? 'success' : isClosed(d.stage) ? 'neutral' : 'primary'}>{STAGE_LABELS[d.stage]}</Badge><Badge>{SOURCE_LABELS[d.source]}</Badge></>}
       subtitle={<>{account ? account.name : 'Client'}{contact ? ` · ${contact.name}${contact.title ? `, ${contact.title}` : ''}` : ''} · {money(d.estimatedValue, d.currency)}</>}
       actions={<Link className="btn btn-secondary" to="/staffing">All deals</Link>} />
-    {error && <ErrorNotice error={error} onRetry={() => setError(undefined)} what="that change" />}
+    {error && <ErrorNotice error={error} onDismiss={() => setError(undefined)} what="that change" />}
     {contact && <ContactCallCard key={`${contact.id}:${contact.version}`} contact={contact} client={account?.name ?? null} dealId={d.id} onSaved={accounts.reload} />}
 
     <section className="panel">
@@ -86,7 +86,7 @@ export function StaffingDealPage() {
 
     {scheduling && <ScheduleInterviewDialog target={scheduling} onClose={() => setScheduling(null)} onDone={() => { setScheduling(null); deal.reload(); work.reload() }} />}
 
-    <ActivityPanel deal={d} busy={busy} onNote={(detail) => act(`${base}/notes`, 'POST', { detail })} />
+    <ActivityPanel deal={d} busy={busy} onNote={async (detail) => (await act<StaffingDeal>(`${base}/notes`, 'POST', { detail })) !== undefined} />
   </div>
 }
 
@@ -114,11 +114,11 @@ function NextActionForm({ deal, busy, onSave }: { deal: StaffingDeal; busy: bool
   </form>
 }
 
-function ActivityPanel({ deal, busy, onNote }: { deal: StaffingDeal; busy: boolean; onNote: (detail: string) => Promise<unknown> }) {
+function ActivityPanel({ deal, busy, onNote }: { deal: StaffingDeal; busy: boolean; /** Resolves true when the note was saved; the typed note is only cleared then. */ onNote: (detail: string) => Promise<boolean> }) {
   const [note, setNote] = useState('')
   return <section className="panel">
     <header className="panel-head"><h3 className="eyebrow">Activity</h3><span className="grow" /><span className="muted-small">Kept as a permanent record; notes cannot be edited.</span></header>
-    <form className="panel-body row" onSubmit={(e) => { e.preventDefault(); if (note.trim()) void onNote(note.trim()).then(() => setNote('')) }}>
+    <form className="panel-body row" onSubmit={(e) => { e.preventDefault(); if (note.trim()) void onNote(note.trim()).then((saved) => { if (saved) setNote('') }) }}>
       <input className="grow" value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (call summary, client ask…)" aria-label="Note" />
       <button className="btn btn-secondary" type="submit" disabled={busy || !note.trim()}>Add note</button>
     </form>

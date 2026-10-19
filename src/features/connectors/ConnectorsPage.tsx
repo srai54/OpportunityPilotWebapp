@@ -1,3 +1,4 @@
+import { OauthFinish } from './OauthFinish'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Avatar, Card, CardGrid } from '../../components/cards'
@@ -141,6 +142,7 @@ export function ConnectorsPage() {
   return (
     <div className="page page-wide stack-4">
       <PageHeader title="Connectors" subtitle="Connect your apps in one click." />
+      <OauthFinish />
       {notice && (
         <div ref={noticeRef} tabIndex={-1} className={`notice ${notice.ok ? 'notice-success' : 'notice-warning'}`} role={notice.ok ? 'status' : 'alert'}>
           <span>{notice.text}</span>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
+import { useEffect, useRef, useState } from 'react'
+import { composerTarget, MAIL_APPS, pagerOf, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { ContactFinder } from './ContactFinder'
 import { PrepareEmailsCard } from './PrepareEmailsCard'
@@ -22,6 +22,7 @@ import { useApi } from '../../lib/useApi'
 export function OutreachPage() {
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const [selected, setSelected] = useState<OutreachDraft>()
+  const openSeq = useRef(0)
   async function removeDraft() {
     if (!selected || !window.confirm('Delete this message? A sent message stays on record in the lead history.')) return
     try { await api<void>(`/api/v1/drafts/${selected.id}`, { method: 'DELETE' }); setSelected(undefined); drafts.reload(); setNotice('Message deleted.') } catch (e) { setError(e as Error) }
@@ -55,6 +56,7 @@ export function OutreachPage() {
 
   const [params] = useSearchParams()
   const wanted = params.get('draft')
+  const pager = pagerOf(filtered.map((d) => d.id), selected?.id)
   const firstId = (wanted && filtered.some((d) => d.id === wanted) ? wanted : null) ?? filtered[0]?.id
   useEffect(() => {
     if (!selected && firstId) void open({ id: firstId })
@@ -63,11 +65,14 @@ export function OutreachPage() {
   }, [firstId, selected])
 
   async function open(item: Pick<DraftListItem, 'id'>) {
+    // Only the last draft clicked fills the editor, even if an earlier, slower request answers after it.
+    const seq = ++openSeq.current
     setError(undefined); setNotice(''); setLoadError(false); setTried(false)
     try {
       const row = await api<OutreachDraft>(`/api/v1/drafts/${item.id}`)
+      if (seq !== openSeq.current) return
       setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? '')
-    } catch (e) { setLoadError(true); setError(e as Error) }
+    } catch (e) { if (seq === openSeq.current) { setLoadError(true); setError(e as Error) } }
   }
 
   const checks = selected ? readyChecks(selected.channel, { recipient, subject, body }) : []
@@ -291,6 +296,12 @@ export function OutreachPage() {
         </section>
 
         <div className="stack-3">
+          {selected && pager.total > 1 && pager.index >= 0 && <nav className="row wrap outreach-pager" aria-label="One message at a time">
+            <strong>Message {pager.index + 1} of {pager.total}</strong><span className="grow" />
+            <button type="button" className="btn btn-ghost btn-sm" disabled={!pager.prev} onClick={() => pager.prev && void open({ id: pager.prev })}>‹ Previous</button>
+            <button type="button" className="btn btn-ghost btn-sm" disabled={!pager.next} onClick={() => pager.next && void open({ id: pager.next })}>Skip</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={!pager.next} onClick={() => pager.next && void open({ id: pager.next })}>Next ›</button>
+          </nav>}
           {!selected ? <Card tone="muted"><p className="muted">Choose a message to review it.</p></Card> : <>
             <Card
               title={selected.channel === 'LinkedInMessage' ? 'LinkedIn note' : selected.channel === 'Email' ? 'Email' : selected.channel === 'CoverNote' ? 'Cover note' : 'Contact form message'}

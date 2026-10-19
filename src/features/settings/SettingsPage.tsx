@@ -1,3 +1,5 @@
+import { DemoReadinessCard } from '../readiness/DemoReadinessCard'
+import { OauthFinish } from '../connectors/OauthFinish'
 import { useState } from 'react'
 import { Card } from '../../components/cards'
 import { PageHeader } from '../../components/PageHeader'
@@ -63,6 +65,7 @@ export function SettingsPage() {
   return (
     <div className="page page-wide stack-4">
       <PageHeader title="Settings" subtitle="Account, display and safety rules." />
+      <OauthFinish />
 
       <div className="panel-grid-2">
         <div className="stack-4">
@@ -151,6 +154,8 @@ export function SettingsPage() {
               ))}
             </ul>
           </Card>
+
+          <DemoReadinessCard />
 
           <Card title="This deployment">
             <dl className="settings-rows">

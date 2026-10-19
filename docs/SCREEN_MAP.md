@@ -2,7 +2,7 @@
 
 Every route in `src/App.tsx`, plus planned screens that have a flow-doc entry but no route. Status mirrors the flow doc and is changed only by `/build-screen` (or `/resolve-oq` when an OQ changes a route). All signed-in routes render inside `AppShell`.
 
-Last updated: 2026-10-06 (design round 3).
+Last updated: 2026-10-19 (Outreach and Follow-ups rows corrected to the routes in `src/App.tsx`).
 
 | Route | Component | Flow doc → entry | Status |
 |---|---|---|---|
@@ -26,8 +26,8 @@ Last updated: 2026-10-06 (design round 3).
 | `/approvals` | `src/features/approvals/ApprovalQueuePage.tsx` | `docs/CANDIDATE_FLOW.md` → Approval queue | built — against the phase-1 contract, API not verified (OQ-FE-033) |
 | `/applications` | `src/features/applications/ApplicationsPage.tsx` (+ `AgentSetup.tsx`, `HowItWorks.tsx`) | `docs/CANDIDATE_FLOW.md` → Applications | built |
 | `/wellfound` | `src/features/wellfound/WellfoundPage.tsx` + `IndeedSearchPanel.tsx` | Candidate/Sales flow → Job discovery — Wellfound and Indeed | public Wellfound research + official Indeed search handoff built; provider-authorized private feeds pending |
-| `/outreach` | `src/features/placeholder/NotBuiltPage.tsx` (M5 placeholder) | `docs/SALES_FLOW.md` → Outreach — Inbox and draft editor | not built |
-| `/follow-ups` | `src/features/placeholder/NotBuiltPage.tsx` (M7 placeholder) | `docs/SALES_FLOW.md` → Follow-ups | not built |
+| `/outreach` | `src/features/outreach/OutreachPage.tsx` | `docs/SALES_FLOW.md` → Outreach — Inbox and draft editor | built |
+| `/follow-ups` (and `/inbox` → replies tab) | `src/features/follow-ups/FollowUpHub.tsx` | `docs/SALES_FLOW.md` → Follow-ups | built |
 | `/projects`, `/projects/:id` (Sales rail) | `src/features/sales/SalesProjectsPage.tsx`, `SalesProjectDetailPage.tsx` | `TASKS.md` R11 / N5 | manual project list + bid draft/approval built; provider ingestion and placement remain |
 | `/proposals`, `/bids` (Sales rail) | `src/features/sales/SalesProposalsPage.tsx`, `SalesBidsPage.tsx` | `docs/SALES_FLOW.md` → Proposal drafts / Freelancer.com bids | manual proposal review and provider-confirmed bid tracking built; placement remains pending |
 | `/how-it-works` | `src/features/guide/HowItWorksPage.tsx` | `docs/SHARED_FLOW.md` → Update 2026-10-06 | built |

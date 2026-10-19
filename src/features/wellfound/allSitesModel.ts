@@ -1,4 +1,8 @@
 import type { BoardJob, BoardSearchResult, JobBoard } from './boardModel'
+import { isContract, isRemote } from './jobSignals'
+import { SOURCES } from './sourcesModel'
+
+export { isContract, isRemote }
 
 /** What `GET /api/v1/jobboards/feeds` returns. */
 export type FeedSiteStatus = { site: string; status: 'Ready' | 'Failed'; listed: number; matched: number; message: string | null; fromCache: boolean }
@@ -6,7 +10,7 @@ export type FeedJob = { site: string; siteName: string; job: BoardJob }
 export type FeedSearchResult = { sites: FeedSiteStatus[]; jobs: FeedJob[]; observedAt: string }
 
 /** One row of the merged list: the posting, and the site it came from. */
-export type AllJob = { site: string; siteName: string; job: BoardJob }
+export type AllJob = { site: string; siteName: string; job: BoardJob; /** Other sites with the same posting (U1: shown once, with every site's badge). */ alsoOn?: string[] }
 
 /** Every site "All sites" can read. Free ones need no key; the paid ones go through JSearch and use the monthly allowance. */
 export const FREE_SITES = [
@@ -16,9 +20,16 @@ export const FREE_SITES = [
   { id: 'Remotive', label: 'Remotive', note: 'Remote' },
   { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
   { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
+  { id: 'WorkingNomads', label: 'Working Nomads', note: 'Remote, worldwide' },
+  { id: 'HackerNews', label: 'HN Who is hiring', note: 'Monthly thread, many remote and contract roles' },
   { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
   { id: 'Instahyre', label: 'Instahyre', note: 'India tech jobs' },
   { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
+  { id: 'Jooble', label: 'Jooble', note: '60+ countries (needs a server key)' },
+  { id: 'Careerjet', label: 'Careerjet', note: '90+ countries (needs a server key)' },
+  { id: 'Findwork', label: 'Findwork', note: 'Developer jobs (needs a server key)' },
+  { id: 'UsaJobs', label: 'USAJOBS', note: 'US federal (needs a server key)' },
+  { id: 'Freelancer', label: 'Freelancer.com', note: 'Freelance projects' },
 ] as const
 export const PAID_SITES = [
   { id: 'LinkedIn', label: 'LinkedIn' },
@@ -27,16 +38,27 @@ export const PAID_SITES = [
   { id: 'Naukri', label: 'Naukri' },
 ] as const
 
-/** Markets for the Sales team: the US, and Europe country by country. The country narrows the place a search is sent with. */
-export const COUNTRIES: readonly { value: string; label: string; group: 'US' | 'Europe' }[] = [
+/** Country groups shown in the Country list; the region picker (sourcesModel REGIONS) preselects one of these. */
+export type CountryGroup = 'US' | 'Canada' | 'Europe' | 'India' | 'Middle East' | 'Australia & NZ' | 'Asia-Pacific'
+
+/** Markets for the Sales team: the US, Europe country by country, and the other regions. The country narrows the place a search is sent with. */
+export const COUNTRIES: readonly { value: string; label: string; group: CountryGroup }[] = [
   { value: 'United States', label: 'United States', group: 'US' },
+  { value: 'Canada', label: 'Canada', group: 'Canada' },
   { value: 'Sweden', label: 'Sweden', group: 'Europe' }, { value: 'Germany', label: 'Germany', group: 'Europe' },
   { value: 'United Kingdom', label: 'United Kingdom', group: 'Europe' }, { value: 'Netherlands', label: 'Netherlands', group: 'Europe' },
   { value: 'France', label: 'France', group: 'Europe' }, { value: 'Denmark', label: 'Denmark', group: 'Europe' },
   { value: 'Norway', label: 'Norway', group: 'Europe' }, { value: 'Finland', label: 'Finland', group: 'Europe' },
   { value: 'Ireland', label: 'Ireland', group: 'Europe' }, { value: 'Spain', label: 'Spain', group: 'Europe' },
   { value: 'Poland', label: 'Poland', group: 'Europe' }, { value: 'Switzerland', label: 'Switzerland', group: 'Europe' },
+  { value: 'India', label: 'India', group: 'India' },
+  { value: 'United Arab Emirates', label: 'United Arab Emirates', group: 'Middle East' }, { value: 'Saudi Arabia', label: 'Saudi Arabia', group: 'Middle East' },
+  { value: 'Qatar', label: 'Qatar', group: 'Middle East' },
+  { value: 'Australia', label: 'Australia', group: 'Australia & NZ' }, { value: 'New Zealand', label: 'New Zealand', group: 'Australia & NZ' },
+  { value: 'Singapore', label: 'Singapore', group: 'Asia-Pacific' }, { value: 'Japan', label: 'Japan', group: 'Asia-Pacific' },
 ]
+
+export const COUNTRY_GROUPS: readonly CountryGroup[] = ['US', 'Canada', 'Europe', 'India', 'Middle East', 'Australia & NZ', 'Asia-Pacific']
 
 /** The place sent to the sites: the typed place and the chosen country together ("Berlin, Germany"), or whichever there is. */
 export function placeWithCountry(place: string, country: string): string {
@@ -44,11 +66,6 @@ export function placeWithCountry(place: string, country: string): string {
   if (!c) return p
   if (!p) return c
   return p.toLowerCase().includes(c.toLowerCase()) ? p : `${p}, ${c}`
-}
-
-/** A contract role (not an employee job): the board's own employment type says so, or the title does. */
-export function isContract(j: Pick<BoardJob, 'employmentType' | 'title'>): boolean {
-  return /contract/i.test(j.employmentType ?? '') || /\b(contract|contractor|freelance)\b/i.test(j.title)
 }
 
 /** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */
@@ -94,13 +111,18 @@ export function relevance(j: Pick<BoardJob, 'title' | 'companyName' | 'snippet'>
  * job from a paid board; best title matches first, then newest.
  */
 export function mergeAll(feed: readonly FeedJob[], boards: readonly { board: JobBoard; jobs: readonly BoardJob[] }[], query = ''): AllJob[] {
-  const seen = new Set<string>()
+  const seen = new Map<string, AllJob>()
   const all: AllJob[] = []
   const push = (site: string, siteName: string, job: BoardJob) => {
     const key = dedupeKey(job)
-    if (seen.has(key)) return
-    seen.add(key)
-    all.push({ site, siteName, job })
+    const first = seen.get(key)
+    if (first) {
+      if (first.siteName !== siteName && !(first.alsoOn ?? []).includes(siteName)) first.alsoOn = [...(first.alsoOn ?? []), siteName]
+      return
+    }
+    const row: AllJob = { site, siteName, job }
+    seen.set(key, row)
+    all.push(row)
   }
   for (const f of feed) push(f.site, f.siteName, f.job)
   for (const b of boards) for (const j of b.jobs) push(b.board, b.board === 'Seek' ? 'SEEK' : b.board, j)
@@ -145,12 +167,68 @@ export function groupByCompany(jobs: readonly AllJob[]): HiringCompany[] {
     let g = groups.get(key)
     if (!g) { g = { company: name, roles: [], sites: [], places: [], remote: false, contract: false, newest: null }; firstSeen.set(g, i) }
     g.roles.push(j)
-    if (!g.sites.includes(j.siteName)) g.sites.push(j.siteName)
+    for (const s of [j.siteName, ...(j.alsoOn ?? [])]) if (!g.sites.includes(s)) g.sites.push(s)
     if (j.job.location && !g.places.includes(j.job.location)) g.places.push(j.job.location)
-    g.remote ||= Boolean(j.job.isRemote)
+    g.remote ||= isRemote(j.job)
     g.contract ||= isContract(j.job)
     if (j.job.postedAt && (!g.newest || j.job.postedAt > g.newest)) g.newest = j.job.postedAt
     groups.set(key, g)
   })
   return [...groups.values()].sort((a, b) => b.roles.length - a.roles.length || firstSeen.get(a)! - firstSeen.get(b)!)
+}
+
+/** Results per source id from one search, for the source cards: a number, or null when the site did not answer. */
+export function siteCounts(feed: FeedSearchResult | undefined, boards: readonly { board: JobBoard; result: BoardSearchResult | Error }[]): Record<string, number | null> {
+  const out: Record<string, number | null> = {}
+  // The feed answer names sites by their display name ("We Work Remotely"); the cards use ids ("WeWorkRemotely").
+  for (const s of feed?.sites ?? []) out[SOURCES.find((x) => x.label === s.site || x.id === s.site)?.id ?? s.site] = s.status === 'Ready' ? s.matched : null
+  for (const b of boards) out[b.board] = b.result instanceof Error || b.result.status !== 'Ready' ? null : b.result.jobs.length
+  return out
+}
+
+const csvCell = (v: string) => {
+  // Quote every cell; a leading = + - @ is prefixed so a spreadsheet never runs it as a formula (CSV injection).
+  const safe = /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+  return `"${safe.replace(/"/g, '""')}"`
+}
+
+/**
+ * Companies hiring, as a CSV the Sales team imports into Apollo (Accounts → Import): one row per company, with its roles, whether
+ * any role is remote or contract, places, the sites it was found on and a link to one posting. No domain: the sites do not give one.
+ */
+export function companiesCsv(companies: readonly HiringCompany[]): string {
+  const head = ['Company Name', 'Job Titles', 'Open Roles', 'Remote', 'Contract', 'Locations', 'Found On', 'Job Posting URL', 'Newest Posting']
+  const rows = companies.map((c) => [
+    c.company, [...new Set(c.roles.map((r) => r.job.title))].join('; '), String(c.roles.length), c.remote ? 'Yes' : 'No', c.contract ? 'Yes' : 'No',
+    c.places.join('; '), c.sites.join('; '), c.roles[0]?.job.boardUrl ?? '', c.newest ? c.newest.slice(0, 10) : '',
+  ])
+  return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'
+}
+
+/**
+ * "Why this lead" (rules, no AI): the facts on the postings that make a hiring company worth contacting for a staffing team.
+ * Every reason comes from the postings themselves; nothing is guessed.
+ */
+export function whyLead(c: HiringCompany, now: Date = new Date()): string[] {
+  const out: string[] = []
+  const contractRoles = c.roles.filter((r) => isContract(r.job)).length
+  if (c.roles.length > 1) out.push(`${c.roles.length} open roles`)
+  if (contractRoles > 0) out.push(contractRoles === 1 ? 'a contract role' : `${contractRoles} contract roles`)
+  if (c.remote) out.push('remote')
+  if (c.newest) {
+    const days = Math.floor((now.getTime() - Date.parse(c.newest)) / 86_400_000)
+    if (days >= 0 && days <= 14) out.push(days === 0 ? 'posted today' : `posted ${days} day${days === 1 ? '' : 's'} ago`)
+  }
+  if (c.sites.length > 1) out.push(`on ${c.sites.length} sites`)
+  return out
+}
+
+/** The key a company is remembered by between searches (same rule as grouping). */
+export const companyMemoryKey = (name: string) => companyKey(name) || name.toLowerCase()
+
+/** Companies in this search that were not in the last one for the same words; all of them when there was no last search. */
+export function newSince(companies: readonly HiringCompany[], previous: readonly string[] | null): Set<string> {
+  if (!previous) return new Set()
+  const seen = new Set(previous)
+  return new Set(companies.map((c) => companyMemoryKey(c.company)).filter((k) => !seen.has(k)))
 }

@@ -26,7 +26,7 @@ const LOAD_FAILED = new Error(
 
 /**
  * Hanko's combined sign-in and sign-up (passkey, password or email code, then the second factor when the account has
- * one). Styled only through its CSS variables (`.op-hanko` in app.css). The session is picked up by AuthProvider.
+ * one). Styled only through its CSS variables (`.op-hanko` in styles/app/accounts.css). The session is picked up by AuthProvider.
  */
 export function HankoAuthPanel() {
   const state = useHankoElements()

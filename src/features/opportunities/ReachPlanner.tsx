@@ -1,3 +1,4 @@
+import { safeHref } from './opportunityModel'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
@@ -97,7 +98,7 @@ export function ReachPlanner({ o, onError }: Readonly<{ o: OpportunityDetail; on
                 <strong>{p.name}</strong>{p.title ? `, ${p.title}` : ''}{p.email ? ` · ${p.email}${p.emailConfidence != null ? ` (${p.emailConfidence}% sure)` : ''}` : ''}{' '}
                 {p.email && <button type="button" className="btn-link" onClick={() => void draft('Email', p.email)}>Email them</button>}{' '}
                 {!p.email && p.personId && found.source === 'Apollo' && <button type="button" className="btn-link" disabled={busy !== null} onClick={() => void reveal(p)}>{busy === `reveal-${p.personId}` ? 'Asking Apollo…' : 'Show email (uses 1 Apollo credit)'}</button>}{' '}
-                {p.linkedinUrl && <a href={p.linkedinUrl} target="_blank" rel="noreferrer">LinkedIn ↗</a>}
+                {safeHref(p.linkedinUrl) && <a href={safeHref(p.linkedinUrl)!} target="_blank" rel="noopener noreferrer">LinkedIn ↗<span className="sr-only"> {p.name} (opens in a new tab)</span></a>}
               </li>
             ))}
           </ul>

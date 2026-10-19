@@ -1,4 +1,4 @@
-/* ===== Redesign v5 — deep chrome + front page restyle. Loaded after app.css; tokens in tokens.css. ===== */
+/* ===== Redesign v5 — deep chrome + front page restyle. Loaded after styles/app/*.css; tokens in tokens.css. ===== */
 :root { --v5-nav: #0b1220; --v5-nav-2: #111a2e; --v5-nav-ink: #e7ecf5; --v5-nav-muted: #9aa6bd; --v5-nav-line: rgb(255 255 255 / 0.08); --v5-accent: #14b8a6; }
 /* Cooler page background in light mode only; system dark mode keeps the dark token. */
 :root[data-theme="light"] { --op-bg: #f4f6fb; }

@@ -1,37 +1,117 @@
-# OpportunityPilot — web app
+# OpportunityPilot
 
-React 19 + TypeScript + Vite SPA for OpportunityPilot. Two users share one pipeline: a **Candidate** applying to roles, and a **Sales team** using the app as a sales assistant. All data comes from the API in `../OpportunityPilotWebApi`; Supabase is used for sign-in only (guest demo mode when it is not configured).
+**One pipeline that finds work for two people: a job seeker, and the sales team of a staffing company.**
+Search 13+ job sites at once, score every result with quoted evidence, approve in batches, then apply or reach out — by tapping or by voice. Nothing is sent or applied without your approval.
 
-## What it does
+**Live demo:** https://opportunity-pilot-webapp.vercel.app → click **Continue as guest** (no sign-up; data resets on restart).
+API: https://opportunitypilotwebapi.onrender.com (free host: the first request can take ~1 minute while it wakes).
 
-| Workspace | Find | Review | Act | Track |
-|---|---|---|---|---|
-| Candidate | Jobs from 20+ sites (free feeds, company boards, LinkedIn/Indeed, Naukri, Instahyre) | Score out of 100 with quoted evidence; approve or reject | Apply link or desktop agent; tailored resume | Follow-ups, replies, interview status |
-| Sales | Companies hiring for your skills | Lead score with hiring signals | Drafted emails, approve, send from your mailbox | Deals, submissions, shared candidate progress |
+[![ci](https://github.com/shr1-live/OpportunityPilotWebapp/actions/workflows/ci.yml/badge.svg)](https://github.com/shr1-live/OpportunityPilotWebapp/actions/workflows/ci.yml)
+· React 19 · TypeScript 6 · Vite 8 · .NET 10 API · PostgreSQL · Playwright agent · Groq / Gemini / Whisper
 
-**v5 (Oct 2026):** voice launch from any screen (phone mic button; Whisper fallback), animated progress tracker and KPIs, footer status, automatic follow-up drafts, one-line page text. Nothing is sent or applied without your approval.
+## The problem
 
-## Run locally
+- **Job seekers** check LinkedIn, Indeed, Naukri, remote boards and company career pages one by one, and lose track of what they applied to.
+- **Staffing sales teams** need to know *which foreign companies are hiring contract or remote engineers right now*, so they can offer their bench. That signal is spread over dozens of boards in every region.
 
-1. Start the API (`dotnet run --project src/OpportunityPilot.Api` in the API repo, port 5051).
-2. `npm install`, copy `.env.example` to `.env.local` (`VITE_DEV_AUTH=true` signs in without Supabase).
-3. `npm run dev` → http://localhost:5173
+Both are the same job: **find → score → shortlist → act → follow up.**
 
-Gate before any change is done: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`.
+## What OpportunityPilot does
 
-## Where to read
+| Step | Candidate workspace | Sales workspace |
+|---|---|---|
+| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, Hacker News "Who is hiring", The Muse, Instahyre, Freelancer.com projects; with free keys: Adzuna, Jooble, Careerjet, Findwork, USAJOBS), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; *why this lead* and *new since your last search* on each company; CSV export for Apollo |
+| **Score** | Fit out of 100 with the evidence quoted from the posting (rules engine, no black box) | Lead score from hiring signals |
+| **Approve** | Batch approval queue; optional auto-approve above a score | Same, per company |
+| **Act** | Apply link, tailored resume (.docx), or the local desktop agent (stops at any login/CAPTCHA) | Drafted emails per lead, approve, send from Gmail/Outlook/SMTP, or export |
+| **Follow up** | Reply detection (IMAP), follow-up drafts, interview tracker, shareable progress page | Deals, submissions, interviews, follow-ups |
 
-| Need | File |
-|---|---|
-| Stack, commands, folder blueprint, mandatory rules | [CLAUDE.md](CLAUDE.md) |
-| Every route and its status | [docs/SCREEN_MAP.md](docs/SCREEN_MAP.md) |
-| Screen behaviour per user | [docs/SHARED_FLOW.md](docs/SHARED_FLOW.md), [docs/CANDIDATE_FLOW.md](docs/CANDIDATE_FLOW.md), [docs/SALES_FLOW.md](docs/SALES_FLOW.md) |
-| Env vars, API URL, deploy targets, auth modes | [docs/PRODUCT.md](docs/PRODUCT.md) |
-| Known gaps and open decisions | [docs/open-questions.md](docs/open-questions.md) |
-| AI workflow: skills, commands, hooks | [skills/](skills/prompt-master.SKILL.md), [.claude/commands/](.claude/commands/), [.claude/settings.json](.claude/settings.json) |
+Voice from any screen: *"Find remote React contract roles in Germany"* → the assistant plans it, you confirm, it runs.
 
-Live: https://opportunity-pilot-webapp.vercel.app (API: https://opportunitypilotwebapi.onrender.com). Designs: `../opportunitypilot-ui`. Deployment steps: `../DEPLOY.md`.
+## How AI is used
+
+| Feature | Model | Where (API repo) | Guardrails |
+|---|---|---|---|
+| Campaign goal → search criteria | Gemini / Groq (Llama) | `Application/Ai/AiService.cs`, `Infrastructure/Ai/GeminiLlmClient.cs`, `GroqLlmClient.cs` | JSON-only output validated against the schema; rules fallback when no key or on error; daily budget |
+| Voice assistant ("what next?", run one confirmed action) | Groq | `Application/Assistant/AssistantService.cs` | Knows only the user's own figures; proposes, the user taps to run |
+| Speech to text / natural voice | Groq Whisper `whisper-large-v3` (OpenAI `whisper-1` fallback), browser speech | `Api/Controllers/VoiceController.cs`, web `src/features/voice/` | Per-user rate limit; guests blocked |
+| Draft rewrite, profile "Improve with AI" | Groq / Gemini | `Application/Drafts/DraftRewriteService.cs`, `Application/Profiles/ProfileImproveService.cs` | Shown as an AI suggestion, never sent automatically |
+
+Scoring itself is a **transparent rules engine** (every point has a quoted reason), so results are explainable. Every AI answer carries its `source` and a fallback reason; keys stay on the server.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  U[Browser: React SPA on Vercel] -->|HTTPS + JWT / guest token| A[ASP.NET Core API on Render]
+  A --> DB[(PostgreSQL)]
+  A -->|safe fetcher: public IPs only, size and time caps| F[Free job feeds and ATS boards]
+  A -->|server-side keys, daily budgets| P[JSearch, SEEK, Apollo, Apify, Adzuna]
+  A --> L[Groq / Gemini / Whisper]
+  A --> M[Gmail, Outlook, SMTP, Slack, HubSpot, Notion]
+  AG[Desktop agent: Node + Playwright, on the user's PC] -->|agent key| A
+  AG --> S[LinkedIn / Naukri in the user's own browser session]
+```
+
+More: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Run it in 5 steps
+
+1. Clone both repos side by side: `OpportunityPilotWebApi` and `OpportunityPilotWebapp`.
+2. API in demo mode (no database, no keys, guest sign-in): `cd OpportunityPilotWebApi && ConnectionStrings__Main= Cors__AllowedOrigins__0=http://localhost:5173 ASPNETCORE_URLS=http://localhost:5051 dotnet run --no-launch-profile --project src/OpportunityPilot.Api`
+3. Web: `cd OpportunityPilotWebapp && npm install && cp .env.example .env.local`, then clear `VITE_DEV_AUTH=` in `.env.local` (guest mode)
+4. `npm run dev` → http://localhost:5173
+5. Click **Continue as guest**, then **Find** → type a role → **Search**.
+
+**Or with Docker:** `docker compose up` in this folder (API repo next to it) → http://localhost:5173.
+
+## Judge walkthrough (2 minutes)
+
+1. Open the live demo → **Continue as guest**.
+2. Switch to **Sales** (top left). Go to **Find companies**.
+3. Pick region **Global remote**, type `React developer`, **Search**. Contract only and Remote only are on by default for Sales.
+4. Open **Sites** to see every source as a card: free or credits, where Remote/Contract come from, and how many results each gave.
+5. **Download for Apollo (CSV)**, or **Turn into leads and write emails** → review the drafted emails in **Outreach** (nothing is sent without a tap).
+6. Press the **mic** (or type) and say *"What should I do next?"* — the assistant answers from your own numbers.
+7. **Settings → Demo readiness** shows what is live on this server (AI, data, every source).
+
+## Quality
+
+| Check | Command | Today |
+|---|---|---|
+| Typecheck | `npm run typecheck` | 0 errors |
+| Lint (oxlint) | `npm run lint` | 0 warnings |
+| Unit tests (Vitest) | `npm test` | 603 tests |
+| Build | `npm run build` | lazy-loaded routes; `docx` loaded only when a resume is exported |
+| Layout + accessibility | `npm run check:shell`, `npm run check:devices` | every route × 1280/1024/375 × light/dark, axe WCAG 2.1 AA 0 violations |
+| API | `dotnet test` in the API repo | 830 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
+
+## Security and data honesty
+
+- Keys for paid sources and AI live only on the server; everything in `VITE_*` is public by design.
+- Guests can explore everything except paid parts (voice, AI, live paid boards, sending).
+- Per-visitor rate limits, 4 MB body cap, security headers; the server fetcher only reaches public IPs.
+- The app never scrapes behind a login server-side; LinkedIn/Naukri automation runs only in the user's own desktop agent and stops at any check.
+- Saved results are always labelled with their date and "not live".
+
+See [SECURITY.md](SECURITY.md).
 
 ## About the data (for reviewers)
 
-This is an MVP running on free or low-credit API plans: SEEK (20 searches), Apollo (50 credits, 25 per search), JSearch for Indeed and LinkedIn (200 searches a month) and Apify for Naukri. When a plan's credits run out, or for a guest session, the search tabs offer **saved results** from real searches, always labelled with their date and "not live". With paid plans in production, every search is real-time. Nothing is ever sent or applied without the person's tap.
+This MVP runs on free or low-credit plans: SEEK (20 searches), Apollo (50 credits), JSearch for Indeed and LinkedIn (200 searches a month), Apify for Naukri. When a plan's credits run out, or for a guest, the search tabs offer **saved results** from real searches, labelled with their date and "not live". The free feeds are always live.
+
+## Where to read next
+
+| Need | File |
+|---|---|
+| Architecture and data flow | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Every route and its status | [docs/SCREEN_MAP.md](docs/SCREEN_MAP.md) |
+| Screen behaviour per user | [docs/SHARED_FLOW.md](docs/SHARED_FLOW.md), [docs/CANDIDATE_FLOW.md](docs/CANDIDATE_FLOW.md), [docs/SALES_FLOW.md](docs/SALES_FLOW.md) |
+| Design system rules | [DESIGN.md](DESIGN.md) |
+| Env vars, deploy targets, auth modes | [docs/PRODUCT.md](docs/PRODUCT.md), [docs/SETUP.md](docs/SETUP.md) |
+| Known gaps and open decisions | [docs/open-questions.md](docs/open-questions.md) |
+| **Built with Claude Code** — our AI dev workflow: rules, skills, slash commands, hooks | [CLAUDE.md](CLAUDE.md), [skills/](skills/), [.claude/commands/](.claude/commands/), [.claude/settings.json](.claude/settings.json) |
+
+## License
+
+See [LICENSE](LICENSE).
