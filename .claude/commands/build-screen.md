@@ -10,7 +10,7 @@ Argument: the entry heading, e.g. `Outreach — Inbox and draft editor`, or a ro
 ## Steps
 
 1. **Find the entry** via `docs/SCREEN_MAP.md` and read it in full in `docs/CANDIDATE_FLOW.md`, `docs/SALES_FLOW.md` or `docs/SHARED_FLOW.md`. No entry → stop: create it first (all ten fields, `Status: not built`) and confirm it with the user.
-2. **Check readiness.** Every field is filled. Every endpoint in "State (reads/writes)" exists in the API contract (`../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md` or `M4_M5_CONTRACT.md`) **and** is implemented by the API (check `../OpportunityPilotWebApi/docs/IMPLEMENTATION_STATUS.md` or its controllers). Any linked P1 OQ still Open, or a missing endpoint → stop and report; offer `/resolve-oq` or a `NotBuiltPage` instead. Vague entry → `skills/prompt-master.SKILL.md`.
+2. **Check readiness.** Every field is filled. Every endpoint in "State (reads/writes)" exists in the API contract (`../OpportunityPilotWebApi/docs/api-contracts.md`) **and** is implemented by the API (check `../OpportunityPilotWebApi/docs/plans-and-status.md` or its controllers). Any linked P1 OQ still Open, or a missing endpoint → stop and report; offer `/resolve-oq` or a `NotBuiltPage` instead. Vague entry → `skills/prompt-master.SKILL.md`.
 3. **Read references:** the design artboard in `../opportunitypilot-ui/` (visual only — routes come from the flow doc), the closest built screen as a pattern (e.g. `OpportunitiesPage.tsx` for paged tables, `CampaignBuilder.tsx` for forms with `useBlocker`), and `CLAUDE.md`.
 4. **Build in this order:**
    1. Types in `src/lib/types.ts`, mirroring the contract exactly.
@@ -25,7 +25,7 @@ Argument: the entry heading, e.g. `Outreach — Inbox and draft editor`, or a ro
 7. **Update docs (same change):**
    - Flow-doc entry: set **Status** to `built`; rewrite Actions/State/Validation to match what was actually built; replace TODOs with remaining real gaps.
    - `docs/SCREEN_MAP.md`: route, component and status.
-   - `docs/PROJECT_REF.md`: new endpoints in the "Endpoints the web app calls" table, new env vars.
+   - `docs/PRODUCT.md (Project reference section)`: new endpoints in the "Endpoints the web app calls" table, new env vars.
    - Run `/audit-oq` for the touched files and register new gaps; mark OQs this build closed as Resolved (with the date and files).
 8. **Report:** files created/changed, gate results, 375 px result (and how it was checked), docs updated, open OQs left.
 

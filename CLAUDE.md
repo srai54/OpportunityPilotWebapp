@@ -12,14 +12,14 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | Build / dev server | Vite 8 with `@vitejs/plugin-react`; dev server port **5173**, `strictPort` (the API's CORS allows exactly this origin) |
 | Routing | react-router-dom 7 **data router** (`createBrowserRouter` in `src/App.tsx`). Required: `useBlocker` guards unsaved edits in Profiles and the Campaign builder |
 | State | No global store. Server data through `useApi` (GET hook in `src/lib/useApi.ts`) and `api()` / `apiDownload()` (`src/lib/api.ts`); screen state in component state; capabilities shared through `ShellContext` |
-| Auth | `src/features/auth/AuthProvider.tsx`. **Hanko** (`VITE_HANKO_API_URL` set, `@teamhanko/hanko-elements` 3.0.0 loaded on demand by `src/lib/hanko.ts`) is the main sign-in on top of any mode; setup in `docs/AUTH_SETUP.md`. Three modes picked at build time: **supabase** (Supabase URL + publishable key set), **dev** (`VITE_DEV_AUTH=true` and a dev build only), **guest** (neither — demo mode, the API issues a signed random guest token) |
+| Auth | `src/features/auth/AuthProvider.tsx`. **Hanko** (`VITE_HANKO_API_URL` set, `@teamhanko/hanko-elements` 3.0.0 loaded on demand by `src/lib/hanko.ts`) is the main sign-in on top of any mode; setup in `docs/SETUP.md`. Three modes picked at build time: **supabase** (Supabase URL + publishable key set), **dev** (`VITE_DEV_AUTH=true` and a dev build only), **guest** (neither — demo mode, the API issues a signed random guest token) |
 | Data | Every record comes from the API (`OpportunityPilotWebApi`, .NET 10). Supabase is used for sign-in only; the browser never reads the database |
 | API base URL | `VITE_API_BASE_URL`, read in `src/lib/config.ts`; default `http://localhost:5051`; production value committed in `.env.production` |
 | Tests | Vitest 5, `environment: node`, only `src/**/*.test.ts` (pure logic; there are no component/DOM tests) |
 | Lint | oxlint (`.oxlintrc.json`: react, typescript, oxc plugins) |
 | Styling | Plain CSS: `src/styles/tokens.css` (design tokens, copied verbatim from `../opportunitypilot-ui/tokens.css`) + `src/styles/app.css`. No CSS framework, no CSS-in-JS |
 | Fonts | Inter (UI) and IBM Plex Mono (ids) from Google Fonts (`index.html`) |
-| Hosting | Vercel (current, `vercel.json`) and a Render static-site Blueprint (`render.yaml`). Both: `npm run build` → `dist/`, SPA rewrite to `/index.html`. Details: `docs/PROJECT_REF.md` |
+| Hosting | Vercel (current, `vercel.json`) and a Render static-site Blueprint (`render.yaml`). Both: `npm run build` → `dist/`, SPA rewrite to `/index.html`. Details: `docs/PRODUCT.md` |
 | Node | `^20.19.0 || >=22.12.0` (Render pins 22.12.0) |
 | Docker | None for the web app |
 
@@ -79,8 +79,8 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 | A request is vague (two or more of: which user, which screen/route, which flow-doc entry, which API endpoint/contract, acceptance checks are missing) | Read `skills/prompt-master.SKILL.md` and ask its one structured question burst before writing code |
 | After finishing a feature | Run `/audit-oq` and register every new mock, hard-code, stub or dead link in `docs/open-questions.md` |
 | Closing a tracked gap | Run `/resolve-oq OQ-FE-###` — one OQ per run |
-| Adding or changing an API call | Find the endpoint in `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md` or `M4_M5_CONTRACT.md` (or the API's controllers). Mirror its DTO in `src/lib/types.ts`. If no contract exists, log an OQ and ask — never invent an endpoint |
-| Adding an environment variable | Public values only; add it to `.env.example`, `src/lib/config.ts` and `docs/PROJECT_REF.md` |
+| Adding or changing an API call | Find the endpoint in `../OpportunityPilotWebApi/docs/api-contracts.md` (or the API's controllers). Mirror its DTO in `src/lib/types.ts`. If no contract exists, log an OQ and ask — never invent an endpoint |
+| Adding an environment variable | Public values only; add it to `.env.example`, `src/lib/config.ts` and `docs/PRODUCT.md` |
 | Something is unknown or undecided | Log it in `docs/open-questions.md` with ID, priority and owner instead of improvising |
 
 ### Data honesty
@@ -151,13 +151,13 @@ The AI does not discover docs on its own; this table is the bridge. Read the row
 | Candidate screens: job campaigns, research run, opportunities (Job), Applications, approval queue, cover notes | `docs/CANDIDATE_FLOW.md` | Touching a Candidate screen |
 | Sales screens: customer campaigns, opportunities (Customer), outreach, follow-ups, proposals, bids, batch approval | `docs/SALES_FLOW.md` | Touching a Sales screen |
 | Every route → component → flow doc → status | `docs/SCREEN_MAP.md` | Adding/removing a route; checking what is built |
-| Env vars, API base URL, deploy targets and URLs, auth modes, design and contract locations | `docs/PROJECT_REF.md` | Configuration, deployment, auth or API questions |
-| Hanko + Supabase sign-in setup (owner steps, env vars, troubleshooting) | `docs/AUTH_SETUP.md` | Touching sign-in, or switching Hanko on |
+| Env vars, API base URL, deploy targets and URLs, auth modes, design and contract locations | `docs/PRODUCT.md` | Configuration, deployment, auth or API questions |
+| Hanko + Supabase sign-in setup (owner steps, env vars, troubleshooting) | `docs/SETUP.md` | Touching sign-in, or switching Hanko on |
 | Open gaps, mocks, hard-codes, undecided items | `docs/open-questions.md` | Before inventing anything; after every feature |
 | Vague requests | `skills/prompt-master.SKILL.md` | Two or more context dimensions missing |
-| API contract — campaigns, sources, research, opportunities, agent | `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md` | Any built research/opportunity screen |
+| API contract — every built endpoint | `../OpportunityPilotWebApi/docs/api-contracts.md` | Any screen that calls the API |
 | API contract — job boards (Greenhouse, Lever, Adzuna), approval queue | `../OpportunityPilotWebApi/docs/CANDIDATE_PHASE1_CONTRACT.md` | Sources step, Filters step, Approvals |
-| API contract — Gemini, drafts, suppression, activities, follow-ups (not built) | `../OpportunityPilotWebApi/docs/M4_M5_CONTRACT.md` | Outreach, follow-ups, AI features |
+| Earlier slice specs (some not built) | `../OpportunityPilotWebApi/docs/feature-contracts.md` | Planning a new slice |
 | Product status and decisions | `../HANDOFF.md`, `../OpportunityPilotWebApi/docs/DECISIONS.md` | Scope or priority questions |
 | Designs | `../opportunitypilot-ui/` (`*.dc.html`, `README.md`) | Visual reference for a screen |
 | Deployment steps | `../DEPLOY.md` | Deploying API + web + Supabase |

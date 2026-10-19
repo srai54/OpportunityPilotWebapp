@@ -8,4 +8,4 @@ keep Supabase working as a fallback and guests unchanged. Decision: when `VITE_H
 shows Hanko's own `<hanko-auth>` element (themed with our tokens through its CSS variables) and links to the Supabase
 form as "Use the older sign-in (Supabase)"; Settings → Security shows `<hanko-profile>` for Hanko users. The package
 (`@teamhanko/hanko-elements` 3.0.0, SDK pinned to 3.0.0) is loaded only when the URL is set, so other deployments are
-unchanged. Hanko and Supabase users are separate owners in the API (no account linking). Setup: `docs/AUTH_SETUP.md`.
+unchanged. Hanko and Supabase users are separate owners in the API (no account linking). Setup: `docs/SETUP.md`.

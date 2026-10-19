@@ -26,7 +26,7 @@ not stored. States: loading; "Live listings not set up" when the server has no `
 provider errors (refused key, quota); an empty list explains that no matching posting was published on that board.
 The page title is now "Job discovery". Supersedes the Indeed-only wording above where they disagree.
 
-Template fields per entry: Route, Component, What it shows, Actions, State (reads), State (writes), Navigation out, Validation, Status, TODOs. `Status` is flipped only by `/build-screen`. Shared screens (sign-in, shell, Overview, Profiles, Integrations, Settings): `docs/SHARED_FLOW.md`. Customer-mode differences of the same components: `docs/SALES_FLOW.md`. API contract for built screens: `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md`. Gap IDs refer to `docs/open-questions.md`.
+Template fields per entry: Route, Component, What it shows, Actions, State (reads), State (writes), Navigation out, Validation, Status, TODOs. `Status` is flipped only by `/build-screen`. Shared screens (sign-in, shell, Overview, Profiles, Integrations, Settings): `docs/SHARED_FLOW.md`. Customer-mode differences of the same components: `docs/SALES_FLOW.md`. API contract for built screens: `../OpportunityPilotWebApi/docs/api-contracts.md`. Gap IDs refer to `docs/open-questions.md`.
 
 ---
 
@@ -200,7 +200,7 @@ Template fields per entry: Route, Component, What it shows, Actions, State (read
 
 - **Route:** none yet (planned as a section of `/opportunities/:id`)
 - **Component:** none yet (planned in `src/features/opportunities/` or a new `src/features/drafts/`)
-- **What it shows:** (planned, `M4_M5_CONTRACT.md` channel `CoverNote`) A generated cover note for the job: greeting, role, matched required skills, the profile's own offer sentence, availability, with `[placeholders]` for unknowns; the basis of each claim (Profile / Evidence); version, approval state, source (Template or Gemini + fallback reason). AI text on the AI surface.
+- **What it shows:** (planned, see `feature-contracts.md` in the API repo, channel `CoverNote`) A generated cover note for the job: greeting, role, matched required skills, the profile's own offer sentence, availability, with `[placeholders]` for unknowns; the basis of each claim (Profile / Evidence); version, approval state, source (Template or Gemini + fallback reason). AI text on the AI surface.
 - **Actions:** Generate → `POST /api/v1/opportunities/:id/drafts { channel: 'CoverNote' }`; edit and save → `PUT /api/v1/drafts/:id` (clears approval); approve → `POST /api/v1/drafts/:id/approve { version }`; revoke approval or delete. The agent fills the approved note only into cover-letter-like free-text fields.
 - **State (reads):** `GET /api/v1/opportunities/:id/drafts`.
 - **State (writes):** the POST/PUT calls above, `POST /api/v1/drafts/:id/revoke-approval`, `DELETE /api/v1/drafts/:id`.

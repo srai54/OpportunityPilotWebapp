@@ -16,7 +16,7 @@ Score the request against the dimensions below. **Two or more missing → fire.*
 | 1 | Which user | Request wording; Job vs Customer mode; `docs/SCREEN_MAP.md` | It could be Candidate, Sales or both, and behaviour differs |
 | 2 | Which screen / route | `docs/SCREEN_MAP.md`, `src/App.tsx` | No route or component can be pinned down |
 | 3 | Flow-doc entry | `docs/CANDIDATE_FLOW.md`, `docs/SALES_FLOW.md`, `docs/SHARED_FLOW.md` | No entry exists, or the request contradicts its Actions/Validation |
-| 4 | API contract | `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md`, `M4_M5_CONTRACT.md`, `src/lib/types.ts` | The data or endpoint needed is not in a contract (e.g. batch approval, Freelancer.com bids, proposals) |
+| 4 | API contract | `../OpportunityPilotWebApi/docs/api-contracts.md`, `src/lib/types.ts` | The data or endpoint needed is not in a contract (e.g. batch approval, Freelancer.com bids, proposals) |
 | 5 | Output shape | Flow-doc "What it shows"; design `../opportunitypilot-ui/*.dc.html` | Unclear what appears, where, and in which states (loading, empty, error, not built) |
 | 6 | Constraints | `CLAUDE.md` rules; `docs/open-questions.md` | Conflicts with a rule (no fabricated data, tokens only, approval model, no secrets) or touches an open OQ |
 | 7 | Acceptance checks | Flow-doc "Validation" | No way to tell when it is done: CTA enable/disable conditions, error cases, 375 px, keyboard/screen-reader behaviour |
@@ -36,7 +36,7 @@ Score the request against the dimensions below. **Two or more missing → fire.*
 | User | "Is this for the **Candidate** (Job mode, apply agent) or the **Sales team** (Customer mode, outreach), or both? Default: <inferred>." |
 | Screen | "Which screen: <route A> (`<component>`) or a new screen? If new, which nav section and route — proposed `<route>`?" |
 | Flow doc | "There is no entry for this in `docs/<ROLE>_FLOW.md`. I will add one with these actions and validation: <draft>. Correct?" |
-| Contract | "The API has no endpoint for <thing> (`RESEARCH_CONTRACT.md` / `M4_M5_CONTRACT.md`). Should I (a) wait for the contract, (b) build the UI as `NotBuiltPage`, or (c) use <existing endpoint> instead?" |
+| Contract | "The API has no endpoint for <thing> (`api-contracts.md`). Should I (a) wait for the contract, (b) build the UI as `NotBuiltPage`, or (c) use <existing endpoint> instead?" |
 | Approval | "Approval model for this: per version (current contract) or batch 'Approve all' (product decision 2026-10-05, OQ-FE-001)?" |
 | Acceptance | "Done means: <CTA> enabled only when <conditions>; errors shown via `ErrorNotice`; 409 keeps edits; no overflow at 375 px; typecheck/lint/test/build green. Anything to add?" |
 | Edge cases | "When <empty / 409 / API asleep / guest demo mode>, should it <option A> or <option B>?" |

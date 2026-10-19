@@ -26,8 +26,12 @@ Gate before any change is done: `npm run typecheck`, `npm run lint`, `npm test`,
 | Stack, commands, folder blueprint, mandatory rules | [CLAUDE.md](CLAUDE.md) |
 | Every route and its status | [docs/SCREEN_MAP.md](docs/SCREEN_MAP.md) |
 | Screen behaviour per user | [docs/SHARED_FLOW.md](docs/SHARED_FLOW.md), [docs/CANDIDATE_FLOW.md](docs/CANDIDATE_FLOW.md), [docs/SALES_FLOW.md](docs/SALES_FLOW.md) |
-| Env vars, API URL, deploy targets, auth modes | [docs/PROJECT_REF.md](docs/PROJECT_REF.md) |
+| Env vars, API URL, deploy targets, auth modes | [docs/PRODUCT.md](docs/PRODUCT.md) |
 | Known gaps and open decisions | [docs/open-questions.md](docs/open-questions.md) |
 | AI workflow: skills, commands, hooks | [skills/](skills/prompt-master.SKILL.md), [.claude/commands/](.claude/commands/), [.claude/settings.json](.claude/settings.json) |
 
 Live: https://opportunity-pilot-webapp.vercel.app (API: https://opportunitypilotwebapi.onrender.com). Designs: `../opportunitypilot-ui`. Deployment steps: `../DEPLOY.md`.
+
+## About the data (for reviewers)
+
+This is an MVP running on free or low-credit API plans: SEEK (20 searches), Apollo (50 credits, 25 per search), JSearch for Indeed and LinkedIn (200 searches a month) and Apify for Naukri. When a plan's credits run out, or for a guest session, the search tabs offer **saved results** from real searches, always labelled with their date and "not live". With paid plans in production, every search is real-time. Nothing is ever sent or applied without the person's tap.

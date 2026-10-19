@@ -41,7 +41,7 @@ const PUBLIC_ENV_FILES = new Set(['.env.example', '.env.production'])
 if (/^\.env(\..*)?$/i.test(base) && !PUBLIC_ENV_FILES.has(base)) {
   block(
     `${base} is a local env file (git-ignored, may hold secrets)`,
-    'Ask the user to edit it; document new variables in .env.example and docs/PROJECT_REF.md.',
+    'Ask the user to edit it; document new variables in .env.example and docs/PRODUCT.md.',
   )
 }
 if (base === 'package-lock.json' || base === 'npm-shrinkwrap.json') {
