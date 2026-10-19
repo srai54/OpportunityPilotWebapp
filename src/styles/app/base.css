@@ -1,0 +1,258 @@
+/* Base, shell, rail and navigation. Split from app.css on 2026-10-19 in the original order; tokens only (tokens.css). */
+/* App styles. All colours, spacing and type come from tokens.css. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--op-bg);
+  color: var(--op-ink);
+  font-family: var(--op-font);
+  font-size: var(--op-text-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--op-primary); text-decoration: none; }
+a:hover { color: var(--op-primary-hover); text-decoration: underline; }
+button, input, textarea, select { font: inherit; color: inherit; }
+code, .mono { font-family: var(--op-font-mono); font-size: 0.92em; }
+h1, h2, h3, h4 { margin: 0; }
+p { margin: 0; }
+
+:focus-visible { outline: 2px solid var(--op-primary); outline-offset: 2px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: var(--op-space-2); top: -60px; z-index: 100;
+  background: var(--op-surface); padding: var(--op-space-2) var(--op-space-3);
+  border-radius: var(--op-radius-control); box-shadow: var(--op-shadow-raised);
+}
+.skip-link:focus { top: var(--op-space-2); }
+
+/* ---------- Layout helpers ---------- */
+
+.row { display: flex; align-items: center; gap: var(--op-space-2); }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1 1 auto; }
+.stack-2 > * + * { margin-top: var(--op-space-2); }
+.stack-3 > * + * { margin-top: var(--op-space-3); }
+.stack-4 > * + * { margin-top: var(--op-space-4); }
+.stack-6 > * + * { margin-top: var(--op-space-6); }
+.plain-list { list-style: none; margin: 0; padding: 0; }
+.small { font-size: var(--op-text-meta); }
+.muted-small { color: var(--op-muted); font-size: var(--op-text-meta); }
+.text-success { color: var(--op-on-green-tint); }
+.text-warning { color: var(--op-on-amber-tint); }
+.hint { color: var(--op-muted); font-size: var(--op-text-micro); margin-top: var(--op-space-1); }
+
+.boot {
+  display: grid; place-items: center; min-height: 100vh; color: var(--op-muted);
+}
+
+/* ---------- Shell (design v2: ShellStates.dc.html, Main.dc.html) ---------- */
+
+.shell { display: flex; min-height: 100vh; --op-ws-accent: var(--op-ws-candidate); }
+.shell.ws-sales { --op-ws-accent: var(--op-ws-sales); }
+
+.rail {
+  width: var(--op-nav-width); flex-shrink: 0;
+  background: var(--op-nav); color: var(--op-nav-ink);
+  display: flex; flex-direction: column; padding: var(--op-space-3) 0 14px;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+/* Teal on navy is too faint for a focus ring; this light teal reads at 8.5:1. */
+.rail :focus-visible { outline-color: var(--op-nav-focus); }
+
+.rail-head { display: flex; align-items: center; gap: 9px; padding: 0 var(--op-space-3) var(--op-space-3); }
+.rail-toggle {
+  position: relative; flex-shrink: 0; width: 30px; height: 30px; display: grid; place-items: center;
+  border: 0; border-radius: var(--op-radius-control); background: none; color: var(--op-nav-ink-strong); cursor: pointer;
+}
+.rail-toggle:hover { background: var(--op-nav-active); }
+.rail-brand-name { color: var(--op-nav-ink-strong); font-size: 14px; font-weight: 600; letter-spacing: -0.012em; white-space: nowrap; }
+
+/* Workspace switch — a display preference stored on this device. */
+.ws { position: relative; }
+.ws-button {
+  position: relative; display: flex; align-items: center; gap: 9px; width: calc(100% - 16px); margin: 0 var(--op-space-2) var(--op-space-1);
+  padding: var(--op-space-2) 10px; border-radius: var(--op-radius); border: 1px solid var(--op-nav-raised-border);
+  background: var(--op-nav-raised); cursor: pointer; text-align: left; color: var(--op-nav-ink-strong);
+}
+.ws-button:hover { border-color: var(--op-nav-ink-muted); }
+.ws-tile {
+  width: 26px; height: 26px; border-radius: var(--op-radius-control); flex-shrink: 0; display: grid; place-items: center;
+  background: var(--op-ws-accent); color: var(--op-text-inverse);
+}
+.ws-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.ws-kicker { font-size: 9.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--op-nav-ink-muted); }
+.ws-name { font-size: var(--op-text-body); font-weight: 600; color: var(--op-nav-ink-strong); }
+.ws-chevron { color: var(--op-nav-ink-muted); flex-shrink: 0; }
+.ws-tagline { padding: 0 18px var(--op-space-1); font-size: var(--op-text-micro); color: var(--op-nav-ink-muted); }
+/* Design WorkspaceSwitcher: a light popover over the rail, each option with its build status. */
+.rail:has(.ws-options) { overflow: visible; }
+.ws-options {
+  position: absolute; z-index: 30; top: 0; left: calc(100% - 40px); width: 290px; padding: 12px;
+  border-radius: 10px; border: 1px solid var(--op-line); background: var(--op-surface); color: var(--op-ink);
+  box-shadow: var(--op-shadow-popover); display: flex; flex-direction: column; gap: 8px;
+}
+.ws-options-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--op-muted); padding: 2px 4px; }
+.ws-option {
+  display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--op-line); border-radius: 8px;
+  background: var(--op-surface); color: var(--op-ink); cursor: pointer; text-align: left;
+}
+.ws-option:hover { border-color: var(--op-field-border); }
+.ws-option[aria-pressed='true'] { border-color: var(--op-primary); background: var(--op-primary-tint); }
+.ws-option .ws-tile { width: 30px; height: 30px; color: var(--op-on-primary); }
+.ws-option .ws-name { color: var(--op-ink); }
+.ws-option-candidate .ws-tile { background: var(--op-ws-candidate); }
+.ws-option-sales .ws-tile { background: var(--op-ws-sales); }
+.ws-option-tagline { font-size: var(--op-text-micro); color: var(--op-muted); }
+.ws-status { flex-shrink: 0; }
+.ws-check { color: var(--op-primary); font-weight: 700; }
+.ws-note { margin: 4px 4px 0; padding-top: 10px; border-top: 1px solid var(--op-hair); font-size: var(--op-text-micro); color: var(--op-muted); line-height: 1.5; }
+@media (max-width: 860px) {
+  .ws-options { position: static; width: auto; margin: 0 var(--op-space-2) var(--op-space-2); }
+}
+
+.rail-groups { padding-bottom: var(--op-space-5); }
+.rail-section {
+  padding: 13px 14px 5px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--op-nav-ink-muted);
+}
+.rail-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.rail-group:first-child .rail-list { margin-top: var(--op-space-2); }
+.rail-link {
+  position: relative; display: flex; align-items: center; gap: 10px; padding: var(--op-space-2) var(--op-space-3);
+  margin: 0 var(--op-space-2); border-radius: var(--op-radius-control);
+  color: var(--op-nav-ink); font-size: 13px; font-weight: 500;
+}
+.rail-link:hover { color: var(--op-nav-ink-strong); background: var(--op-nav-active); text-decoration: none; }
+.rail-link.active { color: var(--op-nav-ink-strong); background: var(--op-nav-active); font-weight: 600; }
+.rail-icon { flex-shrink: 0; }
+.rail-label { min-width: 0; }
+
+/* Counts come only from GET /api/v1/overview; zero and unknown show nothing. */
+.nav-count { margin-left: auto; font-variant-numeric: tabular-nums; }
+.nav-count-muted { font-size: 11px; font-family: var(--op-font-mono); color: var(--op-nav-ink-muted); }
+.nav-count-attention {
+  min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px; display: grid; place-items: center;
+  background: var(--op-nav-badge); color: var(--op-on-nav-badge); font-size: var(--op-text-micro); font-weight: 700;
+}
+.nav-soon {
+  margin-left: auto; font-size: 9.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--op-nav-ink-muted);
+}
+/* --op-nav-ink-muted is below 4.5:1 on the active background, so lift it there. */
+.rail-link:hover .nav-count-muted, .rail-link.active .nav-count-muted,
+.rail-link:hover .nav-soon, .rail-link.active .nav-soon { color: var(--op-nav-ink); }
+
+.rail-footer {
+  margin: auto var(--op-space-2) 0; padding: var(--op-space-3) var(--op-space-4) 0; border-top: 1px solid var(--op-nav-border);
+  display: flex; flex-direction: column; gap: 7px;
+}
+.rail-status { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--op-nav-ink-soft); }
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; display: inline-block; }
+.rail-status .dot { width: 6px; height: 6px; }
+.dot-success { background: var(--op-dot-success); }
+.dot-warning { background: var(--op-dot-warning); }
+.dot-danger { background: var(--op-dot-danger); }
+.dot-neutral { background: var(--op-dot-neutral); }
+
+/* Collapsed (desktop only): icons, dots for counts, tooltips from data-tip. Visible overflow lets tooltips out. */
+.rail-collapsed { width: var(--op-nav-width-collapsed); overflow: visible; }
+.rail-collapsed .rail-head { justify-content: center; padding: 0 0 10px; }
+.rail-collapsed .rail-toggle { width: 40px; height: 38px; }
+.rail-collapsed .ws-button { width: 30px; height: 30px; margin: 0 auto var(--op-space-3); padding: 0; border: 0; border-radius: var(--op-radius-control); justify-content: center; }
+.rail-collapsed .ws-tile { width: 30px; height: 30px; }
+.rail-collapsed .ws-options { position: absolute; left: calc(100% + var(--op-space-1)); top: 0; z-index: 40; width: 232px; margin: 0; box-shadow: var(--op-shadow-popover); }
+.rail-collapsed .rail-list { gap: 3px; }
+.rail-collapsed .rail-group:first-child .rail-list { margin-top: 0; }
+.rail-collapsed .rail-link { width: 40px; height: 38px; margin: 0 auto; padding: 0; justify-content: center; color: var(--op-nav-ink-soft); }
+.rail-collapsed .rail-link:hover, .rail-collapsed .rail-link.active { color: var(--op-nav-ink-strong); }
+.rail-divider { height: 1px; background: var(--op-nav-border); margin: 7px 10px; }
+.nav-dot { position: absolute; top: 6px; right: 7px; width: 6px; height: 6px; border-radius: 50%; background: var(--op-nav-badge); }
+.rail-collapsed .rail-footer { margin: auto 0 0; padding: var(--op-space-3) 0 0; border-top: 0; align-items: center; }
+.rail-collapsed .rail-status .dot { width: 8px; height: 8px; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after {
+  content: attr(data-tip); position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%); z-index: 40;
+  padding: var(--op-space-1) var(--op-space-2); border-radius: var(--op-radius-chip); white-space: nowrap; pointer-events: none;
+  background: var(--op-ink); color: var(--op-surface); font-size: var(--op-text-meta); font-weight: 500;
+  box-shadow: var(--op-shadow-raised);
+}
+
+.main-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  height: var(--op-header-height); display: flex; align-items: center; gap: 14px;
+  padding: 0 22px; background: var(--op-surface); border-bottom: 1px solid var(--op-line);
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-heading { min-width: 0; display: flex; flex-direction: column; }
+.topbar-title {
+  font-size: var(--op-text-screen); font-weight: 600; letter-spacing: -0.012em; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.topbar-hint { font-size: var(--op-text-meta); color: var(--op-muted); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-toggle {
+  display: none; flex-shrink: 0; margin-left: -10px;
+  width: var(--op-touch-target); height: var(--op-touch-target); align-items: center; justify-content: center;
+  border: 0; border-radius: var(--op-radius-control); background: none; color: var(--op-ink); cursor: pointer;
+}
+.menu-toggle:hover { background: var(--op-neutral-tint); }
+.topbar .pill {
+  height: 26px; padding: 0 10px; border-radius: var(--op-radius-control); font-size: var(--op-text-meta); font-weight: 400;
+  white-space: nowrap; border: 1px solid var(--op-line);
+}
+.topbar .pill-neutral { background: var(--op-panel-head); color: var(--op-muted); }
+.topbar .pill-neutral .dot { background: var(--op-faint); }
+.topbar .pill-primary { background: var(--op-primary-tint); color: var(--op-on-primary-tint); border-color: var(--op-primary-tint); }
+.topbar .pill-primary .dot { background: var(--op-primary); }
+.topbar .pill .dot { width: 6px; height: 6px; }
+
+.account { position: relative; flex-shrink: 0; }
+.avatar {
+  display: grid; place-items: center; padding: 0; border: 0; background: none; cursor: pointer;
+  min-width: 30px; min-height: 30px; border-radius: 50%;
+}
+.avatar-initials {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--op-line); background: var(--op-hair); color: var(--op-on-neutral-tint);
+  font-weight: 600; font-size: var(--op-text-meta);
+}
+.avatar:hover .avatar-initials { border-color: var(--op-field-border); }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; z-index: 20;
+  background: var(--op-surface); border: 1px solid var(--op-line); border-radius: var(--op-radius);
+  box-shadow: var(--op-shadow-popover); padding: var(--op-space-1);
+}
+.menu-meta { padding: var(--op-space-2) var(--op-space-3); color: var(--op-muted); font-size: var(--op-text-meta); word-break: break-all; }
+.menu-item {
+  display: block; width: 100%; text-align: left; border: 0; background: none; cursor: pointer;
+  padding: var(--op-space-2) var(--op-space-3); border-radius: var(--op-radius-chip);
+}
+.menu-item:hover { background: var(--op-neutral-tint); }
+
+.banner {
+  display: flex; align-items: flex-start; gap: 9px; padding: var(--op-space-2) 22px; font-size: 12px;
+  background: var(--op-banner-bg); border-bottom: 1px solid var(--op-banner-border); color: var(--op-on-amber-tint);
+}
+.banner strong { font-weight: 600; }
+.banner-icon { flex-shrink: 0; margin-top: 1px; color: var(--op-warning-icon); }
+.banner-danger { background: var(--op-danger-tint); color: var(--op-on-danger-tint); border-color: var(--op-danger-border); }
+.banner-danger .banner-icon { color: var(--op-on-danger-tint); }
+
+.content { padding: var(--op-space-4) var(--op-space-5); outline: none; }
+
+.scrim { position: fixed; inset: 0; background: var(--op-scrim); z-index: 29; }
+
+/* ---------- Page scaffolding ---------- */
+
+.page { max-width: 1240px; margin: 0 auto; }

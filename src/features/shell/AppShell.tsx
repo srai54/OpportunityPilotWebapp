@@ -39,7 +39,7 @@ import {
   writeWorkspace,
 } from './shellModel'
 
-/** Below this width the rail is always a drawer (matches --op-nav-drawer-breakpoint and the 860 px rules in app.css). */
+/** Below this width the rail is always a drawer (matches --op-nav-drawer-breakpoint and the 860 px rules in styles/app/*.css). */
 const DRAWER_QUERY = '(max-width: 860px)'
 
 function subscribeDrawerQuery(onChange: () => void) {

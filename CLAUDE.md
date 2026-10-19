@@ -17,7 +17,7 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | API base URL | `VITE_API_BASE_URL`, read in `src/lib/config.ts`; default `http://localhost:5051`; production value committed in `.env.production` |
 | Tests | Vitest 5, `environment: node`, only `src/**/*.test.ts` (pure logic; there are no component/DOM tests) |
 | Lint | oxlint (`.oxlintrc.json`: react, typescript, oxc plugins) |
-| Styling | Plain CSS: `src/styles/tokens.css` (design tokens, copied verbatim from `../opportunitypilot-ui/tokens.css`) + `src/styles/app.css`. No CSS framework, no CSS-in-JS |
+| Styling | Plain CSS: `src/styles/tokens.css` (design tokens, copied verbatim from `../opportunitypilot-ui/tokens.css`) + `src/styles/app/*.css` (one file per area, imported in order by `src/main.tsx`). No CSS framework, no CSS-in-JS |
 | Fonts | Inter (UI) and IBM Plex Mono (ids) from Google Fonts (`index.html`) |
 | Hosting | Vercel (current, `vercel.json`) and a Render static-site Blueprint (`render.yaml`). Both: `npm run build` → `dist/`, SPA rewrite to `/index.html`. Details: `docs/PRODUCT.md` |
 | Node | `^20.19.0 || >=22.12.0` (Render pins 22.12.0) |
@@ -48,7 +48,7 @@ Rules for any AI agent working in this repository. Project rules here win over g
 
 | Path | Holds | Rule |
 |---|---|---|
-| `src/main.tsx` | Mounts `<App/>`, imports `tokens.css` then `app.css` | Nothing else goes here |
+| `src/main.tsx` | Mounts `<App/>`, imports `tokens.css`, then `styles/app/*.css` in order, then `v5.css` and `auth-v6.css` | Nothing else goes here |
 | `src/App.tsx` | Route table (data router), `AuthGate`, `NotFound` | Every new route is added here **and** to `docs/SCREEN_MAP.md` |
 | `src/lib/` | `api.ts` (fetch wrapper, `ApiError`, `ApiUnreachableError`), `config.ts` (public env), `useApi.ts`, `supabase.ts` (auth client only), `types.ts` (DTOs), `download.ts` | Framework-free helpers shared by several features |
 | `src/components/` | Shared UI: `ErrorNotice` (inline, or the "Could not load X" card with `what`), `States` (`EmptyState`, `FilteredEmpty`, `LoadingState` with API-waking, `NotBuiltState`), `StatusBadge`/`Badge`, `TagInput` | Only components used by two or more features. Every page uses `States` for loading / empty / waking — no hand-made "Loading…" text or centred empty cards |
@@ -56,13 +56,13 @@ Rules for any AI agent working in this repository. Project rules here win over g
 | `src/features/<area>/<area>Model.ts` | Pure logic: labels, validation (`draftProblems`), path builders, normalisers, formatters | No React, no fetch, no DOM — so it can be unit-tested in Node. Existing: `campaignModel`, `researchModel`, `opportunityModel`, `approvalModel`, `applicationStatus`, `profileFields` |
 | `src/features/<area>/*.test.ts` | Vitest tests, co-located with the model they test | Every new model function gets a test |
 | `src/styles/tokens.css` | Design tokens (`--op-*`) | Copied from `../opportunitypilot-ui/tokens.css`; change the design source first, then copy |
-| `src/styles/app.css` | All component classes, grouped by screen, responsive rules at the end | Uses tokens only |
+| `src/styles/app/*.css` | Component classes split by area: `base`, `layout`, `accounts`, `screens`, `features`, `refinements`, `find-drawer` (order matters: later files refine earlier ones) | Uses tokens only; add new rules to the file of their area |
 | `docs/` | Flow docs, screen map, project reference, open questions | See the reference table below |
 | `skills/` | `prompt-master.SKILL.md` | Read when a rule below says so |
 | `.claude/commands/` | `/audit-oq`, `/resolve-oq`, `/build-screen` | |
 | `.claude/hooks/` | Command/write guards and the write log | Wired in `.claude/settings.json` |
 
-**Where a new screen goes:** flow-doc entry first (role doc) → `src/features/<area>/<Name>Page.tsx` → pure logic in `<area>Model.ts` + `<area>Model.test.ts` → DTOs in `src/lib/types.ts` → route in `src/App.tsx` (with `handle: { title }`) → nav entry in `NAV` in `src/features/shell/AppShell.tsx` if it is top-level → classes in `src/styles/app.css` → `docs/SCREEN_MAP.md`. A screen whose milestone is not built uses `NotBuiltPage` (no sample data, no dead buttons).
+**Where a new screen goes:** flow-doc entry first (role doc) → `src/features/<area>/<Name>Page.tsx` → pure logic in `<area>Model.ts` + `<area>Model.test.ts` → DTOs in `src/lib/types.ts` → route in `src/App.tsx` (with `handle: { title }`) → nav entry in `NAV` in `src/features/shell/AppShell.tsx` if it is top-level → classes in the matching `src/styles/app/*.css` → `docs/SCREEN_MAP.md`. A screen whose milestone is not built uses `NotBuiltPage` (no sample data, no dead buttons).
 
 ## 4. Path aliases
 
@@ -109,7 +109,7 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 
 ### CSS (learned in this codebase)
 
-- Tokens only: colours, spacing, radii, font sizes come from `--op-*` variables in `tokens.css`. No new hex/rgb literals in `app.css`.
+- Tokens only: colours, spacing, radii, font sizes come from `--op-*` variables in `tokens.css`. No new hex/rgb literals in `styles/app/*.css`.
 - Any `overflow-x: auto|scroll` container is `position: relative` (otherwise absolutely positioned `.sr-only` text inside it widens the page on mobile).
 - Single-column mobile grids use `minmax(0, 1fr)`, never bare `1fr`, so wide tables scroll inside their column instead of widening the page.
 - Wide tables sit in `.table-card > .table-scroll` with `role="region"`, an accessible name and `tabIndex={0}`.

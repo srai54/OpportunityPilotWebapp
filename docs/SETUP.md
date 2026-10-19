@@ -91,7 +91,7 @@ Local development: put `VITE_HANKO_API_URL=<dev project URL>` in `.env.local`, a
 
 Web: `src/lib/config.ts` (`hankoApiUrl`), `src/lib/hanko.ts` (on-demand `register`), `src/features/auth/AuthProvider.tsx`
 (session, token for API calls, sign-out), `HankoElements.tsx` (`<hanko-auth>`, `<hanko-profile>`), styling `.op-hanko` in
-`src/styles/app.css`. API: `Auth/HankoAuth.cs`, `Auth/AuthSetup.cs` (see `../OpportunityPilotWebApi/docs/SETUP.md`).
+`src/styles/app/accounts.css`. API: `Auth/HankoAuth.cs`, `Auth/AuthSetup.cs` (see `../OpportunityPilotWebApi/docs/SETUP.md`).
 
 ---
 

@@ -126,7 +126,7 @@ Local agent (Node + Playwright, on the user's computer) ──► API with an ag
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Web | React 19, TypeScript, Vite, plain CSS tokens (`tokens.css`, `app.css`), vitest | Rules in `DESIGN.md` and the repo `CLAUDE.md` |
+| Web | React 19, TypeScript, Vite, plain CSS tokens (`tokens.css`, `styles/app/*.css`), vitest | Rules in `DESIGN.md` and the repo `CLAUDE.md` |
 | API | .NET 10, Clean Architecture (Domain / Application / Infrastructure / Api), EF Core | Two migration sets: Postgres and SQL Server |
 | Data | Supabase Postgres, schema `app`, tables created by API migrations on start | `SQL.md` lists the verification queries |
 | Auth | Supabase Auth (JWT), guest tokens for demo, agent keys for the local agent | Sign-in keys not set yet (U1) |
