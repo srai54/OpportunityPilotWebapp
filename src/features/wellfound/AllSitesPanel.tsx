@@ -1,5 +1,4 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
 import { Avatar, Card, CardList } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
@@ -10,9 +9,12 @@ import { RoleList, ROLE_LIST_ID } from '../suggest/RoleList'
 import { placeFor } from '../suggest/picks'
 import { PLACE_LIST_ID, PlaceList } from '../suggest/PlaceList'
 import { SitePicker } from './SitePicker'
+import { bulkFromSearch } from './bulkFromSearch'
+import { runAction } from '../voice/voiceFlow'
+import type { ProfileSummary } from '../../lib/types'
 import type { Workspace } from '../shell/shellModel'
 import { chosenSites, COUNTRIES, feedsPath, isContract, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
-import { boardJobsPath, campaignFromSearchPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
+import { boardJobsPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
 const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
 
@@ -35,6 +37,10 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const [busy, setBusy] = useState(false)
   const [found, setFound] = useState<Found>()
   const sales = workspace === 'sales'
+  const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
+  const [adding, setAdding] = useState('')
+  const [added, setAdded] = useState<string>()
+  const [addError, setAddError] = useState<Error>()
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -54,6 +60,19 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
     ]) as [FeedSearchResult | Error, ...{ board: JobBoard; result: BoardSearchResult | Error }[]]
     setFound({ query: query.trim(), location: place.trim(), feed, boards })
     setBusy(false)
+  }
+
+  /** The results already on screen go straight into a campaign (no new search), approved; Sales then gets the emails written. */
+  async function addShown() {
+    if (!found) return
+    setAdding('Starting…'); setAdded(undefined); setAddError(undefined)
+    try {
+      const picked = sales ? companies.slice(0, 40).flatMap((c) => c.roles.map((r) => r.job)) : shown.slice(0, 40).map((m) => m.job)
+      const done = await bulkFromSearch({ sales, board: 'All sites', boardName: 'All sites', query: found.query, location: found.location, picked, profiles: profiles.data ?? [], onStep: setAdding })
+      setAdded(sales ? `${done.approved} companies added and approved. Writing their emails now; the voice panel asks before anything is sent.`
+        : `${done.approved} jobs added and approved. Your desktop agent applies to the LinkedIn, Naukri and Instahyre ones; the rest are in your apply queue.`)
+      if (sales) void runAction({ kind: 'outreach', label: 'Write and send the emails', query: null, location: null, page: null, campaignId: done.campaignId }, true)
+    } catch (e) { setAddError(e as Error) } finally { setAdding('') }
   }
 
   const feedOk = found && !(found.feed instanceof Error) ? found.feed : undefined
@@ -97,11 +116,13 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
         subtitle={visaOnly ? `Only postings whose text mentions visa sponsorship, a work permit or relocation (${merged.length - shown.length} hidden). Best title matches first.`
           : sales ? `From ${shown.length} postings, grouped by company; companies hiring for more of these roles first. Turn them into leads to score them and find who to contact.`
           : 'Best title matches first, then newest. The same job on two sites is shown once.'}
-        actions={shown.length > 0 ? <Link className="btn btn-primary btn-sm" data-coach="find-campaign" to={campaignFromSearchPath(workspace, { query: found.query, location: found.location }, 'LinkedIn', 'All sites')}>{sales ? 'Turn into leads' : 'Track these jobs'}</Link> : undefined}>
+        actions={shown.length > 0 ? <button type="button" className="btn btn-primary btn-sm" data-coach="find-campaign" disabled={Boolean(adding) || !profiles.data} onClick={() => void addShown()}>{adding || (sales ? `Turn ${Math.min(companies.length, 40)} into leads and write emails` : `Track these ${Math.min(shown.length, 40)} jobs`)}</button> : undefined}>
         <ul className="site-lines" aria-label="What each site returned">
           {lines.map((l) => <li key={l.name} className={l.ok ? 'is-ok' : 'is-off'}><span aria-hidden="true">{l.ok ? '✓' : '○'}</span> <strong>{l.name}</strong> {l.text}</li>)}
         </ul>
       </Card>
+      {added && <p className="muted-small" role="status">{added}</p>}
+      {addError && <ErrorNotice error={addError} what="adding these results" />}
       {count === 0
         ? <Card tone="muted"><p>{sales ? 'No hiring company matched' : 'No job matched'} on any site that answered. Try fewer words, a broader place, or turn off Remote only{contractOnly ? ', Contract only' : ''}{visaOnly ? ' and the visa filter' : ''}.</p></Card>
         : sales ? <CardList label="Companies hiring">
