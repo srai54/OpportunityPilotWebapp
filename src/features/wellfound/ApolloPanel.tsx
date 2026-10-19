@@ -16,7 +16,7 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
   const [titles, setTitles] = useState('')
   const [country, setCountry] = useState('')
   const [sizes, setSizes] = useState<string[]>([])
-  const [kind, setKind] = useState<LeadKind>('companies')
+  const [kind, setKind] = useState<LeadKind>('people')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<LeadSearchResult | Error>()
   const body = leadSearchBody({ keywords, titles, country, sizes, kind })
@@ -51,9 +51,9 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
         <button className="btn btn-primary" type="submit" disabled={busy || !body}>{busy ? 'Searching…' : 'Search Apollo'}</button>
       </div>
       <div className="search-tools row wrap" role="group" aria-label="Company size">
-        {SIZE_BANDS.map((b) => <label key={b.value} className="chip-check"><input type="checkbox" checked={sizes.includes(b.value)} onChange={() => toggleSize(b.value)} /> {b.label}</label>)}
+        {SIZE_BANDS.map((b) => <label key={b.value} className="chip-check" title="Not available with the current Apollo plan"><input type="checkbox" disabled checked={sizes.includes(b.value)} onChange={() => toggleSize(b.value)} /> {b.label}</label>)}
       </div>
-      <p className="muted-small">Each search uses up to 10 paid results on the server's Apollo plan. Remote and contract are not in Apollo's data; use All sites for those.</p>
+      <p className="muted-small">Each search returns 25 people and uses 25 paid credits (one search a day). Company size is not available with the current Apollo plan; remote and contract are not in Apollo's data, use All sites for those.</p>
     </form>
 
     {busy && <LoadingState label="Asking Apollo…" rows={3} />}
