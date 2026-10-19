@@ -21,7 +21,15 @@ function describe(error: Error): string {
  * Inline by default (inside forms and cards). With `what`, renders the design's "request failed" card:
  * "Could not load X", the reason, a support reference (never a server trace), Try again and an optional way out.
  */
-export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error; onRetry?: () => void; what?: string; secondary?: ReactNode }) {
+export function ErrorNotice({ error, onRetry, onDismiss, what, secondary }: {
+  error: Error
+  /** Repeats what failed ("Try again"). */
+  onRetry?: () => void
+  /** Only hides the message ("Dismiss"): for a failed one-off action there is nothing to repeat from here. */
+  onDismiss?: () => void
+  what?: string
+  secondary?: ReactNode
+}) {
   const text = describe(error)
   const correlationId = error instanceof ApiError ? error.correlationId : undefined
   // When the failure was first shown, for the support reference.
@@ -52,6 +60,7 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
               <Icon name="refresh" size={14} /> Try again
             </button>
           )}
+          {onDismiss && <button type="button" className="btn btn-ghost btn-sm" onClick={onDismiss}>Dismiss</button>}
           {secondary}
         </div>
       </section>
@@ -67,6 +76,7 @@ export function ErrorNotice({ error, onRetry, what, secondary }: { error: Error;
           Try again
         </button>
       )}
+      {onDismiss && <button type="button" className="btn btn-ghost btn-sm notice-action" onClick={onDismiss}>Dismiss</button>}
     </div>
   )
 }

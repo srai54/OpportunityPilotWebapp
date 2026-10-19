@@ -199,7 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     hankoSignedIn.current = false
     setHankoUser(null)
-    if (supabase) await supabase.auth.signOut()
+    // Local state is cleared even when Supabase cannot be reached, so signing out always signs out here.
+    try { if (supabase) await supabase.auth.signOut() } catch { /* the server session expires on its own */ }
     write(DEV_USER_KEY, null)
     write(GUEST_TOKEN_KEY, null)
     setSession(null)

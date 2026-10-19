@@ -55,9 +55,9 @@ interface ProblemDetails {
 /** Sends a request with the auth headers and turns failures into ApiError / ApiUnreachableError. */
 async function send(path: string, init: RequestInit): Promise<Response> {
   let response: Response
-  let requestAuthHeaders: Record<string, string>
+  // Outside the try: a failing token refresh is a sign-in problem, not "the API could not be reached".
+  const requestAuthHeaders: Record<string, string> = await authHeaders()
   try {
-    requestAuthHeaders = await authHeaders()
     response = await fetch(`${config.apiBaseUrl}${path}`, {
       ...init,
       headers: {

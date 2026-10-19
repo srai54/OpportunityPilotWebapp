@@ -21,12 +21,6 @@ export const STATUS_FILTERS: { value: ApplicationStatus | ''; label: string }[] 
 ]
 
 // Instahyre is in the API enum but the agent does not support it yet, so it is not offered as a filter.
-export const PLATFORM_FILTERS: { value: ApplicationPlatform | ''; label: string }[] = [
-  { value: '', label: 'All' },
-  { value: 'LinkedIn', label: 'LinkedIn' },
-  { value: 'Naukri', label: 'Naukri' },
-]
-
 export interface ApplicationFilters {
   status: ApplicationStatus | ''
   platform: ApplicationPlatform | ''

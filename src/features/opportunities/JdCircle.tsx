@@ -1,3 +1,4 @@
+import { safeHref } from './opportunityModel'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Avatar, Card } from '../../components/cards'
@@ -90,7 +91,7 @@ export function JdCircle({ o }: Readonly<{ o: OpportunityDetail }>) {
                     <button type="button" className="btn btn-secondary btn-sm" disabled={busy !== null} onClick={() => void write(p)}>
                       {busy === `note-${p.id}` ? 'Writing…' : p.degree === 1 || p.relation === 'Connection' ? 'Ask for a referral' : 'Write a note'}<span className="sr-only"> to {p.name}</span>
                     </button>
-                    <a className="btn btn-ghost btn-sm" href={p.profileUrl} target="_blank" rel="noreferrer">LinkedIn ↗<span className="sr-only"> {p.name} (opens in a new tab)</span></a>
+                    <a className="btn btn-ghost btn-sm" href={safeHref(p.profileUrl) ?? undefined} target="_blank" rel="noopener noreferrer">LinkedIn ↗<span className="sr-only"> {p.name} (opens in a new tab)</span></a>
                     {p.source === 'Manual' && <button type="button" className="btn btn-ghost btn-sm" disabled={busy !== null} onClick={() => void remove(p)}>Remove<span className="sr-only"> {p.name}</span></button>}
                   </div>
                 </li>

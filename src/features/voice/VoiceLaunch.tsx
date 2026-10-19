@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/icons'
+import { trapTab } from '../../lib/focusTrap'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from '../command/commandModel'
 import { listenOnce, recognitionCtor, type Recognition } from '../command/speech'
 import type { Workspace } from '../shell/shellModel'
@@ -141,23 +142,30 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startWhenReady])
 
+  // The window listener below is added once; it calls the latest `understand` (current workspace, screen and history) through this ref.
+  const understandRef = useRef(understand)
+  const sheetRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { understandRef.current = understand })
+
   // "What next?" from the pill (or anywhere): reopen the assistant with the conversation and ask it.
   useEffect(() => {
     const onAsk = (e: Event) => {
       const question = (e as CustomEvent<string>).detail
       setOpen(true); setErr(null)
       openEpoch.current = -1
-      if (question) setTimeout(() => understand(question), 50)
+      if (question) setTimeout(() => understandRef.current(question), 50)
     }
     window.addEventListener('op-open-assistant', onAsk)
     return () => window.removeEventListener('op-open-assistant', onAsk)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (!open) return
     if (!canSpeak && !canRecord()) inputRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+      else if (e.key === 'Tab') trapTab(e, sheetRef.current)
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -181,7 +189,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
       )}
       {open && (
         <div className="voice-scrim" onClick={(e) => { if (e.target === e.currentTarget) close() }}>
-          <div className="voice-sheet va" role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
+          <div className="voice-sheet va" ref={sheetRef} role="dialog" aria-modal="true" aria-labelledby="voice-title" data-testid="voice-sheet">
             <div className="va-head">
               <span className="va-badge" aria-hidden="true"><Icon name="sparkles" size={14} /></span>
               <h2 id="voice-title">{listening ? 'Listening…' : thinking ? 'Thinking…' : 'Your assistant'}</h2>

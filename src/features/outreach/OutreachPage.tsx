@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { ContactFinder } from './ContactFinder'
@@ -22,6 +22,7 @@ import { useApi } from '../../lib/useApi'
 export function OutreachPage() {
   const drafts = useApi<DraftPage>('/api/v1/drafts?take=200')
   const [selected, setSelected] = useState<OutreachDraft>()
+  const openSeq = useRef(0)
   async function removeDraft() {
     if (!selected || !window.confirm('Delete this message? A sent message stays on record in the lead history.')) return
     try { await api<void>(`/api/v1/drafts/${selected.id}`, { method: 'DELETE' }); setSelected(undefined); drafts.reload(); setNotice('Message deleted.') } catch (e) { setError(e as Error) }
@@ -63,11 +64,14 @@ export function OutreachPage() {
   }, [firstId, selected])
 
   async function open(item: Pick<DraftListItem, 'id'>) {
+    // Only the last draft clicked fills the editor, even if an earlier, slower request answers after it.
+    const seq = ++openSeq.current
     setError(undefined); setNotice(''); setLoadError(false); setTried(false)
     try {
       const row = await api<OutreachDraft>(`/api/v1/drafts/${item.id}`)
+      if (seq !== openSeq.current) return
       setSelected(row); setBody(row.body); setRecipient(row.recipient ?? ''); setSubject(row.subject ?? '')
-    } catch (e) { setLoadError(true); setError(e as Error) }
+    } catch (e) { if (seq === openSeq.current) { setLoadError(true); setError(e as Error) } }
   }
 
   const checks = selected ? readyChecks(selected.channel, { recipient, subject, body }) : []

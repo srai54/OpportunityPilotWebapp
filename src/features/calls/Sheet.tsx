@@ -1,25 +1,30 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Icon } from '../../components/icons'
+import { trapTab } from '../../lib/focusTrap'
 
 /**
  * A modal sheet: slides up from the bottom on phones, a centred dialog on wide screens. Esc and the close button close it;
- * focus moves to the title on open and back to what opened it on close.
+ * focus moves to the title on open and back to what opened it on close; Tab stays inside the sheet while it is open.
  */
 export function Sheet({ title, subtitle, onClose, children, footer, avatar, labelId }: Readonly<{
   title: string; subtitle?: ReactNode; onClose: () => void; children: ReactNode; footer?: ReactNode; avatar?: ReactNode; labelId: string
 }>) {
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const sheetRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
   useEffect(() => { closeRef.current = onClose }, [onClose])
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
     titleRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeRef.current(); return }
+      if (e.key === 'Tab') trapTab(e, sheetRef.current)
+    }
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('keydown', onKey); opener?.focus?.() }
   }, [])
   return <div className="call-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-    <div className="call-sheet" role="dialog" aria-modal="true" aria-labelledby={labelId}>
+    <div className="call-sheet" ref={sheetRef} role="dialog" aria-modal="true" aria-labelledby={labelId}>
       <span className="call-sheet-grip" aria-hidden="true" />
       <header className="call-sheet-head">
         {avatar}

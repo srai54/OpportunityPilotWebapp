@@ -1,3 +1,4 @@
+import { safeHref } from './opportunityModel'
 import { SendToCrm } from '../connectors/SendToCrm'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -525,8 +526,8 @@ function OpportunityTable({
                         <Link to={`/opportunities/${o.id}#outreach`}>
                           Draft outreach<span className="sr-only"> for {o.organization}</span>
                         </Link>
-                      ) : next.label === 'Open posting' && (o.applyUrl || o.url) ? (
-                        <a href={(o.applyUrl ?? o.url)!} target="_blank" rel="noreferrer">
+                      ) : next.label === 'Open posting' && safeHref(o.applyUrl ?? o.url) ? (
+                        <a href={safeHref(o.applyUrl ?? o.url)!} target="_blank" rel="noopener noreferrer">
                           {applyLabel(o.platform)}
                           <span className="sr-only"> for {o.title} (opens in a new tab)</span>
                         </a>

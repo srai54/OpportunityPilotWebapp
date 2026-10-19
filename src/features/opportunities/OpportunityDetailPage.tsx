@@ -43,7 +43,8 @@ export function OpportunityDetailPage() {
   const loaded = useApi<OpportunityDetail>(`/api/v1/opportunities/${encodeURIComponent(id)}`)
   // PATCH returns the full detail; keep it instead of refetching.
   const [updated, setUpdated] = useState<OpportunityDetail>()
-  const o = updated?.id === id ? updated : loaded.data
+  // Only this id's data: while another opportunity is still on screen from the last route, show loading instead.
+  const o = updated?.id === id ? updated : loaded.data?.id === id ? loaded.data : undefined
 
   if (loaded.error && !o)
     return (
@@ -62,7 +63,7 @@ export function OpportunityDetailPage() {
     )
   if (!o) return <div className="page"><LoadingState label="Loading opportunity…" waking={loaded.waking} rows={6} stats={3} /></div>
 
-  return <Detail o={o} onUpdated={setUpdated} />
+  return <Detail key={o.id} o={o} onUpdated={setUpdated} />
 }
 
 function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: OpportunityDetail) => void }) {
@@ -100,13 +101,14 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
     }
   }
 
-  async function setStatus(next: OpportunityStatus) {
-    if (next === o.status) return
+  /** Returns whether the status is now `next` (false when the person cancelled or the change failed). */
+  async function setStatus(next: OpportunityStatus): Promise<boolean> {
+    if (next === o.status) return true
     if (
       next === 'Applied' &&
       !window.confirm('Mark this as applied? Only do this if you have applied yourself — it is recorded in the activity history.')
     )
-      return
+      return false
     setBusy(true)
     setError(undefined)
     try {
@@ -119,8 +121,10 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
       // The nav's approval count changes when a suggestion is approved or rejected here.
       if (o.status === 'Suggested' || result.status === 'Suggested') refreshOverview()
       setAnnouncement(`Status changed to ${STATUS_LABELS[result.status]?.text ?? result.status}.`)
+      return true
     } catch (e) {
       setError(e as Error)
+      return false
     } finally {
       setBusy(false)
     }
@@ -132,7 +136,8 @@ function Detail({ o, onUpdated }: { o: OpportunityDetail; onUpdated: (o: Opportu
     if (!target) return
     const tab = window.open('about:blank', '_blank')
     if (tab) tab.opener = null
-    if (o.status !== 'Shortlisted') await setStatus('Shortlisted')
+    // Approving failed: close the blank tab and say nothing went through (the error is shown above).
+    if (o.status !== 'Shortlisted' && !(await setStatus('Shortlisted'))) { tab?.close(); return }
     if (tab) tab.location.href = target
     setAnnouncement('Approved. Apply on the page that opened, then come back and click "I applied".')
   }
