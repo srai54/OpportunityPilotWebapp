@@ -5,7 +5,8 @@ import { LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
 import { safeHref } from '../opportunities/opportunityModel'
 import { COUNTRIES } from './allSitesModel'
-import { leadSearchBody, SIZE_BANDS, sizeText, type LeadKind, type LeadSearchResult } from './apolloModel'
+import { SAVED_LEADS, SAVED_SEARCH } from './apolloSample'
+import { leadSearchBody, SIZE_BANDS, sizeText, type Lead, type LeadKind, type LeadSearchResult } from './apolloModel'
 
 /**
  * Sales: companies (or the people at them) from Apollo, by keyword, country and company size. Paid per result on the server's
@@ -19,12 +20,13 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
   const [kind, setKind] = useState<LeadKind>('people')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<LeadSearchResult | Error>()
+  const [saved, setSaved] = useState(false)
   const body = leadSearchBody({ keywords, titles, country, sizes, kind })
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!body || busy) return
-    setBusy(true)
+    setBusy(true); setSaved(false)
     setResult(await api<LeadSearchResult>('/api/v1/sales/lead-search', { method: 'POST', body: JSON.stringify(body) }).catch((err: Error) => err))
     setBusy(false)
   }
@@ -58,21 +60,33 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
 
     {busy && <LoadingState label="Asking Apollo…" rows={3} />}
     {!busy && result instanceof Error && <ErrorNotice error={result} what="Apollo search" />}
-    {!busy && ok && ok.status !== 'Ready' && <Card tone="muted"><p>{ok.message ?? 'Apollo search is not available right now.'}</p></Card>}
+    {!busy && !saved && (result instanceof Error || (ok && ok.status !== 'Ready')) && <Card tone="muted">
+      {ok && <p>{ok.message ?? 'Apollo search is not available right now.'}</p>}
+      <div className="row wrap"><button type="button" className="btn btn-secondary btn-sm" onClick={() => setSaved(true)}>Show saved results from {SAVED_SEARCH.when} (demo)</button></div>
+    </Card>}
+    {!busy && saved && <section className="stack-3" aria-label="Saved Apollo results">
+      <Card tone="muted" title={`Saved results: ${SAVED_SEARCH.what}`} subtitle={`Not live. ${SAVED_LEADS.length} of ${SAVED_SEARCH.total.toLocaleString()} matches from a real Apollo search on ${SAVED_SEARCH.when}. Names are hidden in this demo; live searches show them.`}
+        actions={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setSaved(false)}>Hide</button>} />
+      <LeadTable leads={SAVED_LEADS} people />
+    </section>}
     {!busy && ok?.status === 'Ready' && <section className="stack-3" aria-label="Apollo results">
       <Card tone="muted" title={`${ok.leads.length} ${people ? (ok.leads.length === 1 ? 'person' : 'people') : (ok.leads.length === 1 ? 'company' : 'companies')} from Apollo`}
         subtitle={ok.hidden > 0 ? `${ok.hidden} more ${ok.hidden === 1 ? 'was' : 'were'} outside the sizes you picked and ${ok.hidden === 1 ? 'is' : 'are'} hidden.` : 'Company data is Apollo\'s, shown as it came.'} />
       {ok.leads.length === 0 ? <Card tone="muted"><p>Nothing matched. Try fewer words, another country or more sizes.</p></Card>
-        : <div className="table-scroll" role="region" aria-label="Apollo results table" tabIndex={0}><table className="table"><thead><tr>
-          <th>{people ? 'Person' : 'Company'}</th>{people && <th>Title</th>}{people && <th>Company</th>}<th>Size</th><th>Location</th><th>Links</th>
-        </tr></thead><tbody>{ok.leads.map((l, i) => <tr key={`${l.name}-${i}`}>
-          <td>{l.name}</td>{people && <td>{l.title ?? '—'}</td>}{people && <td>{l.company ?? '—'}</td>}
-          <td className="op-num">{sizeText(l)}</td><td>{l.location ?? '—'}</td>
-          <td><div className="row wrap">
-            {safeHref(l.website) && <a className="btn btn-ghost btn-sm" href={safeHref(l.website)!} target="_blank" rel="noopener noreferrer">Website ↗<span className="sr-only"> of {l.company ?? l.name}</span></a>}
-            {safeHref(l.linkedIn) && <a className="btn btn-ghost btn-sm" href={safeHref(l.linkedIn)!} target="_blank" rel="noopener noreferrer">LinkedIn ↗<span className="sr-only"> of {l.name}</span></a>}
-          </div></td>
-        </tr>)}</tbody></table></div>}
+        : <LeadTable leads={ok.leads} people={people} />}
     </section>}
   </>
+}
+
+function LeadTable({ leads, people }: Readonly<{ leads: readonly Lead[]; people: boolean }>) {
+  return <div className="table-scroll" role="region" aria-label="Apollo results table" tabIndex={0}><table className="table"><thead><tr>
+    <th>{people ? 'Person' : 'Company'}</th>{people && <th>Title</th>}{people && <th>Company</th>}<th>Size</th><th>Location</th><th>Links</th>
+  </tr></thead><tbody>{leads.map((l, i) => <tr key={`${l.name}-${l.company}-${i}`}>
+    <td>{l.name}</td>{people && <td>{l.title ?? '—'}</td>}{people && <td>{l.company ?? '—'}</td>}
+    <td className="op-num">{sizeText(l)}</td><td>{l.location ?? '—'}</td>
+    <td><div className="row wrap">
+      {safeHref(l.website) && <a className="btn btn-ghost btn-sm" href={safeHref(l.website)!} target="_blank" rel="noopener noreferrer">Website ↗<span className="sr-only"> of {l.company ?? l.name}</span></a>}
+      {safeHref(l.linkedIn) && <a className="btn btn-ghost btn-sm" href={safeHref(l.linkedIn)!} target="_blank" rel="noopener noreferrer">LinkedIn ↗<span className="sr-only"> of {l.company ?? l.name}</span></a>}
+    </div></td>
+  </tr>)}</tbody></table></div>
 }
