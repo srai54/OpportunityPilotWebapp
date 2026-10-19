@@ -3,6 +3,10 @@ import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
+import type { ProfileSummary } from '../../lib/types'
+import { useApi } from '../../lib/useApi'
+import { runAction } from '../voice/voiceFlow'
+import { leadsToCampaign } from './apolloLeads'
 import { safeHref } from '../opportunities/opportunityModel'
 import { COUNTRIES } from './allSitesModel'
 import { SAVED_LEADS, SAVED_SEARCH } from './apolloSample'
@@ -71,13 +75,14 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
     {!busy && saved && <section className="stack-3" aria-label="Saved Apollo results">
       <Card tone="muted" title={`Saved results: ${SAVED_SEARCH.what}`} subtitle={`Not live. ${SAVED_LEADS.length} of ${SAVED_SEARCH.total.toLocaleString()} matches from a real Apollo search on ${SAVED_SEARCH.when}. Names are hidden in this demo; live searches show them.`}
         actions={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setSaved(false)}>Hide</button>} />
+      <AddLeads leads={SAVED_LEADS} label={SAVED_SEARCH.what} />
       <LeadTable leads={SAVED_LEADS} people />
     </section>}
     {!busy && !saved && ok?.status === 'Ready' && <section className="stack-3" aria-label="Apollo results">
       <Card tone="muted" title={`${ok.leads.length} ${people ? (ok.leads.length === 1 ? 'person' : 'people') : (ok.leads.length === 1 ? 'company' : 'companies')} from ${ok.leads[0]?.source ?? 'Apollo'}`}
         subtitle={ok.message ?? (ok.hidden > 0 ? `${ok.hidden} more ${ok.hidden === 1 ? 'was' : 'were'} outside the sizes you picked and ${ok.hidden === 1 ? 'is' : 'are'} hidden.` : 'Company data is shown as the source gave it.')} />
       {ok.leads.length === 0 ? <Card tone="muted"><p>Nothing matched. Try fewer words, another country or more sizes.</p></Card>
-        : <LeadTable leads={ok.leads} people={people} />}
+        : <><AddLeads leads={ok.leads} label={[titles, keywords, country].filter(Boolean).join(' · ') || 'Apollo search'} /><LeadTable leads={ok.leads} people={people} /></>}
     </section>}
   </>
 }
@@ -93,4 +98,31 @@ function LeadTable({ leads, people }: Readonly<{ leads: readonly Lead[]; people:
       {safeHref(l.linkedIn) && <a className="btn btn-ghost btn-sm" href={safeHref(l.linkedIn)!} target="_blank" rel="noopener noreferrer">LinkedIn ↗<span className="sr-only"> of {l.company ?? l.name}</span></a>}
     </div></td>
   </tr>)}</tbody></table></div>
+}
+
+/**
+ * One tap from a list to outreach: the leads become an approved Sales campaign (no new Apollo credits), then the voice outreach flow
+ * writes an email for each and asks before sending, exactly like "send the outreach" by voice. Nothing is sent without a tap.
+ */
+function AddLeads({ leads, label }: Readonly<{ leads: readonly Lead[]; label: string }>) {
+  const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
+  const [step, setStep] = useState<string>()
+  const [error, setError] = useState<Error>()
+  const [done, setDone] = useState<string>()
+  async function go() {
+    setError(undefined); setDone(undefined); setStep('Starting…')
+    try {
+      const { campaignId, approved } = await leadsToCampaign(leads, label, profiles.data ?? [], setStep)
+      setDone(`${approved} lead${approved === 1 ? '' : 's'} added and approved. Writing their emails now; the voice panel asks before anything is sent.`)
+      void runAction({ kind: 'outreach', label: 'Write and send the emails', query: null, location: null, page: null, campaignId }, true)
+    } catch (e) { setError(e as Error) } finally { setStep(undefined) }
+  }
+  return <div className="stack-2">
+    <div className="row wrap">
+      <button type="button" className="btn btn-primary btn-sm" disabled={Boolean(step) || !profiles.data} onClick={() => void go()}>{step ?? `Add these ${leads.length} as leads and write emails`}</button>
+      <span className="muted-small">Creates a Sales campaign, approves them, writes an email for each. You send.</span>
+    </div>
+    {done && <p className="muted-small" role="status">{done}</p>}
+    {error && <ErrorNotice error={error} what="adding the leads" />}
+  </div>
 }
