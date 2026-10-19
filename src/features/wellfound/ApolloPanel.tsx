@@ -37,6 +37,10 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
   return <>
     <form className="search-hero" onSubmit={submit} aria-label="Search Apollo">
       {tabs}
+      <div className="segmented" role="group" aria-label="Data">
+        <button type="button" className={!saved ? 'active' : ''} aria-pressed={!saved} onClick={() => setSaved(false)}>Live search</button>
+        <button type="button" className={saved ? 'active' : ''} aria-pressed={saved} onClick={() => setSaved(true)}>Saved results ({SAVED_SEARCH.when})</button>
+      </div>
       <div className="segmented" role="group" aria-label="Find">
         <button type="button" className={!people ? 'active' : ''} aria-pressed={!people} onClick={() => setKind('companies')}>Companies</button>
         <button type="button" className={people ? 'active' : ''} aria-pressed={people} onClick={() => setKind('people')}>People</button>
@@ -55,7 +59,7 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
       <div className="search-tools row wrap" role="group" aria-label="Company size">
         {SIZE_BANDS.map((b) => <label key={b.value} className="chip-check"><input type="checkbox" checked={sizes.includes(b.value)} onChange={() => toggleSize(b.value)} /> {b.label}</label>)}
       </div>
-      <p className="muted-small">Apollo is asked first (25 people, 25 paid credits, one search a day). If it has no credits or finds nothing, the backup source (Apify Leads Finder, up to 10 people) runs with the same filters, including company size. Remote and contract are not in this data; use All sites for those.</p>
+      <p className="muted-small">Live search asks Apollo (25 people, 25 paid credits, one search a day). When Apollo has no credits, use Saved results: a real Apollo search from {SAVED_SEARCH.when}. Remote and contract are not in this data; use All sites for those.</p>
     </form>
 
     {busy && <LoadingState label="Asking Apollo…" rows={3} />}
@@ -69,7 +73,7 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
         actions={<button type="button" className="btn btn-ghost btn-sm" onClick={() => setSaved(false)}>Hide</button>} />
       <LeadTable leads={SAVED_LEADS} people />
     </section>}
-    {!busy && ok?.status === 'Ready' && <section className="stack-3" aria-label="Apollo results">
+    {!busy && !saved && ok?.status === 'Ready' && <section className="stack-3" aria-label="Apollo results">
       <Card tone="muted" title={`${ok.leads.length} ${people ? (ok.leads.length === 1 ? 'person' : 'people') : (ok.leads.length === 1 ? 'company' : 'companies')} from ${ok.leads[0]?.source ?? 'Apollo'}`}
         subtitle={ok.message ?? (ok.hidden > 0 ? `${ok.hidden} more ${ok.hidden === 1 ? 'was' : 'were'} outside the sizes you picked and ${ok.hidden === 1 ? 'is' : 'are'} hidden.` : 'Company data is shown as the source gave it.')} />
       {ok.leads.length === 0 ? <Card tone="muted"><p>Nothing matched. Try fewer words, another country or more sizes.</p></Card>
