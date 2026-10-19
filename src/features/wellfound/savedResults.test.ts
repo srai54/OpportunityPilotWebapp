@@ -19,6 +19,7 @@ describe('saved board results', () => {
     const saved = savedSearches('Indeed')
     expect(saved.map((s) => [s.query, s.jobs.length])).toEqual([['react', 5], ['Java', 2]])
   })
+  it('ships one real LinkedIn search too', () => expect(BUILT_IN.LinkedIn!.jobs.every((j) => j.boardUrl.includes('linkedin.com'))).toBe(true))
   it('ships one real SEEK search and shows it as a saved result', () => {
     const seek = savedSearches('Seek')
     expect(seek.at(-1)?.builtIn).toBe(true)

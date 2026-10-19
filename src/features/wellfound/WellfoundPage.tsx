@@ -136,6 +136,11 @@ export function WellfoundPage() {
         ? <button type="button" className="btn btn-secondary btn-sm" onClick={() => setProvider('all')}>Back to search</button>
         : <button type="button" className="btn btn-ghost btn-sm" onClick={() => setProvider('trends')}><Icon name="trend" size={14} /> Market trends</button>} />
 
+    <details className="how-it-works" data-testid="mvp-data-note">
+      <summary>About the data in this MVP</summary>
+      <p className="muted-small">Live results come from free or low-credit API plans: SEEK (20 searches), Apollo (50 credits, 25 per search), JSearch for Indeed and LinkedIn (200 searches a month) and Apify for Naukri. When a plan's credits run out, or for a guest, the tabs offer <strong>saved results</strong> from real searches, always labelled with their date and "not live". With paid plans in production every search is real-time.</p>
+    </details>
+
     {provider === 'trends' ? <TrendsPanel workspace={workspace === 'sales' ? 'sales' : 'candidate'} tabs={tabs} /> : provider === 'all' ? <AllSitesPanel workspace={workspace} tabs={tabs} /> : provider === 'apollo' && workspace === 'sales' ? <ApolloPanel tabs={tabs} /> : provider !== 'wellfound' && provider !== 'apollo' ? <BoardSearchPanel key={provider} board={provider} workspace={workspace} tabs={tabs} /> : <>
 
     <RoleList />
