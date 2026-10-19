@@ -13,7 +13,9 @@ import { bulkFromSearch } from './bulkFromSearch'
 import { runAction } from '../voice/voiceFlow'
 import type { ProfileSummary } from '../../lib/types'
 import type { Workspace } from '../shell/shellModel'
-import { chosenSites, COUNTRIES, feedsPath, isContract, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, COUNTRIES, COUNTRY_GROUPS, feedsPath, isContract, isRemote, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteCounts, siteLines, type FeedSearchResult } from './allSitesModel'
+import { offForRegion, REGIONS, type RegionId } from './sourcesModel'
+import { useShell } from '../shell/ShellContext'
 import { boardJobsPath, employmentLabel, formatSalary, recruiterSearchUrl, type BoardSearchResult, type JobBoard } from './boardModel'
 
 const NO_FEED: FeedSearchResult = { sites: [], jobs: [], observedAt: '' }
@@ -29,18 +31,33 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const paidReady = status.data?.configured === true
   const [query, setQuery] = useState('')
   const [location, setLocation] = useState('')
-  const [remoteOnly, setRemoteOnly] = useState(false)
+  const sales = workspace === 'sales'
+  const { advanced } = useShell()
+  // Sales defaults (J3): the staffing team looks for contract and remote roles first; both stay switchable.
+  const [remoteOnly, setRemoteOnly] = useState(sales)
+  const [region, setRegion] = useState<RegionId>('all')
   const [off, setOff] = useState<Set<string>>(new Set())
   const [visaOnly, setVisaOnly] = useState(false)
   const [country, setCountry] = useState('')
-  const [contractOnly, setContractOnly] = useState(false)
+  const [contractOnly, setContractOnly] = useState(sales)
   const [busy, setBusy] = useState(false)
   const [found, setFound] = useState<Found>()
-  const sales = workspace === 'sales'
+  // Switching workspace resets the defaults (state adjusted during render, not in an effect).
+  const [defaultsFor, setDefaultsFor] = useState(sales)
+  if (defaultsFor !== sales) { setDefaultsFor(sales); setRemoteOnly(sales); setContractOnly(sales) }
   const profiles = useApi<ProfileSummary[]>('/api/v1/profiles')
   const [adding, setAdding] = useState('')
   const [added, setAdded] = useState<string>()
   const [addError, setAddError] = useState<Error>()
+
+  /** Picking a region (J1) switches on that region's sources only, preselects its country and, for Global remote, Remote only. */
+  function pickRegion(id: RegionId) {
+    const r = REGIONS.find((x) => x.id === id) ?? REGIONS[0]
+    setRegion(r.id)
+    setOff(offForRegion(r.id))
+    setCountry(r.country)
+    if (r.remote) setRemoteOnly(true)
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -78,7 +95,9 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const feedOk = found && !(found.feed instanceof Error) ? found.feed : undefined
   const merged = found ? mergeAll(feedOk?.jobs ?? [], found.boards.flatMap((b) => (b.result instanceof Error || b.result.status !== 'Ready') ? [] : [{ board: b.board, jobs: b.result.jobs }]), found.query) : []
   const lines = found ? siteLines(feedOk, found.boards) : []
-  const afterVisa = visaOnly ? merged.filter((m) => mentionsVisaOrRelocation(m.job)) : merged
+  const counts = found ? siteCounts(feedOk, found.boards) : undefined
+  const afterRemote = remoteOnly ? merged.filter((m) => isRemote(m.job)) : merged
+  const afterVisa = visaOnly ? afterRemote.filter((m) => mentionsVisaOrRelocation(m.job)) : afterRemote
   const shown = contractOnly ? afterVisa.filter((m) => isContract(m.job)) : afterVisa
   // Sales looks for companies that are hiring, not for a job: one row per company with its open roles.
   const companies = sales ? groupByCompany(shown) : []
@@ -95,11 +114,13 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
           <input list={ROLE_LIST_ID} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={sales ? 'Role companies are hiring, e.g. React developer' : 'Role or keywords, e.g. backend developer'} /></label>
         <label className="search-field"><span className="sr-only">Place</span>
           <input list={PLACE_LIST_ID} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Place (optional)" /></label>
-        {sales && <label className="search-field"><span className="sr-only">Country</span>
+        <label className="search-field region-select"><span className="sr-only">Region</span>
+          <select value={region} onChange={(e) => pickRegion(e.target.value as RegionId)}>
+            {REGIONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
+        <label className="search-field"><span className="sr-only">Country</span>
           <select value={country} onChange={(e) => setCountry(e.target.value)}><option value="">Any country</option>
-            <optgroup label="US">{COUNTRIES.filter((c) => c.group === 'US').map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>
-            <optgroup label="Europe">{COUNTRIES.filter((c) => c.group === 'Europe').map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup></select></label>}
-        <SitePicker off={off} onChange={setOff} paidReady={paidReady} />
+            {COUNTRY_GROUPS.map((g) => <optgroup key={g} label={g}>{COUNTRIES.filter((c) => c.group === g).map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</optgroup>)}</select></label>
+        <SitePicker off={off} onChange={setOff} paidReady={paidReady} region={region} counts={counts} />
         <button className="btn btn-primary" type="submit" disabled={busy || !query.trim()}>{busy ? 'Searching…' : 'Search'}</button>
       </div>
       <div className="search-tools row wrap" data-coach="find-filters">
@@ -125,6 +146,24 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
       {addError && <ErrorNotice error={addError} what="adding these results" />}
       {count === 0
         ? <Card tone="muted"><p>{sales ? 'No hiring company matched' : 'No job matched'} on any site that answered. Try fewer words, a broader place, or turn off Remote only{contractOnly ? ', Contract only' : ''}{visaOnly ? ' and the visa filter' : ''}.</p></Card>
+        : sales && advanced ? <div className="table-card"><div className="table-scroll" role="region" aria-label="Companies hiring, as a table" tabIndex={0}>
+          <table className="table company-table">
+            <thead><tr><th scope="col">Company</th><th scope="col">Roles</th><th scope="col">Remote</th><th scope="col">Contract</th><th scope="col">Location</th><th scope="col">Sites</th><th scope="col">Links</th></tr></thead>
+            <tbody>{companies.slice(0, 100).map((c) => {
+              const href = safeHref(c.roles[0].job.boardUrl) ?? undefined
+              const titles = [...new Set(c.roles.map((r) => r.job.title))]
+              return <tr key={c.company}>
+                <th scope="row">{c.company}</th>
+                <td>{c.roles.length}: {titles.slice(0, 2).join(', ')}{titles.length > 2 ? ` +${titles.length - 2}` : ''}</td>
+                <td>{c.remote ? 'Yes' : 'No'}</td>
+                <td>{c.contract ? 'Yes' : 'No'}</td>
+                <td>{c.places.slice(0, 2).join('; ') || '—'}</td>
+                <td>{c.sites.join(', ')}</td>
+                <td className="row wrap">{href && <a href={href} target="_blank" rel="noopener noreferrer">Role ↗<span className="sr-only"> at {c.company} (opens in a new tab)</span></a>}
+                  <a href={recruiterSearchUrl(c.company, found.query)} target="_blank" rel="noopener noreferrer">Recruiters ↗<span className="sr-only"> at {c.company} (opens in a new tab)</span></a></td>
+              </tr>
+            })}</tbody>
+          </table></div></div>
         : sales ? <CardList label="Companies hiring">
           {companies.slice(0, 60).map((c) => {
             const first = c.roles[0]
@@ -163,7 +202,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
                 <p className="lead-meta">{[job.companyName, job.location, employmentLabel(job.employmentType)].filter(Boolean).join(' · ')}</p>
                 <div className="lead-tags">
                   <span className="chip chip-site">{siteName}</span>
-                  {job.isRemote && <span className="chip">Remote</span>}
+                  {isRemote(job) && <span className="chip">Remote</span>}
                   {isContract(job) && <span className="chip">Contract</span>}
                   {salary && <span className="chip">{salary}</span>}
                   {job.postedAt && <span className="lead-note">Posted {new Date(job.postedAt).toLocaleDateString()}</span>}

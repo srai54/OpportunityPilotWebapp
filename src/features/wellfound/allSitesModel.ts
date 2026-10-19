@@ -1,4 +1,8 @@
 import type { BoardJob, BoardSearchResult, JobBoard } from './boardModel'
+import { isContract, isRemote } from './jobSignals'
+import { SOURCES } from './sourcesModel'
+
+export { isContract, isRemote }
 
 /** What `GET /api/v1/jobboards/feeds` returns. */
 export type FeedSiteStatus = { site: string; status: 'Ready' | 'Failed'; listed: number; matched: number; message: string | null; fromCache: boolean }
@@ -27,16 +31,27 @@ export const PAID_SITES = [
   { id: 'Naukri', label: 'Naukri' },
 ] as const
 
-/** Markets for the Sales team: the US, and Europe country by country. The country narrows the place a search is sent with. */
-export const COUNTRIES: readonly { value: string; label: string; group: 'US' | 'Europe' }[] = [
+/** Country groups shown in the Country list; the region picker (sourcesModel REGIONS) preselects one of these. */
+export type CountryGroup = 'US' | 'Canada' | 'Europe' | 'India' | 'Middle East' | 'Australia & NZ' | 'Asia-Pacific'
+
+/** Markets for the Sales team: the US, Europe country by country, and the other regions. The country narrows the place a search is sent with. */
+export const COUNTRIES: readonly { value: string; label: string; group: CountryGroup }[] = [
   { value: 'United States', label: 'United States', group: 'US' },
+  { value: 'Canada', label: 'Canada', group: 'Canada' },
   { value: 'Sweden', label: 'Sweden', group: 'Europe' }, { value: 'Germany', label: 'Germany', group: 'Europe' },
   { value: 'United Kingdom', label: 'United Kingdom', group: 'Europe' }, { value: 'Netherlands', label: 'Netherlands', group: 'Europe' },
   { value: 'France', label: 'France', group: 'Europe' }, { value: 'Denmark', label: 'Denmark', group: 'Europe' },
   { value: 'Norway', label: 'Norway', group: 'Europe' }, { value: 'Finland', label: 'Finland', group: 'Europe' },
   { value: 'Ireland', label: 'Ireland', group: 'Europe' }, { value: 'Spain', label: 'Spain', group: 'Europe' },
   { value: 'Poland', label: 'Poland', group: 'Europe' }, { value: 'Switzerland', label: 'Switzerland', group: 'Europe' },
+  { value: 'India', label: 'India', group: 'India' },
+  { value: 'United Arab Emirates', label: 'United Arab Emirates', group: 'Middle East' }, { value: 'Saudi Arabia', label: 'Saudi Arabia', group: 'Middle East' },
+  { value: 'Qatar', label: 'Qatar', group: 'Middle East' },
+  { value: 'Australia', label: 'Australia', group: 'Australia & NZ' }, { value: 'New Zealand', label: 'New Zealand', group: 'Australia & NZ' },
+  { value: 'Singapore', label: 'Singapore', group: 'Asia-Pacific' }, { value: 'Japan', label: 'Japan', group: 'Asia-Pacific' },
 ]
+
+export const COUNTRY_GROUPS: readonly CountryGroup[] = ['US', 'Canada', 'Europe', 'India', 'Middle East', 'Australia & NZ', 'Asia-Pacific']
 
 /** The place sent to the sites: the typed place and the chosen country together ("Berlin, Germany"), or whichever there is. */
 export function placeWithCountry(place: string, country: string): string {
@@ -44,11 +59,6 @@ export function placeWithCountry(place: string, country: string): string {
   if (!c) return p
   if (!p) return c
   return p.toLowerCase().includes(c.toLowerCase()) ? p : `${p}, ${c}`
-}
-
-/** A contract role (not an employee job): the board's own employment type says so, or the title does. */
-export function isContract(j: Pick<BoardJob, 'employmentType' | 'title'>): boolean {
-  return /contract/i.test(j.employmentType ?? '') || /\b(contract|contractor|freelance)\b/i.test(j.title)
 }
 
 /** What is searched: every site except the ones switched off; the paid ones only when the server has the key. */
@@ -147,10 +157,19 @@ export function groupByCompany(jobs: readonly AllJob[]): HiringCompany[] {
     g.roles.push(j)
     if (!g.sites.includes(j.siteName)) g.sites.push(j.siteName)
     if (j.job.location && !g.places.includes(j.job.location)) g.places.push(j.job.location)
-    g.remote ||= Boolean(j.job.isRemote)
+    g.remote ||= isRemote(j.job)
     g.contract ||= isContract(j.job)
     if (j.job.postedAt && (!g.newest || j.job.postedAt > g.newest)) g.newest = j.job.postedAt
     groups.set(key, g)
   })
   return [...groups.values()].sort((a, b) => b.roles.length - a.roles.length || firstSeen.get(a)! - firstSeen.get(b)!)
+}
+
+/** Results per source id from one search, for the source cards: a number, or null when the site did not answer. */
+export function siteCounts(feed: FeedSearchResult | undefined, boards: readonly { board: JobBoard; result: BoardSearchResult | Error }[]): Record<string, number | null> {
+  const out: Record<string, number | null> = {}
+  // The feed answer names sites by their display name ("We Work Remotely"); the cards use ids ("WeWorkRemotely").
+  for (const s of feed?.sites ?? []) out[SOURCES.find((x) => x.label === s.site || x.id === s.site)?.id ?? s.site] = s.status === 'Ready' ? s.matched : null
+  for (const b of boards) out[b.board] = b.result instanceof Error || b.result.status !== 'Ready' ? null : b.result.jobs.length
+  return out
 }

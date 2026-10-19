@@ -175,7 +175,7 @@ export function WellfoundPage() {
       </HowItWorks>
     </form>
 
-    {actionError && <ErrorNotice error={actionError} onRetry={() => setActionError(undefined)} what="the Wellfound action" />}
+    {actionError && <ErrorNotice error={actionError} onDismiss={() => setActionError(undefined)} what="the Wellfound action" />}
     {syncWarning && <p className="notice notice-warning" role="status">{syncWarning} <button className="btn btn-secondary btn-sm" type="button" onClick={syncPublic}>Try refresh again</button></p>}
 
     {jobs.data && jobs.data.length > 0 && <div className="results-head">

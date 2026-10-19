@@ -13,6 +13,7 @@ import { safeHref } from '../opportunities/opportunityModel'
 import type { Workspace } from '../shell/shellModel'
 import { hiringPostsUrl } from '../opportunities/reachPlan'
 import { BOARDS, campaignFromSearchPath, employmentLabel, recruiterSearchUrl, formatSalary, applyView, type BoardJob, type BoardSearchResult, type JobBoard, type ResultView } from './boardModel'
+import { isContract, isRemote } from './jobSignals'
 
 const SALES_STEPS = [
   'Click "Start a campaign from this search". The builder opens filled in; pick a Product or Services profile and save.',
@@ -190,7 +191,7 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
             <input type="checkbox" className="result-check" checked={picked.has(job.providerJobId)} onChange={() => toggle([job.providerJobId])} aria-label={`Select ${job.title} at ${job.companyName}`} />
             <div className="result-main">
               <a className="result-title" href={href} target="_blank" rel="noopener noreferrer">{job.title}<span className="sr-only"> (opens on {name} in a new tab)</span></a>
-              <div className="result-sub">{[job.companyName, job.location, job.isRemote ? 'Remote' : null, employmentLabel(job.employmentType)].filter(Boolean).join(' · ')}</div>
+              <div className="result-sub">{[job.companyName, job.location, isRemote(job) ? 'Remote' : null, employmentLabel(job.employmentType) ?? (isContract(job) ? 'Contract' : null)].filter(Boolean).join(' · ')}</div>
               {job.snippet ? <p className="result-snippet">{job.snippet}</p> : null}
             </div>
             <div className="result-side">

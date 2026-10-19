@@ -237,3 +237,10 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 - Tile = number badge (a tick when done) + label (+ amber count on Review). **Done** = the app's primary blue tint (`--op-step-done-*` alias the primary tokens), **current stage** = the navy tile of the app bar (`--op-stage-*`) with a 4px teal edge, the step the app recommends next (`currentStage`); **to do** = neutral grey. The page you are on gets a 2px primary outline (`aria-current="step"`).
 - Phones (860px or narrower): tiles show the icon only (names stay for screen readers); the bar is 40px. The progress bar runs blue to teal like the rest of v5.
 - Dark theme inverts the stage tile. Every colour pair is measured in `tokens.css`.
+
+## 21. Find: region picker and source cards (2026-10-19, J1–J3)
+
+- **Region first, then sites.** A `Region` select sits in the search bar before Country. Picking a region switches on only that region's sources (the rest are off, not hidden from the catalogue), preselects its country, and *Global remote* turns Remote only on. The person can still change any of them.
+- **Sites dropdown = source cards.** Inside the `Sites · n of m` popover each source is a small card (`.source-card`): checkbox + name, an access chip (`Free` → `chip-ok`, `Credits` → `chip-warn`, `Needs key` → plain `chip`), one line "Remote from the site/text · Contract from the site/text", and one line with the last search's count ("3 last search", "Did not answer last time", "Not searched yet"). Cards are grouped by access under a `legend`. A paid source without the server key is a disabled card that says why; never hidden silently.
+- **Sales defaults:** Contract only and Remote only start on in the Sales workspace and off for Candidate; both stay visible chips.
+- **Company table in Advanced only (Sales).** Columns: Company, Roles, Remote (Yes/No), Contract (Yes/No), Location, Sites, Links — inside `.table-card > .table-scroll` with `role="region"`, an `aria-label` and `tabIndex={0}` (T7). The simple view keeps the company cards.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { chosenSites, COUNTRIES, isContract, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, COUNTRIES, isContract, siteCounts, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -117,5 +117,19 @@ describe('country and contract (Sales markets)', () => {
     expect(isContract({ employmentType: 'CONTRACTOR', title: 'Dev' })).toBe(true)
     expect(isContract({ employmentType: null, title: 'Freelance React developer' })).toBe(true)
     expect(isContract({ employmentType: 'FULLTIME', title: 'Backend engineer' })).toBe(false)
+  })
+})
+
+describe('siteCounts', () => {
+  it('keys the feed by site id and marks failures as null', () => {
+    const counts = siteCounts(
+      { sites: [{ site: 'We Work Remotely', status: 'Ready', listed: 50, matched: 7, message: null, fromCache: false }, { site: 'Jobicy', status: 'Failed', listed: 0, matched: 0, message: 'x', fromCache: false }], jobs: [], observedAt: '' },
+      [{ board: 'LinkedIn', result: { board: 'LinkedIn', status: 'Ready', jobs: [job({}), job({})], providerResults: 2, message: null, observedAt: null, fromCache: false, source: 'x' } }, { board: 'Seek', result: new Error('down') }],
+    )
+    expect(counts).toEqual({ WeWorkRemotely: 7, Jobicy: null, LinkedIn: 2, Seek: null })
+  })
+  it('groups a remote role found only by its place as remote', () => {
+    const [c] = groupByCompany([{ site: 'x', siteName: 'x', job: job({ location: 'Remote (worldwide)' }) }])
+    expect(c.remote).toBe(true)
   })
 })
