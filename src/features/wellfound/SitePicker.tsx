@@ -66,6 +66,7 @@ export function SitePicker({ off, onChange, paidReady, region, counts }: Readonl
                       <span className="source-card-name">{s.label}</span>
                       <span className={`chip${s.access === 'Free' ? ' chip-ok' : s.access === 'Credits' ? ' chip-warn' : ''}`}>{s.access}</span>
                     </label>
+                    {s.kind && s.kind !== 'Job board' && <span className="muted-small">{s.kind === 'Data provider' ? 'Aggregator: the same job may also come from another site' : 'Freelance projects, not employee jobs'}</span>}
                     <span className="muted-small">Remote {coverageLabel(s.remote)} · Contract {coverageLabel(s.contract)}</span>
                     <span className="muted-small">{!ready ? 'Off: the server has no job-data key' : last === undefined ? 'Not searched yet' : last === null ? 'Did not answer last time' : `${last} last search`}</span>
                   </li>

@@ -20,6 +20,8 @@ export const REGIONS: readonly Region[] = [
 ]
 
 export type Access = 'Free' | 'Credits' | 'Needs key'
+/** Three lists, so the same vacancy from several APIs is recognised and every lead shows where it came from. */
+export type SourceKind = 'Job board' | 'Data provider' | 'Freelance marketplace'
 /**
  * Where remote / contract comes from today: the site's own field (Field), or our reading of the posting's title and text (Text,
  * see jobSignals.ts). The free feeds' own job-type fields are not mapped yet (TASKS S4), so they are Text until that lands.
@@ -36,6 +38,8 @@ export type Source = {
   contract: Coverage
   /** Paid board (JSearch / RapidAPI credits): only searchable when the server has the key. */
   paid: boolean
+  /** Job board by default; aggregators and freelance marketplaces are kept apart. */
+  kind?: SourceKind
 }
 
 export const SOURCES: readonly Source[] = [
@@ -49,8 +53,13 @@ export const SOURCES: readonly Source[] = [
   { id: 'HackerNews', label: 'HN Who is hiring', regions: ['global-remote', 'us-canada', 'europe'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
   { id: 'TheMuse', label: 'The Muse', regions: ['us-canada'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
   { id: 'Instahyre', label: 'Instahyre', regions: ['india'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
-  { id: 'Adzuna', label: 'Adzuna', regions: ['india', 'europe', 'uk', 'us-canada', 'anz', 'apac'], access: 'Needs key', remote: 'Text', contract: 'Text', paid: false },
-  { id: 'LinkedIn', label: 'LinkedIn', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac', 'global-remote'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true },
+  { id: 'Adzuna', label: 'Adzuna', regions: ['india', 'europe', 'uk', 'us-canada', 'anz', 'apac'], access: 'Needs key', remote: 'Text', contract: 'Text', paid: false, kind: 'Data provider' },
+  { id: 'Jooble', label: 'Jooble', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac'], access: 'Needs key', remote: 'Text', contract: 'Field', paid: false, kind: 'Data provider' },
+  { id: 'Careerjet', label: 'Careerjet', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac'], access: 'Needs key', remote: 'Text', contract: 'Text', paid: false, kind: 'Data provider' },
+  { id: 'Findwork', label: 'Findwork', regions: ['global-remote', 'us-canada', 'europe'], access: 'Needs key', remote: 'Field', contract: 'Field', paid: false },
+  { id: 'UsaJobs', label: 'USAJOBS', regions: ['us-canada'], access: 'Needs key', remote: 'Text', contract: 'Field', paid: false },
+  { id: 'Freelancer', label: 'Freelancer.com', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Field', paid: false, kind: 'Freelance marketplace' },
+  { id: 'LinkedIn', label: 'LinkedIn', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac', 'global-remote'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true, kind: 'Data provider' },
   { id: 'Indeed', label: 'Indeed', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true },
   { id: 'Seek', label: 'SEEK', regions: ['anz'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true },
   { id: 'Naukri', label: 'Naukri', regions: ['india'], access: 'Credits', remote: 'Text', contract: 'Text', paid: true },

@@ -20,7 +20,7 @@ Both are the same job: **find → score → shortlist → act → follow up.**
 
 | Step | Candidate workspace | Sales workspace |
 |---|---|---|
-| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, Hacker News "Who is hiring", The Muse, Instahyre, Adzuna), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; *why this lead* and *new since your last search* on each company; CSV export for Apollo |
+| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, Hacker News "Who is hiring", The Muse, Instahyre, Freelancer.com projects; with free keys: Adzuna, Jooble, Careerjet, Findwork, USAJOBS), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; *why this lead* and *new since your last search* on each company; CSV export for Apollo |
 | **Score** | Fit out of 100 with the evidence quoted from the posting (rules engine, no black box) | Lead score from hiring signals |
 | **Approve** | Batch approval queue; optional auto-approve above a score | Same, per company |
 | **Act** | Apply link, tailored resume (.docx), or the local desktop agent (stops at any login/CAPTCHA) | Drafted emails per lead, approve, send from Gmail/Outlook/SMTP, or export |
@@ -84,7 +84,7 @@ More: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Unit tests (Vitest) | `npm test` | 603 tests |
 | Build | `npm run build` | lazy-loaded routes; `docx` loaded only when a resume is exported |
 | Layout + accessibility | `npm run check:shell`, `npm run check:devices` | every route × 1280/1024/375 × light/dark, axe WCAG 2.1 AA 0 violations |
-| API | `dotnet test` in the API repo | 826 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
+| API | `dotnet test` in the API repo | 830 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
 
 ## Security and data honesty
 

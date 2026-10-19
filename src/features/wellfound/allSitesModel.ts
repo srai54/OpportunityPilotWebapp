@@ -25,6 +25,11 @@ export const FREE_SITES = [
   { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
   { id: 'Instahyre', label: 'Instahyre', note: 'India tech jobs' },
   { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
+  { id: 'Jooble', label: 'Jooble', note: '60+ countries (needs a server key)' },
+  { id: 'Careerjet', label: 'Careerjet', note: '90+ countries (needs a server key)' },
+  { id: 'Findwork', label: 'Findwork', note: 'Developer jobs (needs a server key)' },
+  { id: 'UsaJobs', label: 'USAJOBS', note: 'US federal (needs a server key)' },
+  { id: 'Freelancer', label: 'Freelancer.com', note: 'Freelance projects' },
 ] as const
 export const PAID_SITES = [
   { id: 'LinkedIn', label: 'LinkedIn' },

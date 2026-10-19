@@ -24,12 +24,12 @@ describe('source catalogue (J1, J2)', () => {
     expect(offForRegion('all').size).toBe(0)
   })
   it('groups by access and drops empty groups', () => {
-    expect(groupSources('middle-east').map((g) => g.title)).toEqual(['Uses credits'])
+    expect(groupSources('middle-east').map((g) => g.title)).toEqual(['Needs a server key', 'Uses credits'])
     expect(groupSources('all').map((g) => g.title)).toEqual(['Free', 'Needs a server key', 'Uses credits'])
   })
   it('says when a region has nothing to search without the job-data key', () => {
-    expect(regionHasNoReadySource('middle-east', false)).toBe(true)
-    expect(regionHasNoReadySource('middle-east', true)).toBe(false)
+    // The Middle East now has Jooble and Careerjet (keys on the server) next to the credit boards.
+    expect(regionHasNoReadySource('middle-east', false)).toBe(false)
     expect(regionHasNoReadySource('india', false)).toBe(false)
   })
   it('Global remote turns Remote only on and India preselects India', () => {
