@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { api } from '../../lib/api'
 import type { BatchApproveDraftResult, Campaign, DraftPage, OpportunityPage, ProfileSummary, ResearchJob } from '../../lib/types'
-import { campaignPayload, newDraft, quickSourceBodies, suggestedMode } from '../campaigns/campaignModel'
+import { campaignPayload, newDraft, quickSourceBodies, salesBoardFor, suggestedMode } from '../campaigns/campaignModel'
 import type { Mailbox } from '../mail/mailModel'
 import type { BatchSendResult } from '../outreach/sendAll'
 import { isEcho, isYes, speak, voiceEpoch, type AssistantAction, type AssistantReply } from './assistantModel'
@@ -120,7 +120,7 @@ export async function launch(query: string, location: string | null, days: numbe
   draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
   const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: profile.id, mode, ...campaignPayload(draft, mode), autoApproveMinScore: GOOD_MATCH }) })
   remember(campaign.id)
-  await Promise.all(quickSourceBodies(sales ? 'LinkedIn' : 'FreeFeeds', '').map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
+  await Promise.all(quickSourceBodies(sales ? salesBoardFor(location) : 'FreeFeeds', '').map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
   const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
   set({ steps: steps(labels, 1), progress: 20 })
   for (let i = 0; i < 180; i++) {

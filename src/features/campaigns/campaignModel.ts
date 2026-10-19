@@ -377,6 +377,13 @@ export function quickSourceBodies(choice: string, boardToken: string): { kind: s
   return [{ kind: 'JobSearch', url: choice }]
 }
 
+const AU_NZ = /\b(australia|sydney|melbourne|brisbane|perth|adelaide|canberra|hobart|darwin|gold coast|newcastle|nsw|vic|qld|new zealand|auckland|wellington|christchurch)\b/i
+
+/** The live board a voice or quick Sales search uses: SEEK (read directly) for Australia and New Zealand, LinkedIn elsewhere. */
+export function salesBoardFor(location: string | null | undefined): 'Seek' | 'LinkedIn' {
+  return location && AU_NZ.test(location) ? 'Seek' : 'LinkedIn'
+}
+
 export type SearchBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri'
 export const SEARCH_BOARDS: { value: SearchBoard; label: string }[] = [
   { value: 'Indeed', label: 'Indeed' },

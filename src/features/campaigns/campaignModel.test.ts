@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  salesBoardFor,
   quickSourceBodies, stoppable, repeatLabel,
   cadenceLabel,
   modeCopy,
@@ -345,5 +346,15 @@ describe('stoppable', () => {
     expect(r.runs).toHaveLength(1)
     expect(r.repeating.map((s) => s.id)).toEqual(['s1'])
     expect(stoppable([], [])).toEqual({ runs: [], repeating: [] })
+  })
+})
+
+describe('salesBoardFor', () => {
+  it('uses SEEK for Australia and New Zealand, LinkedIn elsewhere', () => {
+    expect(salesBoardFor('Sydney')).toBe('Seek')
+    expect(salesBoardFor('Melbourne VIC')).toBe('Seek')
+    expect(salesBoardFor('Auckland')).toBe('Seek')
+    expect(salesBoardFor('Berlin')).toBe('LinkedIn')
+    expect(salesBoardFor(null)).toBe('LinkedIn')
   })
 })
