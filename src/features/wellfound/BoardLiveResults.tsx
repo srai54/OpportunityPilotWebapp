@@ -88,9 +88,17 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
   }
 
   if (!path) return null
-  if (first.error) return <ErrorNotice error={first.error} onRetry={first.reload} what={`live ${name} jobs`} />
-  if (!first.data) return <LoadingState label={`Fetching live ${name} jobs…`} waking={first.waking} />
-  const r = live ?? first.data
+  // A failed or blocked live search (e.g. guests, who may not use paid searches) still offers the saved results.
+  if (first.error && !saved) return <div className="stack-2">
+    <ErrorNotice error={first.error} onRetry={first.reload} what={`live ${name} jobs`} />
+    {savedList.length > 0 && <div className="row wrap" role="group" aria-label="Saved results">
+      <span className="muted-small">Saved results (no search used):</span>
+      {savedList.map((s) => <button key={`${s.query}|${s.location}|${s.savedAt}`} type="button" className="btn btn-secondary btn-sm" onClick={() => setSaved(s)}>
+        {s.query}{s.location ? ` · ${s.location}` : ''} · {new Date(s.savedAt).toLocaleDateString()} ({s.jobs.length})</button>)}
+    </div>}
+  </div>
+  if (!live) return <LoadingState label={`Fetching live ${name} jobs…`} waking={first.waking} />
+  const r = live
   const last = saved ? r : pages.at(-1) ?? r
   const savedChoices = savedList.length > 0 && <div className="row wrap" role="group" aria-label="Saved results">
     <span className="muted-small">Saved results (no search used):</span>
