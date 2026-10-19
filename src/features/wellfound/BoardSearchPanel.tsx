@@ -4,6 +4,7 @@ import { HowItWorks } from '../../components/HowItWorks'
 import { useShell } from '../shell/ShellContext'
 import type { Workspace } from '../shell/shellModel'
 import { BoardLiveResults } from './BoardLiveResults'
+import { savedSearches, savedWhen, type SavedSearch } from './savedResults'
 import { BOARDS, COUNTRIES, NO_VIEW, boardJobsPath, type JobBoard, type ResultView } from './boardModel'
 
 function terms(value: string) {
@@ -28,6 +29,10 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
   const { advanced } = useShell()
   const [moreOpen, setMoreOpen] = useState(advanced)
   const [livePath, setLivePath] = useState<string | null>(null)
+  // Live search uses a credit; Already searched opens an earlier search of this board for free (date and time shown).
+  const [mode, setMode] = useState<'live' | 'saved'>('live')
+  const [openSaved, setOpenSaved] = useState<SavedSearch | null>(null)
+  const saved = savedSearches(board)
 
   const query = useMemo(() => {
     const parts = [keywords.trim(), ...terms(techStack), company.trim(), workMode === 'remote' ? '' : workMode]
@@ -55,6 +60,10 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
     <RoleList />
     <form className="search-hero" onSubmit={submit} aria-label={`Search ${info.name}`}>
       {tabs}
+      <div className="segmented" role="group" aria-label="Results">
+        <button type="button" className={mode === 'live' ? 'active' : ''} aria-pressed={mode === 'live'} onClick={() => { setMode('live'); setOpenSaved(null) }}>Live search</button>
+        <button type="button" className={mode === 'saved' ? 'active' : ''} aria-pressed={mode === 'saved'} onClick={() => { setMode('saved'); setOpenSaved(null) }}>Already searched ({saved.length})</button>
+      </div>
       <div className="search-bar" data-coach="find-search">
         <label className="search-field search-field-main"><span className="sr-only">{workspace === 'candidate' ? 'Role or keywords' : 'Hiring role or demand signal'}</span>
           <input list={ROLE_LIST_ID} value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder={workspace === 'candidate' ? 'Role or keywords, e.g. .NET developer' : 'Role companies are hiring, e.g. React developer'} /></label>
@@ -95,7 +104,16 @@ export function BoardSearchPanel({ board, workspace, tabs }: { board: JobBoard; 
       </HowItWorks>
     </form>
 
-    {livePath ? <BoardLiveResults key={livePath} board={board} path={livePath} searchUrl={searchUrl} workspace={workspace} query={query} location={location} view={view} />
+    {mode === 'saved' ? (openSaved
+      ? <BoardLiveResults key={`saved-${openSaved.savedAt}`} board={board} path={null} initialSaved={openSaved} searchUrl={searchUrl} workspace={workspace} query={openSaved.query} location={openSaved.location} view={view} />
+      : <section className="stack-2" aria-label={`Already searched on ${info.name}`}>
+        {saved.length === 0 ? <p className="muted-small search-hint">No earlier {info.name} searches yet. Each live search that finds jobs is kept here.</p>
+          : <ul className="saved-list">{saved.map((s) => <li key={`${s.query}|${s.location}|${s.savedAt}`}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOpenSaved(s)}>
+              <strong>{s.query}</strong>{s.location ? ` · ${s.location}` : ''} · {savedWhen(s.savedAt)} · {s.jobs.length} job{s.jobs.length === 1 ? '' : 's'}{s.builtIn ? ' · sample' : ''}
+            </button></li>)}</ul>}
+      </section>)
+    : livePath ? <BoardLiveResults key={livePath} board={board} path={livePath} searchUrl={searchUrl} workspace={workspace} query={query} location={location} view={view} />
       : <p className="muted-small search-hint">{workspace === 'candidate' ? `Type a role and press Search to see live ${info.name} jobs.` : `Type a role and press Search to see which companies are hiring on ${info.name}.`}</p>}
   </>
 }

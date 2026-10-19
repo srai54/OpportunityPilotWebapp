@@ -276,8 +276,8 @@ Chosen at build time in `src/features/auth/AuthProvider.tsx`:
 |---|---|
 | Designs (visual reference, not routing) | `../opportunitypilot-ui/*.dc.html`, `../opportunitypilot-ui/README.md` |
 | Design tokens | `../opportunitypilot-ui/tokens.css` → copied verbatim to `src/styles/tokens.css` (identical on 2026-10-05) |
-| API contract — research, campaigns, sources, opportunities, agent | `../OpportunityPilotWebApi/docs/RESEARCH_CONTRACT.md` (built) |
-| API contract — Gemini, drafts, suppression, activities, follow-ups | `../OpportunityPilotWebApi/docs/M4_M5_CONTRACT.md` (CoverNote drafts built; remaining slices not built) |
+| API contract — every built endpoint | `../OpportunityPilotWebApi/docs/api-contracts.md` |
+| Earlier slice specs (some not built) | `../OpportunityPilotWebApi/docs/feature-contracts.md` |
 | API contract — sales projects, bids, tenders and proposal drafts | `../OpportunityPilotWebApi/docs/SALES_CONTRACT.md` (manual project/bid/approve API built; provider feeds, drafts and UI remain) |
 | API contract — candidate phase 1: Greenhouse / Lever / Adzuna sources, `Suggested` status, approval queue | `../OpportunityPilotWebApi/docs/CANDIDATE_PHASE1_CONTRACT.md` (web built 2026-10-05; API built in parallel) |
 | API implementation status and decisions | `../OpportunityPilotWebApi/docs/IMPLEMENTATION_STATUS.md`, `../OpportunityPilotWebApi/docs/DECISIONS.md` |

@@ -29,16 +29,17 @@ const CANDIDATE_STEPS = [
 ]
 
 import { runAction } from '../voice/voiceFlow'
-import { asResult, saveSearch, savedSearches, type SavedSearch } from './savedResults'
+import { asResult, saveSearch, savedSearches, savedWhen, type SavedSearch } from './savedResults'
 
-type Props = Readonly<{ board: JobBoard; path: string | null; searchUrl: string; workspace: Workspace; query: string; location: string; view: ResultView }>
+type Props = Readonly<{ board: JobBoard; path: string | null; searchUrl: string; workspace: Workspace; query: string; location: string; view: ResultView; initialSaved?: SavedSearch | null }>
 
 /** Live postings from one job board (through the licensed JSearch aggregator). Read-only; each card links to the board. */
-export function BoardLiveResults({ board, path, searchUrl, workspace, query, location, view }: Props) {
-  const first = useApi<BoardSearchResult>(path)
+export function BoardLiveResults({ board, path, searchUrl, workspace, query, location, view, initialSaved = null }: Props) {
+  // An already-searched result opens without calling the board (no credit used).
+  const first = useApi<BoardSearchResult>(initialSaved ? null : path)
   const name = BOARDS[board].name
   // Saved results: a live search that found jobs is kept in this browser; when the board fails or finds nothing, saved ones can be shown.
-  const [saved, setSaved] = useState<SavedSearch | null>(null)
+  const [saved, setSaved] = useState<SavedSearch | null>(initialSaved)
   useEffect(() => { if (first.data && !first.data.fromCache) saveSearch(board, query, location, first.data) }, [first.data, board, query, location])
   const savedList = savedSearches(board)
   const live = saved ? asResult(saved) : first.data
@@ -87,14 +88,14 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
     } catch (e) { setBulkError(e as Error) } finally { setBulkBusy('') }
   }
 
-  if (!path) return null
+  if (!path && !saved) return null
   // A failed or blocked live search (e.g. guests, who may not use paid searches) still offers the saved results.
   if (first.error && !saved) return <div className="stack-2">
     <ErrorNotice error={first.error} onRetry={first.reload} what={`live ${name} jobs`} />
     {savedList.length > 0 && <div className="row wrap" role="group" aria-label="Saved results">
       <span className="muted-small">Saved results (no search used):</span>
       {savedList.map((s) => <button key={`${s.query}|${s.location}|${s.savedAt}`} type="button" className="btn btn-secondary btn-sm" onClick={() => setSaved(s)}>
-        {s.query}{s.location ? ` · ${s.location}` : ''} · {new Date(s.savedAt).toLocaleDateString()} ({s.jobs.length})</button>)}
+        {s.query}{s.location ? ` · ${s.location}` : ''} · {savedWhen(s.savedAt)} ({s.jobs.length})</button>)}
     </div>}
   </div>
   if (!live) return <LoadingState label={`Fetching live ${name} jobs…`} waking={first.waking} />
@@ -103,7 +104,7 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
   const savedChoices = savedList.length > 0 && <div className="row wrap" role="group" aria-label="Saved results">
     <span className="muted-small">Saved results (no search used):</span>
     {savedList.map((s) => <button key={`${s.query}|${s.location}|${s.savedAt}`} type="button" className="btn btn-secondary btn-sm" onClick={() => setSaved(s)}>
-      {s.query}{s.location ? ` · ${s.location}` : ''} · {new Date(s.savedAt).toLocaleDateString()} ({s.jobs.length})</button>)}
+      {s.query}{s.location ? ` · ${s.location}` : ''} · {savedWhen(s.savedAt)} ({s.jobs.length})</button>)}
   </div>
   const cursor = last.nextCursor ?? null
   if (r.status !== 'Ready') {
@@ -127,9 +128,9 @@ export function BoardLiveResults({ board, path, searchUrl, workspace, query, loc
   return <section aria-label={`Live ${name} jobs`} className="stack-3">
     <div className="results-head">
       <h3 className="results-title">{shown.length} {saved ? 'saved' : 'live'} {name} job{shown.length === 1 ? '' : 's'}</h3>
-      {saved ? <Badge tone="neutral">Saved {new Date(saved.savedAt).toLocaleDateString()} · not live</Badge> : <Badge tone="success">Live</Badge>}
+      {saved ? <Badge tone="neutral">Searched {savedWhen(saved.savedAt)} · not live</Badge> : <Badge tone="success">Live</Badge>}
       <span className="grow" />
-      {saved ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSaved(null)}>Back to live results</button>
+      {saved ? (path ? <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSaved(null)}>Back to live results</button> : null)
         : <span className="muted-small">Retrieved {observed}{r.fromCache ? ' (cached, no search used)' : ''}{left != null ? ` · ${left} searches left` : ''}</span>}
     </div>
     {saved && <p className="muted-small">Saved from a real {name} search for “{saved.query}”{saved.location ? ` in ${saved.location}` : ''} on {new Date(saved.savedAt).toLocaleString()}. Jobs may have closed since.</p>}

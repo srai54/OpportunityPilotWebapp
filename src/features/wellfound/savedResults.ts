@@ -35,6 +35,12 @@ export function savedSearches(board: JobBoard): SavedSearch[] {
   return [...read(board), ...(builtIn ? [builtIn] : [])]
 }
 
+/** When a search was made, with date and time ("19 Oct 2026, 1:00 pm"). */
+export function savedWhen(iso: string): string {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
 /** A saved search as a board result, so the normal result list can show it. */
 export function asResult(s: SavedSearch): BoardSearchResult {
   return { board: s.board, status: 'Ready', jobs: s.jobs, providerResults: s.jobs.length, message: null, observedAt: s.savedAt, fromCache: true, source: 'saved', quotaRemaining: null, nextCursor: null }
