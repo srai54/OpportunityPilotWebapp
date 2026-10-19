@@ -123,3 +123,9 @@ export function readyChecks(channel: DraftChannel, d: { recipient: string; subje
   if (channel === 'LinkedInMessage') checks.push({ field: 'body', label: 'Under 300 characters', ok: d.body.length <= 300, fix: 'Shorten it — LinkedIn cuts connection notes at 300 characters.' })
   return checks
 }
+
+/** One message at a time (OP-206): where the open message sits in the list on screen, and its neighbours. */
+export function pagerOf(ids: readonly string[], current: string | undefined): { index: number; total: number; prev: string | null; next: string | null } {
+  const i = current ? ids.indexOf(current) : -1
+  return { index: i, total: ids.length, prev: i > 0 ? ids[i - 1] : null, next: i >= 0 && i < ids.length - 1 ? ids[i + 1] : null }
+}

@@ -13,7 +13,7 @@ import { bulkFromSearch } from './bulkFromSearch'
 import { runAction } from '../voice/voiceFlow'
 import type { ProfileSummary } from '../../lib/types'
 import type { Workspace } from '../shell/shellModel'
-import { chosenSites, companiesCsv, COUNTRIES, COUNTRY_GROUPS, feedsPath, isContract, isRemote, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteCounts, siteLines, type FeedSearchResult } from './allSitesModel'
+import { chosenSites, companiesCsv, companyMemoryKey, newSince, whyLead, COUNTRIES, COUNTRY_GROUPS, feedsPath, isContract, isRemote, placeWithCountry, groupByCompany, mentionsVisaOrRelocation, mergeAll, siteCounts, siteLines, type FeedSearchResult } from './allSitesModel'
 import { offForRegion, REGIONS, type RegionId } from './sourcesModel'
 import { useShell } from '../shell/ShellContext'
 import { saveBlob, safeFilename } from '../../lib/download'
@@ -43,6 +43,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const [contractOnly, setContractOnly] = useState(sales)
   const [busy, setBusy] = useState(false)
   const [found, setFound] = useState<Found>()
+  const [last, setLast] = useState<{ at: string; keys: string[] } | null>(null)
   // Switching workspace resets the defaults (state adjusted during render, not in an effect).
   const [defaultsFor, setDefaultsFor] = useState(sales)
   if (defaultsFor !== sales) { setDefaultsFor(sales); setRemoteOnly(sales); setContractOnly(sales) }
@@ -77,6 +78,16 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
       }),
     ]) as [FeedSearchResult | Error, ...{ board: JobBoard; result: BoardSearchResult | Error }[]]
     setFound({ query: query.trim(), location: place.trim(), feed, boards })
+    // "New since your last search" (per browser): remember which companies this search found, compare next time.
+    const memo = `op.lastSearch.${region}.${place.trim().toLowerCase()}.${query.trim().toLowerCase()}`
+    const okFeed = feed instanceof Error ? [] : feed.jobs
+    const okBoards = boards.flatMap((b) => (b.result instanceof Error || b.result.status !== 'Ready') ? [] : [{ board: b.board, jobs: b.result.jobs }])
+    const keys = groupByCompany(mergeAll(okFeed, okBoards, query)).map((c) => companyMemoryKey(c.company))
+    try {
+      const old = JSON.parse(localStorage.getItem(memo) ?? 'null') as { at: string; keys: string[] } | null
+      setLast(old && Array.isArray(old.keys) ? old : null)
+      localStorage.setItem(memo, JSON.stringify({ at: new Date().toISOString(), keys }))
+    } catch { setLast(null) }
     setBusy(false)
   }
 
@@ -102,6 +113,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
   const shown = contractOnly ? afterVisa.filter((m) => isContract(m.job)) : afterVisa
   // Sales looks for companies that are hiring, not for a job: one row per company with its open roles.
   const companies = sales ? groupByCompany(shown) : []
+  const fresh = newSince(companies, last?.keys ?? null)
   const count = sales ? companies.length : shown.length
   const noun = sales ? (count === 1 ? 'company hiring' : 'companies hiring') : (count === 1 ? 'job' : 'jobs')
 
@@ -136,7 +148,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
       {found.feed instanceof Error && <ErrorNotice error={found.feed} what="the free job feeds" />}
       <Card tone="muted" title={`${count} ${noun} for “${found.query}”${found.location ? ` in ${found.location}` : ''}`}
         subtitle={visaOnly ? `Only postings whose text mentions visa sponsorship, a work permit or relocation (${merged.length - shown.length} hidden). Best title matches first.`
-          : sales ? `From ${shown.length} postings, grouped by company; companies hiring for more of these roles first. Turn them into leads to score them and find who to contact.`
+          : sales ? `From ${shown.length} postings, grouped by company; companies hiring for more of these roles first.${last ? ` ${fresh.size} new since your last search (${new Date(last.at).toLocaleDateString()}).` : ''} Turn them into leads to score them and find who to contact.`
           : 'Best title matches first, then newest. The same job on two sites is shown once.'}
         actions={shown.length > 0 ? <button type="button" className="btn btn-primary btn-sm" data-coach="find-campaign" disabled={Boolean(adding) || !profiles.data} onClick={() => void addShown()}>{adding || (sales ? `Turn ${Math.min(companies.length, 40)} into leads and write emails` : `Track these ${Math.min(shown.length, 40)} jobs`)}</button> : undefined}>
         <ul className="site-lines" aria-label="What each site returned">
@@ -181,7 +193,9 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
               <div className="lead-main">
                 <h3 className="lead-title">{c.company}</h3>
                 <p className="lead-meta">{c.roles.length} open role{c.roles.length === 1 ? '' : 's'}: {titles.slice(0, 3).join(', ')}{titles.length > 3 ? ` and ${titles.length - 3} more` : ''}</p>
+                {whyLead(c).length > 0 && <p className="lead-why"><strong>Why this lead:</strong> {whyLead(c).join(' · ')}</p>}
                 <div className="lead-tags">
+                  {fresh.has(companyMemoryKey(c.company)) && <span className="chip chip-ok">New</span>}
                   {c.sites.map((site) => <span key={site} className="chip chip-site">{site}</span>)}
                   {c.remote && <span className="chip">Remote</span>}
                   {c.contract && <span className="chip">Contract</span>}
@@ -197,7 +211,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
           })}
         </CardList>
         : <CardList label="Jobs from all sites">
-          {shown.slice(0, 80).map(({ site, siteName, job }) => {
+          {shown.slice(0, 80).map(({ site, siteName, job, alsoOn }) => {
             const href = safeHref(job.boardUrl) ?? undefined
             const salary = formatSalary(job)
             return <li key={`${site}:${job.providerJobId}`} className="ccard lead-card result-lite">
@@ -208,6 +222,7 @@ export function AllSitesPanel({ workspace, tabs }: Readonly<{ workspace: Workspa
                 <p className="lead-meta">{[job.companyName, job.location, employmentLabel(job.employmentType)].filter(Boolean).join(' · ')}</p>
                 <div className="lead-tags">
                   <span className="chip chip-site">{siteName}</span>
+                  {alsoOn?.map((o) => <span key={o} className="chip chip-site">{o}</span>)}
                   {isRemote(job) && <span className="chip">Remote</span>}
                   {isContract(job) && <span className="chip">Contract</span>}
                   {salary && <span className="chip">{salary}</span>}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { chosenSites, companiesCsv, COUNTRIES, isContract, siteCounts, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, companiesCsv, newSince, whyLead, COUNTRIES, isContract, siteCounts, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -74,7 +74,7 @@ describe('siteLines', () => {
 
 describe('site choice', () => {
   it('lists the free sites and five search sites (with Naukri and Instahyre) and searches all unless some are off', () => {
-    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'WorkingNomads', 'TheMuse', 'Instahyre', 'Adzuna'])
+    expect(FREE_SITES.map((s) => s.id)).toEqual(['Arbeitnow', 'Jobicy', 'WeWorkRemotely', 'Remotive', 'RemoteOk', 'Himalayas', 'WorkingNomads', 'HackerNews', 'TheMuse', 'Instahyre', 'Adzuna'])
     expect(PAID_SITES.map((s) => s.id)).toEqual(['LinkedIn', 'Indeed', 'Seek', 'Naukri'])
     expect(chosenSites(new Set(), true)).toEqual({ free: FREE_SITES.map((s) => s.id), paid: ['LinkedIn', 'Indeed', 'Seek', 'Naukri'] })
     expect(chosenSites(new Set(['Jobicy', 'Indeed']), true)).toMatchObject({ paid: ['LinkedIn', 'Seek', 'Naukri'] })
@@ -142,5 +142,29 @@ describe('companiesCsv (U3, Apollo import)', () => {
     expect(head).toBe('"Company Name","Job Titles","Open Roles","Remote","Contract","Locations","Found On","Job Posting URL","Newest Posting"')
     expect(row).toContain(`"'=HYPERLINK(""x"")"`)
     expect(row).toContain('"Contract ""React"" dev","1","No","Yes","Berlin","Jobicy","https://x.test/1"')
+  })
+})
+
+describe('whyLead and newSince', () => {
+  it('explains a lead only from its postings', () => {
+    const [c] = groupByCompany([
+      { site: 'a', siteName: 'Jobicy', job: job({ providerJobId: '1', title: 'Contract React dev', isRemote: true, postedAt: '2026-10-17T00:00:00Z' }) },
+      { site: 'b', siteName: 'LinkedIn', job: job({ providerJobId: '2', title: 'Go dev', postedAt: '2026-10-10T00:00:00Z' }) },
+    ])
+    expect(whyLead(c, new Date('2026-10-19T12:00:00Z'))).toEqual(['2 open roles', 'a contract role', 'remote', 'posted 2 days ago', 'on 2 sites'])
+  })
+  it('marks companies that were not in the last search for the same words', () => {
+    const cs = groupByCompany([{ site: 'a', siteName: 'A', job: job({ companyName: 'Acme Inc' }) }, { site: 'a', siteName: 'A', job: job({ providerJobId: '2', companyName: 'Globex' }) }])
+    expect([...newSince(cs, ['acme'])]).toEqual(['globex'])
+    expect(newSince(cs, null).size).toBe(0)
+  })
+})
+
+describe('mergeAll also-on badges (U1)', () => {
+  it('shows a posting once and lists the other sites it was on', () => {
+    const merged = mergeAll([fj('Jobicy', { providerJobId: 'f1' })], [{ board: 'LinkedIn', jobs: [job({ providerJobId: 'l1' })] }, { board: 'Indeed', jobs: [job({ providerJobId: 'i1' })] }])
+    expect(merged).toHaveLength(1)
+    expect(merged[0].alsoOn).toEqual(['LinkedIn', 'Indeed'])
+    expect(groupByCompany(merged)[0].sites).toEqual(['Jobicy', 'LinkedIn', 'Indeed'])
   })
 })

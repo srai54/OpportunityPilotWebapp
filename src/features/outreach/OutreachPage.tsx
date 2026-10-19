@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { composerTarget, MAIL_APPS, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
+import { composerTarget, MAIL_APPS, pagerOf, readMailApp, readyChecks, writeMailApp, type MailApp } from './composer'
 import { useShell } from '../shell/ShellContext'
 import { ContactFinder } from './ContactFinder'
 import { PrepareEmailsCard } from './PrepareEmailsCard'
@@ -56,6 +56,7 @@ export function OutreachPage() {
 
   const [params] = useSearchParams()
   const wanted = params.get('draft')
+  const pager = pagerOf(filtered.map((d) => d.id), selected?.id)
   const firstId = (wanted && filtered.some((d) => d.id === wanted) ? wanted : null) ?? filtered[0]?.id
   useEffect(() => {
     if (!selected && firstId) void open({ id: firstId })
@@ -295,6 +296,12 @@ export function OutreachPage() {
         </section>
 
         <div className="stack-3">
+          {selected && pager.total > 1 && pager.index >= 0 && <nav className="row wrap outreach-pager" aria-label="One message at a time">
+            <strong>Message {pager.index + 1} of {pager.total}</strong><span className="grow" />
+            <button type="button" className="btn btn-ghost btn-sm" disabled={!pager.prev} onClick={() => pager.prev && void open({ id: pager.prev })}>‹ Previous</button>
+            <button type="button" className="btn btn-ghost btn-sm" disabled={!pager.next} onClick={() => pager.next && void open({ id: pager.next })}>Skip</button>
+            <button type="button" className="btn btn-secondary btn-sm" disabled={!pager.next} onClick={() => pager.next && void open({ id: pager.next })}>Next ›</button>
+          </nav>}
           {!selected ? <Card tone="muted"><p className="muted">Choose a message to review it.</p></Card> : <>
             <Card
               title={selected.channel === 'LinkedInMessage' ? 'LinkedIn note' : selected.channel === 'Email' ? 'Email' : selected.channel === 'CoverNote' ? 'Cover note' : 'Contact form message'}

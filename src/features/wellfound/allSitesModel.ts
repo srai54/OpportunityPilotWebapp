@@ -10,7 +10,7 @@ export type FeedJob = { site: string; siteName: string; job: BoardJob }
 export type FeedSearchResult = { sites: FeedSiteStatus[]; jobs: FeedJob[]; observedAt: string }
 
 /** One row of the merged list: the posting, and the site it came from. */
-export type AllJob = { site: string; siteName: string; job: BoardJob }
+export type AllJob = { site: string; siteName: string; job: BoardJob; /** Other sites with the same posting (U1: shown once, with every site's badge). */ alsoOn?: string[] }
 
 /** Every site "All sites" can read. Free ones need no key; the paid ones go through JSearch and use the monthly allowance. */
 export const FREE_SITES = [
@@ -21,6 +21,7 @@ export const FREE_SITES = [
   { id: 'RemoteOk', label: 'Remote OK', note: 'Remote' },
   { id: 'Himalayas', label: 'Himalayas', note: 'Remote, worldwide' },
   { id: 'WorkingNomads', label: 'Working Nomads', note: 'Remote, worldwide' },
+  { id: 'HackerNews', label: 'HN Who is hiring', note: 'Monthly thread, many remote and contract roles' },
   { id: 'TheMuse', label: 'The Muse', note: 'US and worldwide' },
   { id: 'Instahyre', label: 'Instahyre', note: 'India tech jobs' },
   { id: 'Adzuna', label: 'Adzuna', note: 'India, UK, US and more (needs server keys)' },
@@ -105,13 +106,18 @@ export function relevance(j: Pick<BoardJob, 'title' | 'companyName' | 'snippet'>
  * job from a paid board; best title matches first, then newest.
  */
 export function mergeAll(feed: readonly FeedJob[], boards: readonly { board: JobBoard; jobs: readonly BoardJob[] }[], query = ''): AllJob[] {
-  const seen = new Set<string>()
+  const seen = new Map<string, AllJob>()
   const all: AllJob[] = []
   const push = (site: string, siteName: string, job: BoardJob) => {
     const key = dedupeKey(job)
-    if (seen.has(key)) return
-    seen.add(key)
-    all.push({ site, siteName, job })
+    const first = seen.get(key)
+    if (first) {
+      if (first.siteName !== siteName && !(first.alsoOn ?? []).includes(siteName)) first.alsoOn = [...(first.alsoOn ?? []), siteName]
+      return
+    }
+    const row: AllJob = { site, siteName, job }
+    seen.set(key, row)
+    all.push(row)
   }
   for (const f of feed) push(f.site, f.siteName, f.job)
   for (const b of boards) for (const j of b.jobs) push(b.board, b.board === 'Seek' ? 'SEEK' : b.board, j)
@@ -156,7 +162,7 @@ export function groupByCompany(jobs: readonly AllJob[]): HiringCompany[] {
     let g = groups.get(key)
     if (!g) { g = { company: name, roles: [], sites: [], places: [], remote: false, contract: false, newest: null }; firstSeen.set(g, i) }
     g.roles.push(j)
-    if (!g.sites.includes(j.siteName)) g.sites.push(j.siteName)
+    for (const s of [j.siteName, ...(j.alsoOn ?? [])]) if (!g.sites.includes(s)) g.sites.push(s)
     if (j.job.location && !g.places.includes(j.job.location)) g.places.push(j.job.location)
     g.remote ||= isRemote(j.job)
     g.contract ||= isContract(j.job)
@@ -192,4 +198,32 @@ export function companiesCsv(companies: readonly HiringCompany[]): string {
     c.places.join('; '), c.sites.join('; '), c.roles[0]?.job.boardUrl ?? '', c.newest ? c.newest.slice(0, 10) : '',
   ])
   return [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'
+}
+
+/**
+ * "Why this lead" (rules, no AI): the facts on the postings that make a hiring company worth contacting for a staffing team.
+ * Every reason comes from the postings themselves; nothing is guessed.
+ */
+export function whyLead(c: HiringCompany, now: Date = new Date()): string[] {
+  const out: string[] = []
+  const contractRoles = c.roles.filter((r) => isContract(r.job)).length
+  if (c.roles.length > 1) out.push(`${c.roles.length} open roles`)
+  if (contractRoles > 0) out.push(contractRoles === 1 ? 'a contract role' : `${contractRoles} contract roles`)
+  if (c.remote) out.push('remote')
+  if (c.newest) {
+    const days = Math.floor((now.getTime() - Date.parse(c.newest)) / 86_400_000)
+    if (days >= 0 && days <= 14) out.push(days === 0 ? 'posted today' : `posted ${days} day${days === 1 ? '' : 's'} ago`)
+  }
+  if (c.sites.length > 1) out.push(`on ${c.sites.length} sites`)
+  return out
+}
+
+/** The key a company is remembered by between searches (same rule as grouping). */
+export const companyMemoryKey = (name: string) => companyKey(name) || name.toLowerCase()
+
+/** Companies in this search that were not in the last one for the same words; all of them when there was no last search. */
+export function newSince(companies: readonly HiringCompany[], previous: readonly string[] | null): Set<string> {
+  if (!previous) return new Set()
+  const seen = new Set(previous)
+  return new Set(companies.map((c) => companyMemoryKey(c.company)).filter((k) => !seen.has(k)))
 }
