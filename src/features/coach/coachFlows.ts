@@ -8,7 +8,7 @@ export const COACH_FLOWS: CoachFlow[] = [
   {
     id: 'overview', label: 'Home',
     steps: [
-      { target: 'journey', title: 'Your path, in five steps', body: 'A tick means done. The step tagged Next is what to do now. Click any step to jump there. Guide (top right) turns these tips off.' },
+      { target: 'journey', title: 'Your path, in five steps', body: 'A tick means done. The dark step is what to do now. Click any step to jump there. Guide (top right) turns these tips off.' },
       { target: 'start-card', title: 'Do this next', body: 'The highlighted step has one button. Press it — you never need to hunt through menus.' },
       { target: 'ws-toggle', title: 'Looking for a job, or for customers?', body: 'Candidate finds roles for you. Sales finds companies that are hiring, to sell to. Same five steps, different words.',
         sales: { body: 'Sales finds companies that are hiring, to sell to. Candidate finds roles for you. Same five steps, different words.' } },

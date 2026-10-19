@@ -220,7 +220,7 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 
 ## 18. v5 — colour, header, footer, progress and voice (2026-10-15)
 - **Colour:** primary is the industry SaaS blue `#2563eb` (5.2:1 on white; hover `#1d4ed8`), dark mode `#60a5fa`. Progress fills run blue → teal. Status colours keep words or icons beside them.
-- **Header:** one 52px bar. A mic button (`voice-launch`) sits before help; on phones a round 56px mic button floats bottom-right.
+- **Header:** one 60px bar (v5; `check:shell` fails above 60px or on wrap). A mic button (`voice-launch`) sits before help; on phones a round 56px mic button floats bottom-right.
 - **Progress tracker:** the journey bar shows the five steps plus an animated progress bar and `n/5`. KPI numbers count up once on first view (`AnimatedValue`, 0.7s ease-out, instant with reduced motion; screen readers get the final value).
 - **Footer:** every screen ends with API status, workspace, the approval promise, How it works and Settings.
 - **Voice:** say a command → see what it understood → "Yes, run it". Nothing runs without that tap. Browser speech now; Whisper server transcription is planned in `docs/NEXT_BATCH.md`.
@@ -231,3 +231,9 @@ Open the screen with: a very long name and long unbroken email; a one-letter nam
 - **After the call** (`features/calls/CallDoneSheet`): a bottom sheet on phones, a centred dialog on wide screens (`Sheet`, `.call-sheet`), opened when the page is visible again within 3 h of a Call tap. Outcome = four big radio buttons (`.call-choice-btn`, selected = primary tint + 2px primary border), a note with an optional mic, then one primary "Schedule interview" and two secondary buttons. Saved only with the existing deal/job endpoints.
 - **Schedule interview** (`ScheduleInterviewDialog`): round · date · time, zone · length (45 min default), How (Video / Phone / Onsite) as the same choice buttons, then only the field that mode needs. "Tell the candidate" (Sales) shows the exact text; WhatsApp and email open with it and the person presses Send. The interview is marked "told" only after they tap "I sent it".
 - **Overview**: the "Interview in N min" card is the tinted signature card (Call / Join / Snooze) and shows only when one starts within 2 h; "Calls today" lists open Call next actions with "n of m done". Both are absent when empty.
+
+## 20. Journey stepper v6 — compact tiles (2026-10-16)
+- **One row, 40px tiles, max 900px wide**, progress bar and `n/5` on the same line. The stepper must never take more than ~50px of height (the first v6 draft was 150px tall and was rejected). No heading. Each tile has the step's icon beside the label.
+- Tile = number badge (a tick when done) + label (+ amber count on Review). **Done** = the app's primary blue tint (`--op-step-done-*` alias the primary tokens), **current stage** = the navy tile of the app bar (`--op-stage-*`) with a 4px teal edge, the step the app recommends next (`currentStage`); **to do** = neutral grey. The page you are on gets a 2px primary outline (`aria-current="step"`).
+- Phones (860px or narrower): tiles show the icon only (names stay for screen readers); the bar is 40px. The progress bar runs blue to teal like the rest of v5.
+- Dark theme inverts the stage tile. Every colour pair is measured in `tokens.css`.

@@ -9,6 +9,8 @@ import { api } from '../../lib/api'
 import type { Campaign, CampaignSummary, ResearchJob } from '../../lib/types'
 import { useApi } from '../../lib/useApi'
 import { StopAllCard } from '../campaigns/StopAllCard'
+import { AgentStatusCard } from '../overview/AgentStatusCard'
+import { useShell } from '../shell/ShellContext'
 import { repeatLabel, type RepeatSchedule } from '../campaigns/campaignModel'
 import type { Integration } from '../connectors/integrationsModel'
 import type { Mailbox } from '../mail/mailModel'
@@ -21,6 +23,7 @@ interface Rule { id: string; title: string; detail: string; on: boolean; manage?
  * it shows the repeats, thresholds, reply checks and alerts that already exist, and pauses or resumes the repeats. Nothing here sends.
  */
 export function AutopilotPage() {
+  const { workspace } = useShell()
   const campaigns = useApi<CampaignSummary[]>('/api/v1/campaigns')
   const schedules = useApi<RepeatSchedule[]>('/api/v1/schedules')
   const integrations = useApi<Integration[]>('/api/v1/integrations')
@@ -114,6 +117,7 @@ export function AutopilotPage() {
       <PageHeader title="Autopilot" subtitle="What runs on its own. Sending always waits for you." />
       {error && <ErrorNotice error={error} />}
       <StopAllCard />
+      {workspace !== 'sales' && <AgentStatusCard />}
       <div className="auto-two">
         <Card title="Next runs">
           {upcoming.length === 0 ? <p className="muted-small">Nothing repeats yet. Pick Daily or Weekly below.</p> : (

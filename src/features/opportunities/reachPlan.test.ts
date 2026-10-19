@@ -5,9 +5,9 @@ const job: ReachInput = { mode: 'Job', organization: 'Acme', title: '.NET Develo
 const lead: ReachInput = { mode: 'Customer', organization: 'Northwind', title: 'Northwind', url: 'https://northwind.example/about', applyUrl: null, platform: null }
 
 describe('reachRoutes', () => {
-  it('for a job with no email: apply first, then the recruiter, a referral, then a lookup service', () => {
+  it('for a job with no email: apply first, then the recruiter, hiring posts, a referral, then a lookup service', () => {
     const ids = reachRoutes(job).map((r) => r.id)
-    expect(ids).toEqual(['apply', 'recruiter', 'referral', 'find-email', 'connect-finder'])
+    expect(ids).toEqual(['apply', 'recruiter', 'hiring-posts', 'referral', 'find-email', 'connect-finder'])
     expect(reachRoutes(job)[0].why).toMatch(/desktop agent/)
   })
   it('a published email goes first and removes the lookups', () => {
@@ -18,7 +18,7 @@ describe('reachRoutes', () => {
   })
   it('a sales lead goes to a decision maker and offers the contact form on its own site', () => {
     const routes = reachRoutes(lead)
-    expect(routes.map((r) => r.id)).toEqual(['decision-maker', 'referral', 'find-email', 'connect-finder', 'contact-form'])
+    expect(routes.map((r) => r.id)).toEqual(['decision-maker', 'hiring-posts', 'referral', 'find-email', 'connect-finder', 'contact-form'])
     expect(routes.at(-1)?.why).toContain('northwind.example')
   })
   it('never offers a job board\'s own contact form for a lead found there', () => {

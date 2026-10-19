@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardJob, BoardSearchResult } from './boardModel'
-import { chosenSites, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
+import { chosenSites, COUNTRIES, isContract, placeWithCountry, groupByCompany, dedupeKey, feedsPath, FREE_SITES, PAID_SITES, mentionsVisaOrRelocation, mergeAll, relevance, siteLines, type FeedJob } from './allSitesModel'
 
 const job = (o: Partial<BoardJob>): BoardJob => ({
   providerJobId: 'x', title: 'React Developer', companyName: 'Acme', companyLogoUrl: null, boardUrl: 'https://x.test/1', location: 'Berlin', isRemote: false,
@@ -99,5 +99,23 @@ describe('groupByCompany', () => {
     expect(groups[0].roles.map((r) => r.job.title)).toEqual(['React developer', 'Senior React developer'])
     expect(groups[0].remote).toBe(true)
     expect(groups[0].newest).toBe('2026-10-10T00:00:00Z')
+  })
+})
+
+describe('country and contract (Sales markets)', () => {
+  it('joins the typed place and the country, once', () => {
+    expect(placeWithCountry('Berlin', 'Germany')).toBe('Berlin, Germany')
+    expect(placeWithCountry('', 'Sweden')).toBe('Sweden')
+    expect(placeWithCountry('Berlin, Germany', 'Germany')).toBe('Berlin, Germany')
+    expect(placeWithCountry('Pune', '')).toBe('Pune')
+  })
+  it('lists the US and Europe by country', () => {
+    expect(COUNTRIES.filter((c) => c.group === 'US').map((c) => c.value)).toEqual(['United States'])
+    expect(COUNTRIES.map((c) => c.value)).toEqual(expect.arrayContaining(['Sweden', 'Germany']))
+  })
+  it('spots a contract role by type or title', () => {
+    expect(isContract({ employmentType: 'CONTRACTOR', title: 'Dev' })).toBe(true)
+    expect(isContract({ employmentType: null, title: 'Freelance React developer' })).toBe(true)
+    expect(isContract({ employmentType: 'FULLTIME', title: 'Backend engineer' })).toBe(false)
   })
 })

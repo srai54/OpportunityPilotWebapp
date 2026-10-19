@@ -37,6 +37,15 @@ const TARGETS: Record<StepId, string> = {
 }
 const ORDER: StepId[] = ['profile', 'find', 'review', 'reach', 'follow']
 
+/**
+ * The current stage (the dark tile): the step the app recommends next, else the first step not done yet, else none when every step
+ * is done.
+ */
+export function currentStage(steps: readonly Pick<JourneyStep, 'id' | 'done'>[], recommended: StepId | null): StepId | null {
+  if (recommended && steps.some((s) => s.id === recommended)) return recommended
+  return steps.find((s) => !s.done)?.id ?? null
+}
+
 /** Fields added later in the API may be missing on an older server, so every count defaults to 0. */
 const n = (v: number | undefined) => (typeof v === 'number' ? v : 0)
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Icon } from '../../components/icons'
 import { commandPath, describeCommand, parseCommand, type ParsedCommand } from '../command/commandModel'
 import { listenOnce, recognitionCtor, type Recognition } from '../command/speech'
@@ -7,7 +7,7 @@ import type { Workspace } from '../shell/shellModel'
 import { canRecord, recordAndTranscribe, setVoiceLanguage, voiceLanguage, whisperAvailable, type Recording } from './whisper'
 import { api, isSignInRequired, isTryLater } from '../../lib/api'
 import { isEcho, isNo, isYes, speak, stopVoice, voiceEpoch, type AssistantReply } from './assistantModel'
-import { addTurn, flowContext, getFlow, runAction, scheduleFlow, setFlow, useTurns } from './voiceFlow'
+import { addTurn, clearTurns, flowContext, getFlow, runAction, scheduleFlow, setFlow, useTurns } from './voiceFlow'
 import { schedulePlan, scheduleQuestion } from './scheduleModel'
 
 /**
@@ -19,6 +19,7 @@ import { schedulePlan, scheduleQuestion } from './scheduleModel'
  */
 export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const ws = workspace === 'sales' ? 'sales' : 'candidate'
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
@@ -43,6 +44,9 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
   const scheduling = reply?.action?.kind === 'schedule' ? schedulePlan(reply.action, ws === 'sales') : null
   const chatEnd = useRef<HTMLDivElement>(null)
   useEffect(() => { chatEnd.current?.scrollIntoView({ block: 'end' }) }, [turns.length, thinking, plan])
+  // A switch between Candidate and Sales starts a new conversation: old Sales turns made it offer outreach in Candidate (recording 12:36).
+  const lastWs = useRef(ws)
+  useEffect(() => { if (lastWs.current !== ws) { lastWs.current = ws; clearTurns(); setReply(null); setPlan(null) } }, [ws])
 
   function understand(value: string, spoken = false) {
     const said = value.trim()
@@ -61,8 +65,8 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
     if (idle) setFlow({ phase: 'thinking', title: `“${said.slice(0, 60)}”`, steps: [] })
     void api<AssistantReply>('/api/v1/assistant', { method: 'POST', body: JSON.stringify({
       text: said, workspace: ws === 'sales' ? 'Sales' : 'Candidate', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      history, context: flowContext(),
-    }) })
+      history, context: `${ws === 'sales' ? 'Sales' : 'Candidate'} workspace, on screen ${pathname}. ${flowContext()}`,
+    }), signal: AbortSignal.timeout(25_000) })
       .then((r) => {
         setReply(r)
         addTurn({ role: 'assistant', text: r.reply })
@@ -89,6 +93,7 @@ export function VoiceLaunch({ workspace }: Readonly<{ workspace: Workspace }>) {
         // A guest or a busy hour gets a plain answer in the conversation; anything else falls back to the local parser.
         if (isSignInRequired(e)) { addTurn({ role: 'assistant', text: 'Sign in to use the voice assistant. Guest mode covers browsing and the free features.' }); return }
         if (isTryLater(e)) { addTurn({ role: 'assistant', text: 'I have answered a lot this hour. Try again later, or use the screens directly.' }); return }
+        if (e instanceof DOMException && e.name === 'TimeoutError') { addTurn({ role: 'assistant', text: 'That took too long. Please ask again.' }); return }
         const parsed = parseCommand(said, ws); setPlan(parsed); setTried(true)
       })
       .finally(() => { setThinking(false); if (getFlow().phase === 'thinking') setFlow({ phase: 'idle', title: '', steps: [] }) })

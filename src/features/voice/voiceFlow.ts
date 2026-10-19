@@ -118,7 +118,7 @@ export async function launch(query: string, location: string | null, days: numbe
   draft.goal = `Find ${query}${where}.`
   draft.criteria = { ...draft.criteria, keywords: [query.slice(0, 200)], locations: location ? [location.slice(0, 100)] : [], maxPostingAgeDays: mode === 'Job' ? days : null }
   draft.autoSuggestMinScore = mode === 'Job' ? 40 : null
-  const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: profile.id, mode, ...campaignPayload(draft, mode) }) })
+  const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: profile.id, mode, ...campaignPayload(draft, mode), autoApproveMinScore: GOOD_MATCH }) })
   remember(campaign.id)
   await Promise.all(quickSourceBodies(sales ? 'LinkedIn' : 'FreeFeeds', '').map((body) => api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify(body) })))
   const { jobId } = await api<{ jobId: string }>(`/api/v1/campaigns/${campaign.id}/research`, { method: 'POST' })
@@ -129,19 +129,19 @@ export async function launch(query: string, location: string | null, days: numbe
     const done = c.sources > 0 ? c.sourcesDone + c.sourcesFailed : 0
     set({ steps: steps(labels, c.candidates > 0 ? 2 : 1), progress: Math.min(90, 20 + Math.round((done / Math.max(1, c.sources)) * 70)), detail: `${c.fetched} read · ${c.candidates} found · ${c.qualified} good` })
     if (job.state !== 'Queued' && job.state !== 'Running') {
-      const nextStep = sales ? () => outreach(campaign.id) : () => apply(campaign.id)
+      const nextStep = sales ? () => outreach(campaign.id, true) : () => apply(campaign.id)
       setFlow({
         phase: 'done', title: `${c.candidates} found · ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}`,
         detail: starter ? `${query}${where}. I started a profile for you — add your skills to rank the matches better.` : `${query}${where}`,
         steps: steps(labels, 4), progress: 100, link: { to: `/opportunities?campaign=${campaign.id}`, label: 'Review' },
-        confirm: c.qualified > 0 ? { yes: sales ? 'Write the emails' : 'Approve the best', run: nextStep } : undefined,
+        confirm: c.qualified > 0 ? { yes: sales ? 'Approve and write emails' : 'Approve the best', run: nextStep } : undefined,
         next: sales
           ? [{ label: 'Message my LinkedIn connections', to: '/outreach#linkedin' }, { label: 'Search wider', to: '/wellfound' }]
           : [{ label: 'Tailor my resume', to: `/opportunities?campaign=${campaign.id}` }, { label: 'Search wider', to: '/wellfound' }],
       })
       announce(
         `Done. Your ${query} campaign found ${c.candidates} ${sales ? 'companies' : 'jobs'}, ${c.qualified} good match${c.qualified === 1 ? '' : 'es'}. ` +
-        (c.qualified > 0 ? (sales ? 'Shall I write the emails for the approved companies?' : 'Shall I approve the best ones so your agent applies?') : 'Want to review them, or search wider?'),
+        (c.qualified > 0 ? (sales ? 'Shall I approve the good matches and write their emails?' : 'Shall I approve the best ones so your agent applies?') : 'Want to review them, or search wider?'),
         c.qualified > 0 ? nextStep : undefined,
       )
       return
@@ -155,6 +155,9 @@ function review(sales: boolean, campaignId: string | null = null) {
   const id = campaignId ?? lastCampaign()
   setFlow({ phase: 'done', title: 'Your results', detail: id ? 'From your latest voice campaign' : 'Everything found so far', steps: [], link: { to: id ? `/opportunities?campaign=${id}` : '/opportunities', label: sales ? 'Review leads' : 'Review jobs' } })
 }
+
+/** The least score voice (and new voice campaigns) approve on their own — decided 2026-10-16 (U17-13b). Only Qualified matches count. */
+export const GOOD_MATCH = 50
 
 /** At most this many emails are sent from the mailbox in one go (the server's batch limit). */
 export const SEND_CAP = 25
@@ -183,7 +186,8 @@ async function outreachCampaigns(campaignId: string | null): Promise<string[]> {
  * Sales: write an email for every approved company that has none yet (with or without a known address), then — after a yes — send the
  * ones with an address from the connected mailbox; the rest open in Outreach to send through Gmail, where the address is typed.
  */
-async function outreach(campaignId: string | null = null): Promise<void> {
+/** approveGood: first approve the campaign's good matches — the person said "approve and write" right after it ran, so it never stops at "nothing approved". */
+async function outreach(campaignId: string | null = null, approveGood = false): Promise<void> {
   const ids = await outreachCampaigns(campaignId)
   if (ids.length === 0) throw new Error('Start a campaign first, then approve the companies you want to email.')
   const labels = ['Write the emails', 'Your OK', 'Send']
@@ -195,6 +199,11 @@ async function outreach(campaignId: string | null = null): Promise<void> {
   const writtenNow = new Set<string>()
   for (const id of ids) {
     const page = await api<OpportunityPage>(`/api/v1/campaigns/${id}/opportunities?take=200`)
+    if (approveGood) {
+      for (const o of page.items.filter((x) => (x.status === 'New' || x.status === 'Suggested') && x.outcome === 'Qualified' && x.score >= GOOD_MATCH)) {
+        try { await api(`/api/v1/opportunities/${o.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Shortlisted' }) }); o.status = 'Shortlisted' } catch { /* a status that cannot move is skipped */ }
+      }
+    }
     for (const o of page.items.filter((x) => x.status === 'Shortlisted')) {
       approved++
       if (hasDraft.has(o.id)) continue
@@ -230,8 +239,8 @@ async function outreach(campaignId: string | null = null): Promise<void> {
         const items = withAddress.filter((d) => d.state === 'Approved' || versions.has(d.id)).slice(0, SEND_CAP).map((d) => ({ id: d.id, version: versions.get(d.id) ?? d.version }))
         const out = await api<BatchSendResult[]>('/api/v1/drafts/send-via-mailbox-batch', { method: 'POST', body: JSON.stringify({ provider: box.provider, items }) })
         const sent = out.filter((o) => o.outcome === 'Sent').length
-        setFlow({ phase: 'done', title: `${sent} sent`, detail: sent < items.length ? `${items.length - sent} not sent — see Outreach.` : 'Replies show up in your Inbox.', steps: steps(labels, 3), progress: 100, link: { to: '/outreach', label: 'Open Outreach' } })
-        announce(`Done. ${sent} email${sent === 1 ? '' : 's'} sent. Check your Inbox for replies.`)
+        setFlow({ phase: 'done', title: `${sent} sent`, detail: sent < items.length ? `${items.length - sent} not sent — see Outreach.` : 'Replies show up in your Inbox.', steps: steps(labels, 3), progress: 100, link: { to: '/outreach', label: 'Open Outreach' }, next: [{ label: 'Message my LinkedIn connections', to: '/outreach#linkedin' }, { label: 'Follow-ups', to: '/follow-ups' }] })
+        announce(`Done. ${sent} email${sent === 1 ? '' : 's'} sent. Replies show up in Follow up. Want to message your LinkedIn connections too?`)
       },
     },
   })
@@ -244,9 +253,9 @@ async function apply(campaignId: string | null = null): Promise<void> {
   const labels = ['Pick the best matches', 'Your OK', 'Approve for the agent']
   setFlow({ phase: 'running', title: 'Picking the best matches', steps: steps(labels, 0), progress: 30 })
   const page = await api<OpportunityPage>(`/api/v1/campaigns/${id}/opportunities?take=200`)
-  const best = page.items.filter((o) => (o.status === 'New' || o.status === 'Suggested') && o.score >= 60).sort((a, b) => b.score - a.score).slice(0, 10)
+  const best = page.items.filter((o) => (o.status === 'New' || o.status === 'Suggested') && o.outcome === 'Qualified' && o.score >= GOOD_MATCH).sort((a, b) => b.score - a.score).slice(0, 10)
   if (best.length === 0) {
-    setFlow({ phase: 'done', title: 'No strong matches yet', detail: 'Nothing scored 60 or more. Review them yourself.', steps: steps(labels, 3), link: { to: `/opportunities?campaign=${id}`, label: 'Review jobs' } })
+    setFlow({ phase: 'done', title: 'No strong matches yet', detail: `Nothing scored ${GOOD_MATCH} or more. Review them yourself.`, steps: steps(labels, 3), link: { to: `/opportunities?campaign=${id}`, label: 'Review jobs' } })
     return
   }
   setFlow({

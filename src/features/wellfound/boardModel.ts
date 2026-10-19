@@ -1,3 +1,4 @@
+import { hiringPeopleUrl } from '../opportunities/reachPlan'
 export type JobBoard = 'Indeed' | 'LinkedIn' | 'Seek' | 'Naukri' | 'Instahyre'
 
 export type BoardJob = {
@@ -153,11 +154,8 @@ export function campaignFromSearchPath(workspace: 'candidate' | 'sales', s: { qu
 }
 
 /** A LinkedIn people search for the recruiters and hiring managers at a company, optionally narrowed by a role or skill. */
-export function recruiterSearchUrl(company: string, skill = ''): string {
-  const c = company.trim().replaceAll('"', '').slice(0, 80)
-  const k = skill.trim().replaceAll('"', '').slice(0, 60)
-  const keywords = `${c ? `"${c}" ` : ''}(recruiter OR "talent acquisition" OR "hiring manager")${k ? ` ${k}` : ''}`
-  return `https://www.linkedin.com/search/results/people/?${new URLSearchParams({ keywords })}`
+export function recruiterSearchUrl(company: string, skill = '', inNetwork = false): string {
+  return hiringPeopleUrl(company, skill, inNetwork)
 }
 
 /** Countries JSearch understands (two-letter codes). A search without one takes its country from the location. */

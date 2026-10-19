@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { hiringPostsUrl } from '../opportunities/reachPlan'
 import { BOARDS, applyView, isAgency, NO_VIEW, campaignFromSearchPath, recruiterSearchUrl, boardJobsPath, datePostedFor, employmentLabel, formatSalary, type BoardSearch } from './boardModel'
 
 const base: BoardSearch = { query: 'react developer', location: 'Bengaluru', workMode: 'remote', postedWithinDays: '7', country: '' }
@@ -69,9 +70,20 @@ describe('recruiterSearchUrl', () => {
   it('searches people at the company for recruiters and adds the skill', () => {
     const u = new URL(recruiterSearchUrl('Acme "Labs"', '.NET'))
     expect(u.origin + u.pathname).toBe('https://www.linkedin.com/search/results/people/')
-    expect(u.searchParams.get('keywords')).toBe('"Acme Labs" (recruiter OR "talent acquisition" OR "hiring manager") .NET')
+    expect(u.searchParams.get('keywords')).toBe('"Acme Labs" (recruiter OR "talent acquisition" OR "hiring manager" OR hiring) .NET')
+    expect(u.searchParams.get('network')).toBeNull()
   })
-  it('still works without a company', () => expect(new URL(recruiterSearchUrl('')).searchParams.get('keywords')).toBe('(recruiter OR "talent acquisition" OR "hiring manager")'))
+  it('still works without a company', () => expect(new URL(recruiterSearchUrl('')).searchParams.get('keywords')).toBe('(recruiter OR "talent acquisition" OR "hiring manager" OR hiring)'))
+  it('keeps 1st and 2nd-degree connections when asked', () => expect(new URL(recruiterSearchUrl('Acme', '', true)).searchParams.get('network')).toBe('["F","S"]'))
+})
+
+describe('hiringPostsUrl', () => {
+  it('searches posts that say hiring for the role, newest first', () => {
+    const u = new URL(hiringPostsUrl('React developer', 'Acme', 'Pune'))
+    expect(u.pathname).toBe('/search/results/content/')
+    expect(u.searchParams.get('keywords')).toBe('hiring React developer "Acme" Pune')
+    expect(u.searchParams.get('sortBy')).toBe('"date_posted"')
+  })
 })
 
 describe('result view filters', () => {
