@@ -53,9 +53,9 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
         <button className="btn btn-primary" type="submit" disabled={busy || !body}>{busy ? 'Searching…' : 'Search Apollo'}</button>
       </div>
       <div className="search-tools row wrap" role="group" aria-label="Company size">
-        {SIZE_BANDS.map((b) => <label key={b.value} className="chip-check" title="Not available with the current Apollo plan"><input type="checkbox" disabled checked={sizes.includes(b.value)} onChange={() => toggleSize(b.value)} /> {b.label}</label>)}
+        {SIZE_BANDS.map((b) => <label key={b.value} className="chip-check"><input type="checkbox" checked={sizes.includes(b.value)} onChange={() => toggleSize(b.value)} /> {b.label}</label>)}
       </div>
-      <p className="muted-small">Each search returns 25 people and uses 25 paid credits (one search a day). Company size is not available with the current Apollo plan; remote and contract are not in Apollo's data, use All sites for those.</p>
+      <p className="muted-small">Apollo is asked first (25 people, 25 paid credits, one search a day). If it has no credits or finds nothing, the backup source (Apify Leads Finder, up to 10 people) runs with the same filters, including company size. Remote and contract are not in this data; use All sites for those.</p>
     </form>
 
     {busy && <LoadingState label="Asking Apollo…" rows={3} />}
@@ -70,8 +70,8 @@ export function ApolloPanel({ tabs }: Readonly<{ tabs: ReactNode }>) {
       <LeadTable leads={SAVED_LEADS} people />
     </section>}
     {!busy && ok?.status === 'Ready' && <section className="stack-3" aria-label="Apollo results">
-      <Card tone="muted" title={`${ok.leads.length} ${people ? (ok.leads.length === 1 ? 'person' : 'people') : (ok.leads.length === 1 ? 'company' : 'companies')} from Apollo`}
-        subtitle={ok.hidden > 0 ? `${ok.hidden} more ${ok.hidden === 1 ? 'was' : 'were'} outside the sizes you picked and ${ok.hidden === 1 ? 'is' : 'are'} hidden.` : 'Company data is Apollo\'s, shown as it came.'} />
+      <Card tone="muted" title={`${ok.leads.length} ${people ? (ok.leads.length === 1 ? 'person' : 'people') : (ok.leads.length === 1 ? 'company' : 'companies')} from ${ok.leads[0]?.source ?? 'Apollo'}`}
+        subtitle={ok.message ?? (ok.hidden > 0 ? `${ok.hidden} more ${ok.hidden === 1 ? 'was' : 'were'} outside the sizes you picked and ${ok.hidden === 1 ? 'is' : 'are'} hidden.` : 'Company data is shown as the source gave it.')} />
       {ok.leads.length === 0 ? <Card tone="muted"><p>Nothing matched. Try fewer words, another country or more sizes.</p></Card>
         : <LeadTable leads={ok.leads} people={people} />}
     </section>}
