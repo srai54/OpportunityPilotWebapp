@@ -59,6 +59,8 @@ export const SOURCES: readonly Source[] = [
   { id: 'Findwork', label: 'Findwork', regions: ['global-remote', 'us-canada', 'europe'], access: 'Needs key', remote: 'Field', contract: 'Field', paid: false },
   { id: 'UsaJobs', label: 'USAJOBS', regions: ['us-canada'], access: 'Needs key', remote: 'Text', contract: 'Field', paid: false },
   { id: 'Freelancer', label: 'Freelancer.com', regions: ['global-remote'], access: 'Free', remote: 'Field', contract: 'Field', paid: false, kind: 'Freelance marketplace' },
+  { id: 'Reed', label: 'Reed', regions: ['uk'], access: 'Needs key', remote: 'Text', contract: 'Text', paid: false },
+  { id: 'Arbeitsagentur', label: 'Bundesagentur für Arbeit', regions: ['europe'], access: 'Free', remote: 'Text', contract: 'Text', paid: false },
   { id: 'LinkedIn', label: 'LinkedIn', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac', 'global-remote'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true, kind: 'Data provider' },
   { id: 'Indeed', label: 'Indeed', regions: ['india', 'europe', 'uk', 'us-canada', 'middle-east', 'anz', 'apac'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true },
   { id: 'Seek', label: 'SEEK', regions: ['anz'], access: 'Credits', remote: 'Field', contract: 'Field', paid: true },

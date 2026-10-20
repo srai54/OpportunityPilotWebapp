@@ -30,6 +30,8 @@ export const FREE_SITES = [
   { id: 'Findwork', label: 'Findwork', note: 'Developer jobs (needs a server key)' },
   { id: 'UsaJobs', label: 'USAJOBS', note: 'US federal (needs a server key)' },
   { id: 'Freelancer', label: 'Freelancer.com', note: 'Freelance projects' },
+  { id: 'Reed', label: 'Reed', note: 'UK, many contract roles (needs a server key)' },
+  { id: 'Arbeitsagentur', label: 'Bundesagentur für Arbeit', note: 'Germany, official job service' },
 ] as const
 export const PAID_SITES = [
   { id: 'LinkedIn', label: 'LinkedIn' },

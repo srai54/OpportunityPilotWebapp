@@ -16,10 +16,10 @@ const MAILTO_MAX = 1800
 export type MailApp = 'default' | 'outlook' | 'outlookPersonal' | 'gmail'
 
 export const MAIL_APPS: { value: MailApp; label: string; hint: string }[] = [
-  { value: 'default', label: 'Default mail app', hint: 'Opens whatever your computer uses for email links.' },
-  { value: 'outlook', label: 'Outlook (work or school) — web / installed app', hint: 'Opens a new message in Outlook on the web, or in the installed Outlook app if Edge hands it over.' },
-  { value: 'outlookPersonal', label: 'Outlook.com (personal) — web / installed app', hint: 'For @outlook.com, @hotmail.com and @live.com accounts.' },
-  { value: 'gmail', label: 'Gmail — web / installed app', hint: 'Opens a new message in Gmail on the web.' },
+  { value: 'default', label: 'Default mail app', hint: 'Opens whatever your computer uses for email links. A link cannot carry files: attach your CV in the message before you press Send.' },
+  { value: 'outlook', label: 'Outlook (work or school) — web / installed app', hint: 'Opens a new message in Outlook on the web, or in the installed Outlook app if Edge hands it over. A link cannot carry files: attach your CV in the message before you press Send.' },
+  { value: 'outlookPersonal', label: 'Outlook.com (personal) — web / installed app', hint: 'For @outlook.com, @hotmail.com and @live.com accounts. A link cannot carry files: attach your CV in the message before you press Send.' },
+  { value: 'gmail', label: 'Gmail — web / installed app', hint: 'Opens a new message in Gmail on the web. A link cannot carry files: attach your CV in the message before you press Send.' },
 ]
 
 const MAIL_APP_KEY = 'op.mailApp'
