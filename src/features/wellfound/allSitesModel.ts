@@ -1,6 +1,7 @@
 import type { BoardJob, BoardSearchResult, JobBoard } from './boardModel'
 import { isContract, isRemote } from './jobSignals'
 import { SOURCES } from './sourcesModel'
+import { isSignInRequired } from '../../lib/api'
 
 export { isContract, isRemote }
 
@@ -144,7 +145,7 @@ export function siteLines(feed: FeedSearchResult | undefined, boards: readonly {
   for (const s of feed?.sites ?? []) lines.push({ name: s.site === 'WeWorkRemotely' ? 'We Work Remotely' : s.site === 'RemoteOk' ? 'Remote OK' : s.site, ok: s.status === 'Ready', text: s.status === 'Ready' ? `${s.matched} of ${s.listed}` : (s.message ?? 'did not answer') })
   for (const b of boards) {
     const name = b.board === 'Seek' ? 'SEEK' : b.board
-    if (b.result instanceof Error) lines.push({ name, ok: false, text: 'did not answer' })
+    if (b.result instanceof Error) lines.push({ name, ok: false, text: isSignInRequired(b.result) ? 'sign in to search it' : 'did not answer' })
     else lines.push({ name, ok: b.result.status === 'Ready', text: b.result.status === 'Ready' ? `${b.result.jobs.length} found` : (b.result.status === 'NotConfigured' ? 'not set up on this server' : (b.result.message ?? 'unavailable')) })
   }
   return lines
