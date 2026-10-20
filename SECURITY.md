@@ -23,5 +23,5 @@ Per-visitor rate limits on costly endpoints (guest sign-in, job-board search, le
 
 ## Known gaps (tracked)
 
-- A Content-Security-Policy header is not set yet: it needs the inline theme-boot script hash and the Hanko, Supabase and fonts origins verified on the live site first.
+- The Content-Security-Policy restricts scripts to this site plus the hashed theme-boot script (verified on a production build); `connect-src`/`img-src` are left open because company logos and sign-in providers come from many hosts.
 - Supabase stores its session in `localStorage` (the library default); with a CSP in place this is the usual SPA trade-off.
