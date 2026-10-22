@@ -23,6 +23,11 @@ export const config = {
   hankoApiUrl: hankoApiUrl(env.VITE_HANKO_API_URL as string | undefined),
   /** Local development sign-in without Supabase. Compiled out of production builds by the DEV check. */
   devAuth: import.meta.env.DEV && env.VITE_DEV_AUTH === 'true',
+  /** The Candidate workspace (job search for candidates). On by default, so nothing changes. VITE_SALES_ONLY=true makes this app the
+   *  Sales portal only (no Candidate/Sales switch); candidates then use the candidate app, OpportunityPilotCandidate (2026-10-22). */
+  candidateWorkspace: env.VITE_SALES_ONLY !== 'true',
+  /** The candidate portal's address; share links open there. Empty: links stay on this app. */
+  candidatePortalUrl: ((env.VITE_CANDIDATE_PORTAL_URL as string | undefined) ?? '').trim().replace(/\/+$/, ''),
 }
 
 export const supabaseConfigured = Boolean(config.supabaseUrl && config.supabasePublishableKey)

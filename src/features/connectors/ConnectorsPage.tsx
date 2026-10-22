@@ -1,4 +1,4 @@
-import { OauthFinish } from './OauthFinish'
+import { OauthFinish } from './OauthFinishPage'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Avatar, Card, CardGrid } from '../../components/cards'

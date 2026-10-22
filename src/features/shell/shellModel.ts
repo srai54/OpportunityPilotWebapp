@@ -1,3 +1,4 @@
+import { config } from '../../lib/config'
 import type { IconName } from '../../components/icons'
 import type { Capability, Overview } from '../../lib/types'
 
@@ -193,7 +194,9 @@ export function writeNavCollapsed(collapsed: boolean, store: Store | null = safe
   }
 }
 
-export function readWorkspace(store: Store | null = safeStore()): Workspace {
+/** The saved workspace. With VITE_SALES_ONLY=true (2026-10-22) this app is the Sales portal: always 'sales'. */
+export function readWorkspace(store: Store | null = safeStore(), candidateOn = config.candidateWorkspace): Workspace {
+  if (!candidateOn) return 'sales'
   try {
     return store?.getItem(WORKSPACE_KEY) === 'sales' ? 'sales' : 'candidate'
   } catch {

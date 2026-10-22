@@ -44,7 +44,7 @@ export function StaffingCandidatesPage() {
         : !list.data ? <LoadingState label="Loading candidates…" waking={list.waking} />
         : list.data.length === 0 ? <EmptyState title="No candidates yet" actions={<SampleDataButton workspace="Sales" onLoaded={list.reload} />}>Add the people you can place, then record what each agreed to share.</EmptyState>
         : <div className="table-scroll"><table className="table">
-          <thead><tr><th>Candidate</th><th>Availability</th><th className="num">Rate</th><th>Consent</th><th>May be shared</th><th /></tr></thead>
+          <thead><tr><th>Candidate</th><th>Availability</th><th className="num">Rate</th><th>Consent</th><th>May be shared</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{list.data.map((c) => <tr key={c.id}>
             <td><strong>{c.name}</strong><div className="muted-small">{[c.headline, c.location, c.yearsExperience != null ? `${c.yearsExperience} yrs` : null].filter(Boolean).join(' · ')}</div></td>
             <td>{c.availability === 'NoticePeriod' ? `${c.noticePeriodDays ?? '?'} days' notice` : c.availability === 'NotAvailable' ? 'Not available' : c.availability}</td>

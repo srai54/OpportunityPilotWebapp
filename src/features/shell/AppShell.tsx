@@ -6,6 +6,7 @@ import { percentOf } from '../../components/percent'
 import { journeySteps } from '../journey/journeyModel'
 import { api, ApiUnreachableError, isDegraded } from '../../lib/api'
 import type { Capabilities, Overview } from '../../lib/types'
+import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { ShellContext } from './ShellContext'
@@ -362,14 +363,15 @@ export function AppShell() {
                 <span className="brand-name">OpportunityPilot</span>
               </Link>
               <span className="ab-sep" aria-hidden="true" />
-              <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
+              {/* The Candidate/Sales switch only when the Candidate workspace is on; otherwise this is the Sales portal. */}
+              {config.candidateWorkspace && <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
                 {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
                   <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
                     <Icon name={WORKSPACES[key].icon} size={14} />
                     <span className="ws-seg-label">{WORKSPACES[key].label}</span>
                   </button>
                 ))}
-              </div>
+              </div>}
               {advanced ? (
                 <>
                   <span className="ab-sep ab-sep-crumb" aria-hidden="true" />

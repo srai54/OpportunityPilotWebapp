@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { api } from '../../lib/api'
+import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import { progressUrl, shownSummary, SHOW_OPTIONS, updateMailto, type ProgressLink, type ShowKey } from './progressModel'
 
@@ -21,7 +22,7 @@ export function ProgressShare({ candidate, onClose }: Readonly<{ candidate: { id
     setBusy(true); setError(undefined); setCopied(false)
     try {
       const made = await api<ProgressLink>(`/api/v1/staffing/candidates/${candidate.id}/progress-link`, { method: 'POST', body: JSON.stringify({ show }) })
-      setFresh(made.token ? progressUrl(window.location.origin, made.token) : null)
+      setFresh(made.token ? progressUrl(config.candidatePortalUrl || window.location.origin, made.token) : null)
       status.reload()
     } catch (e) { setError(e as Error) } finally { setBusy(false) }
   }

@@ -12,6 +12,7 @@ import { SignInPage } from './features/auth/SignInPage'
 import { SignUpPage } from './features/auth/SignUpPage'
 import { VerifyEmailPage } from './features/auth/VerifyEmailPage'
 import { EmptyState } from './components/States'
+import { config } from './lib/config'
 
 const CampaignBuilder = lazyPage(() => import('./features/campaigns/CampaignBuilder').then((m) => ({ default: m.CampaignBuilder })))
 const CampaignsPage = lazyPage(() => import('./features/campaigns/CampaignsPage').then((m) => ({ default: m.CampaignsPage })))
@@ -65,6 +66,8 @@ function AuthGate() {
   }, [ready, user, mfaRequired, location.pathname, navigate])
   // A candidate's private progress link works without an account.
   const progressToken = /^\/progress\/([^/]+)$/.exec(location.pathname)?.[1]
+  // Old links keep working: with the candidate portal set, they forward there (2026-10-22); otherwise the page shows here.
+  if (progressToken && config.candidatePortalUrl) { window.location.replace(`${config.candidatePortalUrl}/progress/${progressToken}`); return null }
   if (progressToken) return <Suspense fallback={<div className="boot" role="status">Loading…</div>}><ProgressPage token={decodeURIComponent(progressToken)} /></Suspense>
   if (!ready) return <div className="boot" role="status">Checking your session…</div>
   if (recovering) return <NewPasswordPage />

@@ -1,5 +1,5 @@
 import { DemoReadinessCard } from '../readiness/DemoReadinessCard'
-import { OauthFinish } from '../connectors/OauthFinish'
+import { OauthFinish } from '../connectors/OauthFinishPage'
 import { useState } from 'react'
 import { Card } from '../../components/cards'
 import { PageHeader } from '../../components/PageHeader'

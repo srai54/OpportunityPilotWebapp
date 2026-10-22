@@ -1,3 +1,6 @@
+## 2026-10-22 — Candidate and Sales portals separated
+The owner asked to separate the two: the main app is now the **Sales portal** (staffing company) and candidates get a **separate candidate portal** (repo `OpportunityPilotCandidate`, private) where they see only what the sales team shares. Decision: the portal only reads the existing public progress endpoint (`GET /api/v1/public/progress/{token}`), so no API change. The Candidate workspace (job search, apply queue, agent) is **switched off, not deleted**: `VITE_CANDIDATE_WORKSPACE=true` brings it back. Share links use `VITE_CANDIDATE_PORTAL_URL` (empty: links stay on this app); old `/progress/<token>` links forward to the portal once that is set. Plan: `PORTAL_SPLIT_PLAN_2026-10-22.md`.
+
 
 ## 2026-10-13 — "No bulk apply" reworded; apply queue added
 The Settings rule "No bulk send, no auto-apply" contradicted the product decision (automation level: batch approval) and left nothing to use after approving a batch. Decision (user request): approve a batch once; **Apply to all approved** is a guided queue that opens each posting for the person to submit, and each one is recorded separately (Applied + follow-up). The app still never submits an application itself. Send all (mailbox) follows the same pattern.

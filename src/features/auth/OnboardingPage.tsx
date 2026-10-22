@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon } from '../../components/icons'
 import type { Workspace } from '../shell/shellModel'
 import { writeWorkspace } from '../shell/shellModel'
+import { config } from '../../lib/config'
 import { BrandMark } from './AuthLayout'
 import { ONBOARDED_KEY, writeFlag } from './authModel'
 import { useAuth } from './AuthContext'
@@ -42,7 +43,8 @@ const NEXT = [
 /** Design AuthOnboarding: shown once per browser after first sign-in. Picks the workspace, then opens Profiles. */
 export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
   const { user, signOut } = useAuth()
-  const [choice, setChoice] = useState<Workspace>('candidate')
+  const [choice, setChoice] = useState<Workspace>(config.candidateWorkspace ? 'candidate' : 'sales')
+  const choices = config.candidateWorkspace ? CHOICES : CHOICES.filter((c) => c.key === 'sales')
 
   function finish(path: string) {
     writeWorkspace(choice)
@@ -76,16 +78,17 @@ export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
         </ol>
 
         <div className="stack-2">
-          <h1 className="onboarding-title">Which job are you here to do?</h1>
+          <h1 className="onboarding-title">{config.candidateWorkspace ? 'Which job are you here to do?' : 'Your sales workspace'}</h1>
           <p className="muted">
-            Both run on the same pipeline. The one you pick decides what the app shows you and what a campaign searches
-            for. You can switch any time from the rail, and you can use both.
+            {config.candidateWorkspace
+              ? 'Both run on the same pipeline. The one you pick decides what the app shows you and what a campaign searches for. You can switch any time from the rail, and you can use both.'
+              : 'This app is for the sales team. Candidates follow their progress in the candidate portal, through the private link you share with them.'}
           </p>
         </div>
 
         <fieldset className="onboarding-choices">
           <legend className="sr-only">Workspace</legend>
-          {CHOICES.map((c) => (
+          {choices.map((c) => (
             <label key={c.key} className={`onboarding-choice onboarding-${c.key} ${choice === c.key ? 'is-on' : ''}`}>
               <div className="row">
                 <input type="radio" name="workspace" checked={choice === c.key} onChange={() => setChoice(c.key)} />

@@ -131,19 +131,19 @@ describe('stored preferences', () => {
   })
 
   it('defaults the workspace to Candidate and ignores unknown values', () => {
-    expect(readWorkspace(memoryStore())).toBe('candidate')
-    expect(readWorkspace(memoryStore({ [WORKSPACE_KEY]: 'partners' }))).toBe('candidate')
+    expect(readWorkspace(memoryStore(), true)).toBe('candidate')
+    expect(readWorkspace(memoryStore({ [WORKSPACE_KEY]: 'partners' }), true)).toBe('candidate')
     const s = memoryStore()
     writeWorkspace('sales', s)
-    expect(readWorkspace(s)).toBe('sales')
+    expect(readWorkspace(s, true)).toBe('sales')
   })
 
   it('falls back to defaults when storage throws or is missing', () => {
     expect(readNavCollapsed(throwingStore)).toBe(false)
-    expect(readWorkspace(throwingStore)).toBe('candidate')
+    expect(readWorkspace(throwingStore, true)).toBe('candidate')
     expect(() => writeNavCollapsed(true, throwingStore)).not.toThrow()
     expect(() => writeWorkspace('sales', throwingStore)).not.toThrow()
-    expect(readWorkspace(null)).toBe('candidate')
+    expect(readWorkspace(null, true)).toBe('candidate')
   })
 })
 
@@ -195,5 +195,12 @@ describe('advanced preference', () => {
     expect(readAdvanced(s)).toBe(false)
     expect(readAdvanced(throwingStore)).toBe(false)
     expect(() => writeAdvanced(true, throwingStore)).not.toThrow()
+  })
+})
+
+describe('Sales portal (VITE_SALES_ONLY=true, 2026-10-22)', () => {
+  it('is always the Sales workspace, whatever was saved', () => {
+    expect(readWorkspace(memoryStore(), false)).toBe('sales')
+    expect(readWorkspace(memoryStore({ [WORKSPACE_KEY]: 'candidate' }), false)).toBe('sales')
   })
 })
