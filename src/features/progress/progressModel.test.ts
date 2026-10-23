@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, progressUrl, shownSummary, stagePercent, updateMailto } from './progressModel'
+import { ANSWER_LABEL, agoText, openRoles, SHOW_OPTIONS, countdown, interviewIcs, joinUrl, journey, nextInterview, progressUrl, shownSummary, stagePercent, updateMailto } from './progressModel'
 
 describe('progress link helpers', () => {
   it('builds the link from the site address and token', () => {
@@ -81,5 +81,21 @@ describe('next interview, join link and calendar file', () => {
     expect(ics).toContain('URL:https://meet.example.com/abc')
     expect(ics).toContain('DTSTAMP:20261015T100000Z')
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
+  })
+})
+
+describe('shared extras (2026-10-22)', () => {
+  it('suggests only open roles', () => {
+    const deals = [{ id: 'a', stage: 'New' }, { id: 'b', stage: 'Won' }, { id: 'c', stage: 'Interviewing' }, { id: 'd', stage: 'Lost' }, { id: 'e', stage: 'OnHold' }, { id: 'f', stage: 'Disqualified' }]
+    expect(openRoles(deals).map((d) => d.id)).toEqual(['a', 'c'])
+  })
+  it('labels the candidate answers in plain words', () => {
+    expect(ANSWER_LABEL.Interested).toBe('Interested')
+    expect(ANSWER_LABEL.NotForMe).toBe('Not for me')
+    expect(ANSWER_LABEL.None).toBe('No answer yet')
+  })
+  it('keeps the old default of three things shared and adds the extras as options', () => {
+    expect(SHOW_OPTIONS.map((o) => o.key)).toEqual(['Client', 'Role', 'Interviews', 'Offer', 'Note', 'Prep', 'Roles'])
+    expect(shownSummary(['Note', 'Roles'])).toBe('the stage, plus a note from you, suggested roles')
   })
 })

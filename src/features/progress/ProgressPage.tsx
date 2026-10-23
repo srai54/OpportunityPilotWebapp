@@ -3,9 +3,9 @@ import { Card } from '../../components/cards'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
-import { ApiError } from '../../lib/api'
+import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
-import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressView } from './progressModel'
+import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
 
 const REFRESH_MS = 30_000
 
@@ -41,6 +41,46 @@ function Path({ item, changed }: Readonly<{ item: ProgressItem; changed: boolean
         <p className="muted-small">What happens next: {j.next}</p>
       </div>
     </div>
+  )
+}
+
+/** Roles the recruiter suggests. The candidate answers with one tap; the recruiter sees the answer in "Share progress". */
+function SuggestedRoles({ token, roles, onAnswered }: Readonly<{ token: string; roles: ProgressRole[]; onAnswered: () => void }>) {
+  const [answers, setAnswers] = useState<Record<string, RoleAnswer>>({})
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<Error>()
+  async function answer(role: ProgressRole, value: Exclude<RoleAnswer, 'None'>) {
+    setBusy(role.id); setError(undefined)
+    try {
+      const saved = await api<ProgressRole>(`/api/v1/public/progress/${encodeURIComponent(token)}/roles/${role.id}`, { method: 'POST', body: JSON.stringify({ answer: value }) })
+      setAnswers((cur) => ({ ...cur, [role.id]: saved.answer }))
+      onAnswered()
+    } catch (e) { setError(e as Error) } finally { setBusy(null) }
+  }
+  return (
+    <Card level={2} title="Roles your recruiter suggests" subtitle="Tell them what you think. Nothing is sent to a client without you.">
+      <ul className="stack-3 prog-roles">
+        {roles.map((r) => {
+          const now = answers[r.id] ?? r.answer
+          return (
+            <li key={r.id} className="prog-role">
+              <div className="prog-role-head">
+                <strong>{r.title}</strong>
+                {r.client && <span className="muted-small">{r.client}</span>}
+              </div>
+              <div className="prog-actions" role="group" aria-label={`Your answer for ${r.title}`}>
+                <button type="button" className={`btn btn-sm ${now === 'Interested' ? 'btn-primary' : 'btn-secondary'}`} aria-pressed={now === 'Interested'} disabled={busy === r.id}
+                  onClick={() => void answer(r, 'Interested')}>I'm interested</button>
+                <button type="button" className={`btn btn-sm ${now === 'NotForMe' ? 'btn-primary' : 'btn-secondary'}`} aria-pressed={now === 'NotForMe'} disabled={busy === r.id}
+                  onClick={() => void answer(r, 'NotForMe')}>Not for me</button>
+              </div>
+              {now !== 'None' && <p className="muted-small" role="status">{now === 'Interested' ? 'Your recruiter will see that you are interested.' : 'Your recruiter will see that this one is not for you.'}</p>}
+            </li>
+          )
+        })}
+      </ul>
+      {error && <ErrorNotice error={error} what="your answer" />}
+    </Card>
   )
 }
 
@@ -96,6 +136,9 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
         {view.loading && !view.data && <LoadingState label="Loading your progress…" waking={view.waking} rows={2} />}
         {gone && <Card tone="muted" level={2} title="This link is not active"><p>It may have been replaced or switched off. Ask the person who sent it for a new one.</p></Card>}
         {view.error && !gone && !view.data && <ErrorNotice error={view.error} onRetry={view.reload} what="your progress" />}
+        {view.data?.note && (
+          <Card level={2} tone="signature" title="A note from your recruiter"><p className="prog-note">{view.data.note}</p></Card>
+        )}
         {view.data && view.data.items.length === 0 && (
           <Card tone="muted" level={2} title="Nothing to show yet"><p>When your profile is sent to a client, it appears here and this page updates on its own.</p></Card>
         )}
@@ -138,6 +181,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
                     <p>{when(iv.scheduledAt, iv.timeZone)}{iv.timeZone ? ` (${iv.timeZone})` : ''}{iv.minutes ? ` · ${iv.minutes} min` : ''}{iv.mode ? ` · ${iv.mode}` : ''}</p>
                     {iv.location && !join && <p className="muted-small">Where: {iv.location}</p>}
                     {iv.notes && <p className="muted-small">{iv.notes}</p>}
+                    {iv.prep && <div className="prog-prep"><strong>How to prepare</strong><p className="prog-note">{iv.prep}</p></div>}
                     <div className="prog-actions">
                       {join && <a className="btn btn-primary btn-sm" href={join} target="_blank" rel="noopener noreferrer">Join the interview<span className="sr-only"> (opens in a new tab)</span></a>}
                       <button type="button" className="btn btn-secondary btn-sm" onClick={() => addToCalendar(item)}>Add to my calendar</button>
@@ -149,6 +193,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
             </Card>
           )
         })}
+        {view.data?.roles && view.data.roles.length > 0 && <SuggestedRoles token={token} roles={view.data.roles} onAnswered={reload} />}
         <p className="muted-small">This page shows only what was chosen to share with you. It updates on its own; keep it open or come back any time.</p>
       </div>
     </main>

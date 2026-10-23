@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { Capabilities, Overview } from '../../lib/types'
+import type { Me } from '../access/accessModel'
 import type { Workspace } from './shellModel'
 
 export interface ShellState {
@@ -13,6 +14,10 @@ export interface ShellState {
   /** Client-side preference (localStorage `op.workspace`), not an account setting; filters no data. */
   workspace: Workspace
   setWorkspace: (workspace: Workspace) => void
+  /** The signed-in user's role and admin flag (GET /api/v1/me); undefined until known. */
+  me: Me | undefined
+  /** The views this user may open (role-based access, 2026-10-22). Both until the role is known. */
+  allowedWorkspaces: Workspace[]
   /** Client-side preference (localStorage `op.advanced`): show the advanced menu items and sections. */
   advanced: boolean
   setAdvanced: (on: boolean) => void
@@ -28,6 +33,8 @@ export const ShellContext = createContext<ShellState>({
   refreshOverview: () => {},
   workspace: 'candidate',
   setWorkspace: () => {},
+  me: undefined,
+  allowedWorkspaces: ['candidate', 'sales'],
   advanced: false,
   setAdvanced: () => {},
   guide: true,

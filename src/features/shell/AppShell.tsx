@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { Icon } from '../../components/icons'
 import { ProgressBar } from '../../components/ProgressBar'
@@ -7,6 +7,7 @@ import { journeySteps } from '../journey/journeyModel'
 import { api, ApiUnreachableError, isDegraded } from '../../lib/api'
 import type { Capabilities, Overview } from '../../lib/types'
 import { config } from '../../lib/config'
+import { allowedWorkspaces, effectiveWorkspace, type Me } from '../access/accessModel'
 import { useApi } from '../../lib/useApi'
 import { useAuth } from '../auth/AuthContext'
 import { ShellContext } from './ShellContext'
@@ -141,6 +142,15 @@ export function AppShell() {
     setWorkspaceState(ws)
     writeWorkspace(ws)
   }, [])
+  // Role-based access (2026-10-22): a Candidate-only or Sales-only user sees that view only; Both, no role yet and the admin keep both.
+  // The shown email goes along only as the admin's label (Hanko tokens may carry none); access is decided from the token on the server.
+  const meLabel = user?.guest ? '' : user?.email ?? ''
+  const me = useApi<Me>(apiStatus === 'ready' ? `/api/v1/me${meLabel.includes('@') ? `?label=${encodeURIComponent(meLabel)}` : ''}` : null)
+  const allowedWs = useMemo(() => allowedWorkspaces(me.data), [me.data])
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect
+    if (!allowedWs.includes(workspace)) setWorkspace(effectiveWorkspace(workspace, allowedWs))
+  }, [allowedWs, workspace, setWorkspace])
   const [demoHidden, setDemoHidden] = useState(() => { try { return sessionStorage.getItem('op-demo-hidden') === '1' } catch { return false } })
   const [replay, setReplay] = useState(0)
   const [guide, setGuideState] = useState(() => !tipsOff())
@@ -339,7 +349,7 @@ export function AppShell() {
 
   return (
     <ShellContext.Provider
-      value={{ capabilities: caps, awaitingApproval, overview: overview.data, refreshOverview: overview.reload, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide }}
+      value={{ capabilities: caps, awaitingApproval, overview: overview.data, refreshOverview: overview.reload, workspace, setWorkspace, me: me.data, allowedWorkspaces: allowedWs, advanced, setAdvanced, guide, setGuide }}
     >
       <div className={`shell ws-${workspace} ${advanced ? 'is-advanced' : 'is-simple'}`} style={{ ['--chrome-h' as string]: `${chromeH}px` }}>
         <a href="#main" className="skip-link">Skip to content</a>
@@ -364,7 +374,7 @@ export function AppShell() {
               </Link>
               <span className="ab-sep" aria-hidden="true" />
               {/* The Candidate/Sales switch only when the Candidate workspace is on; otherwise this is the Sales portal. */}
-              {config.candidateWorkspace && <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
+              {config.candidateWorkspace && allowedWs.length > 1 && <div className="ws-seg ws-seg-top" role="group" aria-label="Workspace" data-coach="ws-toggle">
                 {(Object.keys(WORKSPACES) as Workspace[]).map((key) => (
                   <button key={key} type="button" className={`ws-seg-btn ws-seg-${key}`} aria-pressed={key === workspace} onClick={() => setWorkspace(key)}>
                     <Icon name={WORKSPACES[key].icon} size={14} />

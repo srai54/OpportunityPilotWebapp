@@ -3,6 +3,8 @@ import { Icon } from '../../components/icons'
 import type { Workspace } from '../shell/shellModel'
 import { writeWorkspace } from '../shell/shellModel'
 import { config } from '../../lib/config'
+import { api } from '../../lib/api'
+import { roleFor, shouldSaveRole, type Me } from '../access/accessModel'
 import { BrandMark } from './AuthLayout'
 import { ONBOARDED_KEY, writeFlag } from './authModel'
 import { useAuth } from './AuthContext'
@@ -46,8 +48,16 @@ export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
   const [choice, setChoice] = useState<Workspace>(config.candidateWorkspace ? 'candidate' : 'sales')
   const choices = config.candidateWorkspace ? CHOICES : CHOICES.filter((c) => c.key === 'sales')
 
-  function finish(path: string) {
+  async function finish(path: string) {
     writeWorkspace(choice)
+    // Role-based access (2026-10-22): a brand-new account's choice becomes its role; an existing user keeps both views. Best effort:
+    // if the API is unreachable the user simply keeps both views until the admin sets a role.
+    if (!user?.guest) {
+      try {
+        const me = await api<Me>('/api/v1/me')
+        if (shouldSaveRole(me)) await api('/api/v1/me/role', { method: 'PUT', body: JSON.stringify({ role: roleFor(choice) }) })
+      } catch { /* keep both views */ }
+    }
     writeFlag(ONBOARDED_KEY, true)
     onDone(path)
   }
@@ -81,7 +91,9 @@ export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
           <h1 className="onboarding-title">{config.candidateWorkspace ? 'Which job are you here to do?' : 'Your sales workspace'}</h1>
           <p className="muted">
             {config.candidateWorkspace
-              ? 'Both run on the same pipeline. The one you pick decides what the app shows you and what a campaign searches for. You can switch any time from the rail, and you can use both.'
+              ? user?.guest
+                ? 'Both run on the same pipeline. The one you pick decides what the app shows you and what a campaign searches for. You can switch any time from the rail, and you can use both.'
+                : 'Both run on the same pipeline. The one you pick decides what the app shows you and what a campaign searches for.'
               : 'This app is for the sales team. Candidates follow their progress in the candidate portal, through the private link you share with them.'}
           </p>
         </div>
@@ -123,13 +135,14 @@ export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
           </ol>
         </section>
 
+        {!user?.guest && <p className="muted-small">Your choice sets what you see. Your admin can give you both views.</p>}
         <div className="row">
-          <button type="button" className="btn btn-secondary" onClick={() => finish('/')}>
+          <button type="button" className="btn btn-secondary" onClick={() => void finish('/')}>
             Skip for now
           </button>
           <div className="grow" />
           <span className="muted-small">You can change all of this later.</span>
-          <button type="button" className="btn btn-primary" onClick={() => finish('/profiles')}>
+          <button type="button" className="btn btn-primary" onClick={() => void finish('/profiles')}>
             Continue to profile
           </button>
         </div>

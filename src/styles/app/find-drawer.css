@@ -217,6 +217,15 @@ html { scroll-padding-bottom: 96px; }
 @media (prefers-reduced-motion: reduce) { .prog-live-dot, .prog-step.is-now .prog-dot, .prog-path.is-changed { animation: none; } .prog-fill { transition: none; } }
 .prog-actions { display: flex; flex-wrap: wrap; gap: var(--op-space-2); align-items: center; }
 .prog-actions > * { flex: 0 0 auto; }
+/* Shared extras on the candidate's page (2026-10-22): recruiter note, interview prep, suggested roles. */
+.prog-note { white-space: pre-line; overflow-wrap: anywhere; }
+.prog-prep { display: grid; gap: var(--op-space-1); padding-top: var(--op-space-2); border-top: 1px solid var(--op-primary-tint-border); }
+.prog-roles { list-style: none; padding: 0; margin: 0; }
+.prog-role { display: grid; gap: var(--op-space-2); padding-bottom: var(--op-space-3); border-bottom: 1px solid var(--op-line); }
+.prog-role:last-child { border-bottom: 0; padding-bottom: 0; }
+.prog-role-head { display: grid; gap: 2px; }
+/* The page sits in .signin, which makes primary buttons full width; the two answers stay side by side. */
+.prog-role .btn { width: auto; min-height: 44px; }
 .how-to-steps a { text-decoration: underline; }
 .inbox-subject { margin: 4px 0 0; font-size: var(--op-text-body); color: var(--op-ink); }
 
@@ -605,3 +614,10 @@ html { scroll-padding-bottom: 96px; }
 
 /* Why this lead (rules) on company cards */
 .lead-why { margin: 2px 0 0; font-size: var(--op-text-meta); color: var(--op-muted); }
+/* Settings → Users & roles (admin, 2026-10-22). */
+.access-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--op-space-3); }
+.access-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--op-space-2) var(--op-space-3); align-items: center; padding-bottom: var(--op-space-3); border-bottom: 1px solid var(--op-line); }
+.access-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.access-row > :nth-child(3) { grid-column: 1 / -1; }
+.access-row strong { overflow-wrap: anywhere; }
+.selectable { user-select: all; overflow-wrap: anywhere; }

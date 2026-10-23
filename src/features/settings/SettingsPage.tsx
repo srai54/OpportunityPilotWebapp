@@ -16,6 +16,8 @@ import { useShell } from '../shell/ShellContext'
 import { WORKSPACES, type Workspace } from '../shell/shellModel'
 import { ThemeChoiceGroup } from '../shell/ThemeToggle'
 import { SampleDataButton } from '../sample/SampleDataButton'
+import { ROLE_LABEL } from '../access/accessModel'
+import { UsersRolesCard } from '../access/UsersRolesCard'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 const AUTH_LABEL = {
@@ -41,7 +43,7 @@ const FIXED_RULES = [
 export function SettingsPage() {
   const diagnostics = useApi<{ version: string; database: { pendingMigrations: number | null } }>('/api/v1/diagnostics')
   const { user, mode, signOut } = useAuth()
-  const { capabilities, workspace, setWorkspace, advanced, setAdvanced, guide, setGuide } = useShell()
+  const { capabilities, workspace, setWorkspace, me, allowedWorkspaces, advanced, setAdvanced, guide, setGuide } = useShell()
   const [mailApp, setMailAppState] = useState<MailApp>(readMailApp)
   const [accountError, setAccountError] = useState<Error>()
   const [accountBusy, setAccountBusy] = useState(false)
@@ -85,6 +87,17 @@ export function SettingsPage() {
                   {mode === 'guest' && <div className="muted-small">Accounts appear once the Supabase sign-in keys are set.</div>}
                 </dd>
               </div>
+              {me && !me.guest && (
+                <div>
+                  <dt>Your role</dt>
+                  <dd>
+                    <span className="badge">{me.isAdmin ? 'Admin · both views' : ROLE_LABEL[me.role]}</span>
+                    {!me.isAdmin && !me.roleChosen && <div className="muted-small">Not chosen yet, so you see both views.</div>}
+                    {!me.isAdmin && me.roleChosen && me.role !== 'Both' && <div className="muted-small">Ask your admin for the other view.</div>}
+                    <div className="muted-small">Your account ID: <code className="selectable">{me.accountId}</code></div>
+                  </dd>
+                </div>
+              )}
               <div>
                 <dt>
                   <label htmlFor="set-workspace">Workspace</label>
@@ -92,7 +105,7 @@ export function SettingsPage() {
                 </dt>
                 <dd>
                   <select id="set-workspace" value={workspace} onChange={(e) => setWorkspace(e.target.value as Workspace)}>
-                    {(Object.keys(WORKSPACES) as Workspace[]).map((w) => (
+                    {(Object.keys(WORKSPACES) as Workspace[]).filter((w) => allowedWorkspaces.includes(w)).map((w) => (
                       <option key={w} value={w}>
                         {WORKSPACES[w].label} — {WORKSPACES[w].status.toLowerCase()}
                       </option>
@@ -110,6 +123,8 @@ export function SettingsPage() {
             </dl>
             {accountError && <ErrorNotice error={accountError} />}
           </Card>
+
+          {me?.isAdmin && <UsersRolesCard />}
 
           <Card title="Sample data">
             <p className="muted-small">Fill this workspace with labelled sample candidates, deals and interviews to try things out.</p>

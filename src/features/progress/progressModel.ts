@@ -4,18 +4,28 @@ export const SHOW_OPTIONS = [
   { key: 'Role', label: 'Role' },
   { key: 'Interviews', label: 'Interview date and details' },
   { key: 'Offer', label: 'Offer status (never the pay)' },
+  { key: 'Note', label: 'A note from you' },
+  { key: 'Prep', label: 'Interview prep' },
+  { key: 'Roles', label: 'Suggested roles' },
 ] as const
 export type ShowKey = (typeof SHOW_OPTIONS)[number]['key']
 
-export interface ProgressLink { active: boolean; show: ShowKey[]; createdAt: string | null; token: string | null }
+export type RoleAnswer = 'None' | 'Interested' | 'NotForMe'
+export interface SuggestedRole { id: string; dealId: string; title: string; answer: RoleAnswer; answeredAt: string | null }
+export interface ShareInterview { id: string; round: number; title: string; scheduledAt: string; prep: string | null }
+export interface ProgressLink {
+  active: boolean; show: ShowKey[]; createdAt: string | null; token: string | null
+  note?: string | null; roles?: SuggestedRole[] | null; interviews?: ShareInterview[] | null
+}
+export interface ProgressRole { id: string; title: string; client: string | null; answer: RoleAnswer }
 export interface ProgressItem {
   client: string | null
   role: string | null
   stage: string
   updatedAt: string
-  interview: { round: number; scheduledAt: string; timeZone: string | null; mode: string | null; location: string | null; minutes: number | null; notes: string | null } | null
+  interview: { round: number; scheduledAt: string; timeZone: string | null; mode: string | null; location: string | null; minutes: number | null; notes: string | null; prep?: string | null } | null
 }
-export interface ProgressView { firstName: string; asOf: string; items: ProgressItem[] }
+export interface ProgressView { firstName: string; asOf: string; items: ProgressItem[]; note?: string | null; roles?: ProgressRole[] | null }
 
 /** How far along a stage is, for the candidate's bar. These are the stage words the server sends. */
 export function stagePercent(stage: string): number {
@@ -29,6 +39,17 @@ export function stagePercent(stage: string): number {
   if (s.includes('preparing')) return 15
   return 0
 }
+
+/** How the sales team reads the candidate's answer to a suggested role. */
+export const ANSWER_LABEL: Record<RoleAnswer, string> = { None: 'No answer yet', Interested: 'Interested', NotForMe: 'Not for me' }
+
+/** Roles worth suggesting: deals that are still open (not won, lost, disqualified or on hold). */
+export function openRoles<T extends { stage: string }>(deals: readonly T[]): T[] {
+  return deals.filter((d) => !['Won', 'Lost', 'Disqualified', 'OnHold'].includes(d.stage))
+}
+
+export const NOTE_MAX = 1000
+export const PREP_MAX = 2000
 
 export function progressUrl(origin: string, token: string): string {
   return `${origin.replace(/\/$/, '')}/progress/${encodeURIComponent(token)}`
