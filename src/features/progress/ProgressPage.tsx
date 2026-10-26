@@ -6,6 +6,7 @@ import { Badge } from '../../components/StatusBadge'
 import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ResumeBuilder } from '../resumeBuilder/ResumeBuilder'
+import { MyJourney } from '../resource/MyJourney'
 import { writeMyProgress, agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
 
 const REFRESH_MS = 30_000
@@ -138,6 +139,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
         {view.loading && !view.data && <LoadingState label="Loading your progress…" waking={view.waking} rows={2} />}
         {gone && <Card tone="muted" level={2} title="This link is not active"><p>It may have been replaced or switched off. Ask the person who sent it for a new one.</p></Card>}
         {view.error && !gone && !view.data && <ErrorNotice error={view.error} onRetry={view.reload} what="your progress" />}
+        {view.data && <MyJourney token={token} />}
         {view.data?.note && (
           <Card level={2} tone="signature" title="A note from your recruiter"><p className="prog-note">{view.data.note}</p></Card>
         )}

@@ -79,6 +79,7 @@ export const SALES_NAV_GROUPS: NavGroup[] = [
     id: 'staffing',
     label: 'Staffing',
     items: [
+      { to: '/staffing/bench', label: 'Bench', icon: 'people' },
       { to: '/staffing', label: 'Deals', icon: 'bids', advanced: true },
       { to: '/staffing/candidates', label: 'Candidates', icon: 'profiles', advanced: true },
       { to: '/staffing/interviews', label: 'Interviews', icon: 'calendar', advanced: true },
