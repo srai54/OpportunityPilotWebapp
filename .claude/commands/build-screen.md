@@ -10,7 +10,7 @@ Argument: the entry heading, e.g. `Outreach — Inbox and draft editor`, or a ro
 ## Steps
 
 1. **Find the entry** via `docs/SCREEN_MAP.md` and read it in full in `docs/CANDIDATE_FLOW.md`, `docs/SALES_FLOW.md` or `docs/SHARED_FLOW.md`. No entry → stop: create it first (all ten fields, `Status: not built`) and confirm it with the user.
-2. **Check readiness.** Every field is filled. Every endpoint in "State (reads/writes)" exists in the API contract (`../OpportunityPilotWebApi/docs/api-contracts.md`) **and** is implemented by the API (check `../OpportunityPilotWebApi/docs/plans-and-status.md` or its controllers). Any linked P1 OQ still Open, or a missing endpoint → stop and report; offer `/resolve-oq` or a `NotBuiltPage` instead. Vague entry → `skills/prompt-master.SKILL.md`.
+2. **Check readiness.** Every field is filled. Every endpoint in "State (reads/writes)" exists in the API contract (`../OpportunityPilotWebApi/docs/api-contracts.md`) **and** is implemented by the API (check `../OpportunityPilotWebApi/docs/plans-and-status.md` or its controllers). Any linked P1 OQ still Open, or a missing endpoint → stop and report; offer `/resolve-oq` instead. Vague entry → `.claude/skills/prompt-master/SKILL.md`.
 3. **Read references:** the design artboard in `../opportunitypilot-ui/` (visual only — routes come from the flow doc), the closest built screen as a pattern (e.g. `OpportunitiesPage.tsx` for paged tables, `CampaignBuilder.tsx` for forms with `useBlocker`), and `CLAUDE.md`.
 4. **Build in this order:**
    1. Types in `src/lib/types.ts`, mirroring the contract exactly.

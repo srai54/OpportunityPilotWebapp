@@ -10,7 +10,7 @@ Argument: one ID, e.g. `OQ-FE-012`. One OQ per run. If no ID is given, list the 
 ## Steps
 
 1. **Read the entry** in `docs/open-questions.md`. Stop if it is not Open.
-2. **Check the owner.** Owner **Shivanshu** (a decision, credentials or a contract): do not change code. Ask for the decision in one message (use `skills/prompt-master.SKILL.md`), and only continue once it is given. Record the decision in the entry.
+2. **Check the owner.** Owner **Shivanshu** (a decision, credentials or a contract): do not change code. Ask for the decision in one message (use `.claude/skills/prompt-master/SKILL.md`), and only continue once it is given. Record the decision in the entry.
 3. **Read context:** every file in `Where`; the flow-doc entry for the affected screen (`docs/*_FLOW.md`); the API contract if an endpoint or type is involved (`../OpportunityPilotWebApi/docs/api-contracts.md`); the relevant `CLAUDE.md` rules.
 4. **Fix the source** — the smallest change that resolves the entry:
    - Pure logic goes in the feature's `*Model.ts` with a co-located `*.test.ts` case.

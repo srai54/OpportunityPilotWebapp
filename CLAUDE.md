@@ -76,7 +76,7 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 |---|---|
 | Before building or changing a screen | Read its entry in the role's flow doc: `docs/CANDIDATE_FLOW.md`, `docs/SALES_FLOW.md` or `docs/SHARED_FLOW.md`. If the entry is missing, create it first (all fields, `Status: not built`) and confirm it with the user |
 | Building a screen from its flow-doc entry | Run `/build-screen` — it is the only thing that flips `Status` to `built` and updates `docs/SCREEN_MAP.md` |
-| A request is vague (two or more of: which user, which screen/route, which flow-doc entry, which API endpoint/contract, acceptance checks are missing) | Read `skills/prompt-master.SKILL.md` and ask its one structured question burst before writing code |
+| A request is vague (two or more of: which user, which screen/route, which flow-doc entry, which API endpoint/contract, acceptance checks are missing) | Read `.claude/skills/prompt-master/SKILL.md` and ask its one structured question burst before writing code |
 | After finishing a feature | Run `/audit-oq` and register every new mock, hard-code, stub or dead link in `docs/open-questions.md` |
 | Closing a tracked gap | Run `/resolve-oq OQ-FE-###` — one OQ per run |
 | Adding or changing an API call | Find the endpoint in `../OpportunityPilotWebApi/docs/api-contracts.md` (or the API's controllers). Mirror its DTO in `src/lib/types.ts`. If no contract exists, log an OQ and ask — never invent an endpoint |
@@ -155,10 +155,16 @@ The AI does not discover docs on its own; this table is the bridge. Read the row
 | Env vars, API base URL, deploy targets and URLs, auth modes, design and contract locations | `docs/PRODUCT.md` | Configuration, deployment, auth or API questions |
 | Hanko + Supabase sign-in setup (owner steps, env vars, troubleshooting) | `docs/SETUP.md` | Touching sign-in, or switching Hanko on |
 | Open gaps, mocks, hard-codes, undecided items | `docs/open-questions.md` | Before inventing anything; after every feature |
-| Vague requests | `skills/prompt-master.SKILL.md` | Two or more context dimensions missing |
+| Vague requests | `.claude/skills/prompt-master/SKILL.md` | Two or more context dimensions missing |
 | API contract — every built endpoint | `../OpportunityPilotWebApi/docs/api-contracts.md` | Any screen that calls the API |
 | API contract — job boards (Greenhouse, Lever, Adzuna), approval queue | `../OpportunityPilotWebApi/docs/CANDIDATE_PHASE1_CONTRACT.md` | Sources step, Filters step, Approvals |
 | Earlier slice specs (some not built) | `../OpportunityPilotWebApi/docs/feature-contracts.md` | Planning a new slice |
 | Product status and decisions | `../HANDOFF.md`, `../OpportunityPilotWebApi/docs/DECISIONS.md` | Scope or priority questions |
 | Designs | `../opportunitypilot-ui/` (`*.dc.html`, `README.md`) | Visual reference for a screen |
 | Deployment steps | `../DEPLOY.md` | Deploying API + web + Supabase |
+
+## AI tooling, privacy and review
+
+- AI tooling policy (MCP, skills, hooks, permissions, secrets): `docs/AI_TOOLING.md`. No MCP server is configured; add one only with that policy.
+- Privacy and data handling: `docs/PRIVACY.md`.
+- Before a commit run `/verify`; a finished batch goes out with `/release` (PR template in `.github/`).
