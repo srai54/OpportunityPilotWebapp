@@ -621,3 +621,11 @@ html { scroll-padding-bottom: 96px; }
 .access-row > :nth-child(3) { grid-column: 1 / -1; }
 .access-row strong { overflow-wrap: anywhere; }
 .selectable { user-select: all; overflow-wrap: anywhere; }
+/* Resume builder on the candidate's page (2026-10-26). */
+.rb-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--op-space-3); }
+.rb-skill { display: grid; grid-template-columns: minmax(120px, 0.6fr) minmax(0, 1.4fr) auto; gap: var(--op-space-2); align-items: center; }
+.rb-project { padding: var(--op-space-3); border: 1px solid var(--op-line); border-radius: var(--op-radius-control); }
+.rb-match, .rb-review { padding: var(--op-space-3); border-radius: var(--op-radius-control); background: var(--op-primary-tint); border: 1px solid var(--op-primary-tint-border); color: var(--op-ink); }
+.rb-jd summary { cursor: pointer; font-weight: 650; min-height: 44px; display: flex; align-items: center; }
+.prog-page .rb-skill .btn, .prog-page .prog-actions .btn { width: auto; }
+@media (max-width: 560px) { .rb-skill { grid-template-columns: 1fr; } }

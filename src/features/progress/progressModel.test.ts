@@ -95,7 +95,7 @@ describe('shared extras (2026-10-22)', () => {
     expect(ANSWER_LABEL.None).toBe('No answer yet')
   })
   it('keeps the old default of three things shared and adds the extras as options', () => {
-    expect(SHOW_OPTIONS.map((o) => o.key)).toEqual(['Client', 'Role', 'Interviews', 'Offer', 'Note', 'Prep', 'Roles'])
+    expect(SHOW_OPTIONS.map((o) => o.key)).toEqual(['Client', 'Role', 'Interviews', 'Offer', 'Note', 'Prep', 'Roles', 'Resume'])
     expect(shownSummary(['Note', 'Roles'])).toBe('the stage, plus a note from you, suggested roles')
   })
 })

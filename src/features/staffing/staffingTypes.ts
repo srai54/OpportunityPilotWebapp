@@ -22,6 +22,8 @@ export type StaffingDeal = {
   id: string; accountId: string; contactId: string | null; title: string; source: DealSource; externalReference: string | null
   estimatedValue: number | null; currency: string | null; stage: DealStage; stageBeforeHold: DealStage | null
   nextAction: string | null; nextActionAt: string | null; version: number; activities: DealActivity[]; createdAt: string; updatedAt: string
+  /** The client's job description (resume builder, 2026-10-26). */
+  jobDescription?: string | null
 }
 
 export type CandidateField = 'Name' | 'Headline' | 'Skills' | 'Experience' | 'Location' | 'Availability' | 'Rate' | 'Email' | 'Phone' | 'Resume'

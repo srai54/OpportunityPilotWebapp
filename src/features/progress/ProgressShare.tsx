@@ -6,6 +6,7 @@ import { api } from '../../lib/api'
 import { config } from '../../lib/config'
 import { useApi } from '../../lib/useApi'
 import type { StaffingDeal } from '../staffing/staffingTypes'
+import { JobDescriptionEditor, ResumeReviews } from '../resumeBuilder/ResumeReviews'
 import { ANSWER_LABEL, NOTE_MAX, openRoles, PREP_MAX, progressUrl, shownSummary, SHOW_OPTIONS, updateMailto, type ProgressLink, type ShareInterview, type ShowKey } from './progressModel'
 
 const when = (iso: string) => { try { return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) } catch { return iso } }
@@ -49,7 +50,7 @@ export function ProgressShare({ candidate, onClose }: Readonly<{ candidate: { id
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<Error>()
-  const deals = useApi<StaffingDeal[]>(show.includes('Roles') ? '/api/v1/staffing/deals?take=200' : null)
+  const deals = useApi<StaffingDeal[]>(show.includes('Roles') || show.includes('Resume') ? '/api/v1/staffing/deals?take=200' : null)
 
   // Start from what is shared now, so making a new link does not drop the note or the suggested roles by accident.
   const saved = status.data
@@ -128,6 +129,13 @@ export function ProgressShare({ candidate, onClose }: Readonly<{ candidate: { id
               : upcoming.map((iv) => <PrepEditor key={iv.id} interview={iv} />)}
           </div>
         )}
+        {show.includes('Resume') && (
+          <div className="stack-2">
+            <p className="muted-small">Resume builder: {candidate.name.split(' ')[0]} writes a resume for each shared role in your standard client format, against its job description, and submits it for your score.</p>
+            {deals.data && roles.filter((d) => roleIds.includes(d.id) || deals.data!.length <= 3).map((d) => <JobDescriptionEditor key={d.id} dealId={d.id} title={d.title} initial={d.jobDescription ?? null} />)}
+          </div>
+        )}
+        <ResumeReviews candidateId={candidate.id} name={candidate.name} />
         <p className="muted-small">Pay, rates and internal notes are never shown.</p>
         {error && <ErrorNotice error={error} />}
         <div className="row wrap">

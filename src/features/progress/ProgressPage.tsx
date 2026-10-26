@@ -5,6 +5,7 @@ import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
+import { ResumeBuilder } from '../resumeBuilder/ResumeBuilder'
 import { writeMyProgress, agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
 
 const REFRESH_MS = 30_000
@@ -194,6 +195,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
             </Card>
           )
         })}
+        {view.data && <ResumeBuilder token={token} />}
         {view.data?.roles && view.data.roles.length > 0 && <SuggestedRoles token={token} roles={view.data.roles} onAnswered={reload} />}
         <p className="muted-small">This page shows only what was chosen to share with you. It updates on its own; keep it open or come back any time.</p>
       </div>

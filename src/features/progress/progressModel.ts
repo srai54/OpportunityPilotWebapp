@@ -7,6 +7,7 @@ export const SHOW_OPTIONS = [
   { key: 'Note', label: 'A note from you' },
   { key: 'Prep', label: 'Interview prep' },
   { key: 'Roles', label: 'Suggested roles' },
+  { key: 'Resume', label: 'Resume builder' },
 ] as const
 export type ShowKey = (typeof SHOW_OPTIONS)[number]['key']
 
