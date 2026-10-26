@@ -19,14 +19,6 @@ export function JourneyHero({ j }: Readonly<{ j: Journey }>) {
           </li>
         ))}
       </ol>
-      <div className="bench-kpis jr-kpis">
-        {([
-          ['Learned', `${j.learningHours} h`],
-          ['Certifications', j.certifications.length],
-          ['Interviews done / booked', `${j.timeline.filter((t) => t.kind === 'Interview').length} / ${j.upcoming.filter((t) => t.kind === 'Interview').length}`],
-          ['Resume score', j.resumeStrength ?? '—'],
-        ] as const).map(([label, value]) => <div key={label} className="bench-kpi jr-kpi"><span className="muted-small">{label}</span><strong className="op-numeric">{value}</strong></div>)}
-      </div>
     </section>
   )
 }

@@ -7,6 +7,7 @@ import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ResumeBuilder } from '../resumeBuilder/ResumeBuilder'
 import { JourneyHero, JourneySince, JourneyUpcoming, RecruiterCard } from '../resource/MyJourney'
+import { ActivityMixCard, CandidateKpis, ReadinessCard, SkillsCoverageCard, WeeklyActivityCard } from '../resource/CandidateDashboard'
 import { useMyJourney } from '../resource/useMyJourney'
 import { writeMyProgress, agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
 
@@ -154,6 +155,14 @@ export function ProgressBody({ token, embedded = false }: Readonly<{ token: stri
               </div>
             </div>
           )}
+          {j && <CandidateKpis j={j} />}
+          {j && (
+            <div className="cd-row">
+              <ReadinessCard j={j} />
+              <WeeklyActivityCard j={j} />
+              <ActivityMixCard j={j} />
+            </div>
+          )}
           <div className="cv-cols">
             <div className="cv-main stack-4">
               <h2 className="cv-section">Your applications</h2>
@@ -190,6 +199,7 @@ export function ProgressBody({ token, embedded = false }: Readonly<{ token: stri
                   </Card>
                 )
               })}
+              <SkillsCoverageCard token={token} />
               <ResumeBuilder token={token} />
               {j && <JourneySince j={j} url={my.url} onAdded={my.setLatest} />}
             </div>

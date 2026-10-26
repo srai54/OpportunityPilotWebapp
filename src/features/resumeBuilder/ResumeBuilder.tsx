@@ -118,6 +118,7 @@ const STATUS: Record<ResumeState['status'], string> = { Draft: 'Draft', Submitte
 export function ResumeBuilder({ token }: Readonly<{ token: string }>) {
   const ws = useApi<Workspace>(`/api/v1/public/progress/${encodeURIComponent(token)}/resumes`)
   const [pick, setPick] = useState<string>('')
+  const [open, setOpen] = useState(false)
   const jobs = ws.data?.jobs ?? []
   const job = jobs.find((j) => j.dealId === pick) ?? jobs[0]
   if (ws.error instanceof ApiError && ws.error.status === 404) return null
@@ -139,7 +140,9 @@ export function ResumeBuilder({ token }: Readonly<{ token: string }>) {
             {r.salesFeedback && <p className="prog-note">{r.salesFeedback}</p>}
           </div>
         )}
-        <Editor key={job.dealId} token={token} ws={ws.data} job={job} onSaved={ws.reload} />
+        {!open && <p className="muted-small">{r.status === 'Draft' ? (r.updatedAt ? 'A draft is saved.' : 'Not started yet.') : r.status === 'Submitted' ? 'With your recruiter for a score.' : 'Reviewed — see the score above.'} {job.jobDescription ? 'The job description is beside the form.' : ''}</p>}
+        <div><button type="button" className={`btn btn-sm ${open ? 'btn-secondary' : 'btn-primary'}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>{open ? 'Close the resume builder' : r.status === 'Draft' && !r.updatedAt ? 'Start my resume' : 'Open my resume'}</button></div>
+        {open && <Editor key={job.dealId} token={token} ws={ws.data} job={job} onSaved={ws.reload} />}
       </div>
     </Card>
   )

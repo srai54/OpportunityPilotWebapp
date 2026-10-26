@@ -1,3 +1,4 @@
+import { writeMyProgress } from '../progress/progressModel'
 import { useState } from 'react'
 import { api, ApiError } from '../../lib/api'
 import { ErrorNotice } from '../../components/ErrorNotice'
@@ -18,6 +19,9 @@ export function SampleDataButton({ onLoaded, primary = false, workspace }: Reado
     setBusy(true); setError(null); setMissing(false); setDone(null)
     try {
       const r = await api<unknown>(samplePath(workspace), { method: 'POST' })
+      // The sample candidate's private link (shares everything): the Candidate view opens it straight away.
+      const sampleToken = (r as { progressToken?: string | null } | null)?.progressToken
+      if (sampleToken) writeMyProgress(sampleToken)
       setDone(sampleSummary(r))
       const jobId = pendingResearchJob(r)
       // The sample job search is only queued: once it has found jobs, call again to add the two sample job interviews.

@@ -102,3 +102,53 @@ export function monthCells(year: number, month: number, items: readonly Timeline
 export const when = (iso: string, withTime = false) => {
   try { return new Date(iso).toLocaleString(undefined, withTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' }) } catch { return iso }
 }
+
+// ---------- Candidate dashboard analytics (2026-10-26) ----------
+
+export const ACTIVITY_KINDS = ['Learning', 'Certification', 'Project', 'InterviewPrep', 'Interview'] as const
+export interface WeekBar { label: string; start: string; counts: Record<string, number>; total: number; hours: number }
+
+/** Activity per week since joining (at most the last `weeks`), counted by kind; hours from logged learning. */
+export function weeklyActivity(items: readonly TimelineItem[], joinedAt: string, now: Date = new Date(), weeks = 8): WeekBar[] {
+  const day = 86_400_000
+  const joined = new Date(joinedAt).getTime()
+  const span = Math.max(1, Math.min(weeks, Math.ceil((now.getTime() - joined) / (7 * day))))
+  const start = now.getTime() - span * 7 * day
+  const bars: WeekBar[] = Array.from({ length: span }, (_, i) => {
+    const s = new Date(start + i * 7 * day)
+    return { label: s.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }), start: s.toISOString(), counts: {}, total: 0, hours: 0 }
+  })
+  for (const t of items) {
+    const at = new Date(t.at).getTime()
+    if (at < start || at > now.getTime()) continue
+    const kind = t.kind === 'Resume' || t.kind === 'Offer' || t.kind === 'Note' || t.kind === 'Joined' ? null : t.kind
+    if (!kind) continue
+    const b = bars[Math.min(span - 1, Math.floor((at - start) / (7 * day)))]
+    b.counts[kind] = (b.counts[kind] ?? 0) + 1
+    b.total++
+    const h = /(\d+)\s*h\b/.exec(t.detail ?? '')
+    if (h) b.hours += Number(h[1])
+  }
+  return bars
+}
+
+/** How the journey splits by kind (for the mix donut). */
+export function activityMix(items: readonly TimelineItem[]): { kind: string; count: number }[] {
+  return ACTIVITY_KINDS.map((kind) => ({ kind, count: items.filter((t) => t.kind === kind).length })).filter((m) => m.count > 0)
+}
+
+export interface ReadinessItem { label: string; done: boolean }
+
+/** What makes a candidate ready to submit: each item is something the candidate (or recruiter) can see and act on. */
+export function readiness(j: Pick<Journey, 'headline' | 'resumeStrength' | 'certifications' | 'learningHours' | 'timeline' | 'upcoming'>): ReadinessItem[] {
+  const has = (k: string) => j.timeline.some((t) => t.kind === k) || j.upcoming.some((t) => t.kind === k)
+  return [
+    { label: 'Title line on your profile', done: Boolean(j.headline?.trim()) },
+    { label: 'Resume written for a role', done: j.timeline.some((t) => t.kind === 'Resume') },
+    { label: 'Resume scored 75 or more', done: (j.resumeStrength ?? 0) >= 75 },
+    { label: 'At least one certification', done: j.certifications.length > 0 },
+    { label: '20+ hours of learning logged', done: j.learningHours >= 20 },
+    { label: 'A project you built', done: has('Project') },
+    { label: 'Interview prep logged', done: has('InterviewPrep') },
+  ]
+}
