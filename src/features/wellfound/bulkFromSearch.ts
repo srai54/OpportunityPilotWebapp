@@ -45,8 +45,16 @@ export async function bulkFromSearch(o: {
   sales: boolean; board: string; boardName: string; query: string; location: string; picked: BoardJob[]; profiles: ProfileSummary[]
   onStep?: (text: string) => void
 }): Promise<BulkResult> {
-  const profile = o.profiles.find((p) => (p.type === 'Candidate') === !o.sales)
-  if (!profile) throw new Error(o.sales ? 'Create a Product or Services profile first (Profiles), so leads can be scored.' : 'Create your profile first (Profiles), so jobs can be scored and applied to.')
+  if (o.picked.length === 0) throw new Error(o.sales ? 'Tick the companies to add first.' : 'Tick the jobs to add first.')
+  let profile: Pick<ProfileSummary, 'id' | 'type'> | undefined = o.profiles.find((p) => (p.type === 'Candidate') === !o.sales)
+  if (!profile) {
+    // No profile yet (a first-time visitor): start one from the search, as the voice flow does, so the leads are scored now.
+    o.onStep?.('Starting a profile from your search…')
+    profile = await api<ProfileSummary>('/api/v1/profiles', { method: 'POST', body: JSON.stringify({
+      type: o.sales ? 'Services' : 'Candidate', name: o.sales ? 'My services' : 'My profile',
+      data: { fields: o.sales ? { offer: `Services for companies hiring ${o.query.trim()}`, idealCustomer: `Companies hiring ${o.query.trim()}` } : { offer: o.query.trim() }, confirmations: {} }, confirmed: true,
+    }) })
+  }
   if (o.picked.length === 0) throw new Error(o.sales ? 'Tick the companies to add first.' : 'Tick the jobs to add first.')
   const mode = suggestedMode(profile.type)
   const draft = newDraft()
