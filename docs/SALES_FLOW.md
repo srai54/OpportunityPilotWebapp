@@ -80,7 +80,7 @@ Template fields per entry: Route, Component, What it shows, Actions, State (read
 
 ### Follow-ups — Reminders by due date
 
-- **Route:** `/follow-ups` (currently renders `NotBuiltPage`, milestone label M7; listed in the nav)
+- **Route:** `/follow-ups` (Follow up hub: replies, follow-up drafts and suppressions)
 - **Component:** today `src/features/placeholder/NotBuiltPage.tsx` via `src/App.tsx:63-73`; planned `src/features/follow-ups/FollowUpsPage.tsx` + `followUpModel.ts`
 - **What it shows:** Today: "Follow-ups — Reminders grouped by due date, with opt-outs and suppression respected." and "Not built yet — milestone M7". Planned (next actions in the API repo's `feature-contracts.md`, design `FollowUps.dc.html`): open next actions grouped by due date with the time zone stated, overdue marked, opportunity title and organisation; suppression list. Reminders are shown in the app only — nothing is delivered.
 - **Actions:** Today: Go to profiles. Planned: mark done / cancel, reschedule, open the opportunity, add/remove a suppression.
