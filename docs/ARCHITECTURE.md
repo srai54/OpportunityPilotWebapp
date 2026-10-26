@@ -75,3 +75,23 @@ Domain ← Application ← Infrastructure ← Api. Every query is owner-scoped f
 - Server-side fetches go through `SafeFetcher` (public addresses only, redirects re-checked, response size and time caps).
 - Paid providers and AI have daily budgets and per-visitor rate limits; guests cannot use them.
 - Mailbox and connector secrets are encrypted at rest (AES-GCM).
+
+## Folder map (moved from CLAUDE.md, 2026-10-26)
+
+| Path | Holds | Rule |
+|---|---|---|
+| `src/main.tsx` | Mounts `<App/>`, imports `tokens.css`, then `styles/app/*.css` in order, then `v5.css` and `auth-v6.css` | Nothing else goes here |
+| `src/App.tsx` | Route table (data router), `AuthGate`, `NotFound` | Every new route is added here **and** to `docs/SCREEN_MAP.md` |
+| `src/lib/` | `api.ts` (fetch wrapper, `ApiError`, `ApiUnreachableError`), `config.ts` (public env), `useApi.ts`, `supabase.ts` (auth client only), `types.ts` (DTOs), `download.ts` | Framework-free helpers shared by several features |
+| `src/components/` | Shared UI: `ErrorNotice` (inline, or the "Could not load X" card with `what`), `States` (`EmptyState`, `FilteredEmpty`, `LoadingState` with API-waking, `NotBuiltState`), `StatusBadge`/`Badge`, `TagInput` | Only components used by two or more features. Every page uses `States` for loading / empty / waking — no hand-made "Loading…" text or centred empty cards |
+| `src/features/<area>/` | One folder per area: `auth`, `shell`, `overview`, `profiles`, `campaigns`, `research`, `opportunities`, `approvals`, `applications`, `integrations`, `settings`, `placeholder` | Screen components are `<Name>Page.tsx` (or a step/section component next to its page) |
+| `src/features/<area>/<area>Model.ts` | Pure logic: labels, validation (`draftProblems`), path builders, normalisers, formatters | No React, no fetch, no DOM — so it can be unit-tested in Node. Existing: `campaignModel`, `researchModel`, `opportunityModel`, `approvalModel`, `applicationStatus`, `profileFields` |
+| `src/features/<area>/*.test.ts` | Vitest tests, co-located with the model they test | Every new model function gets a test |
+| `src/styles/tokens.css` | Design tokens (`--op-*`) | Copied from `../opportunitypilot-ui/tokens.css`; change the design source first, then copy |
+| `src/styles/app/*.css` | Component classes split by area: `base`, `layout`, `accounts`, `screens`, `features`, `refinements`, `find-drawer` (order matters: later files refine earlier ones) | Uses tokens only; add new rules to the file of their area |
+| `docs/` | Flow docs, screen map, project reference, open questions | See the reference table below |
+| `skills/` | `prompt-master.SKILL.md` | Read when a rule below says so |
+| `.claude/commands/` | `/audit-oq`, `/resolve-oq`, `/build-screen` | |
+| `.claude/hooks/` | Command/write guards and the write log | Wired in `.claude/settings.json` |
+
+**Where a new screen goes:** flow-doc entry first (role doc) → `src/features/<area>/<Name>Page.tsx` → pure logic in `<area>Model.ts` + `<area>Model.test.ts` → DTOs in `src/lib/types.ts` → route in `src/App.tsx` (with `handle: { title }`) → nav entry in `NAV` in `src/features/shell/AppShell.tsx` if it is top-level → classes in the matching `src/styles/app/*.css` → `docs/SCREEN_MAP.md`. A screen whose milestone is not built uses `NotBuiltPage` (no sample data, no dead buttons).

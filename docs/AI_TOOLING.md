@@ -11,7 +11,24 @@ How this repository is worked on with Claude Code, and what the assistant may an
 ## Skills and commands
 
 - Skills live in `.claude/skills/<name>/SKILL.md` (front matter: `name`, `description`) and load when their description matches the task.
-- Slash commands live in `.claude/commands/`. `/verify` runs every check before a commit; `/release` raises the one PR for a finished batch.
+  This repo: `ui-change`, `docs-sync`, `prompt-master`.
+- Slash commands live in `.claude/commands/`: `/verify` (every check before a commit), `/review` (findings on the branch before the PR),
+  `/release` (the one PR for a finished batch), `/live-check` (the deployed site after a merge), `/handoff` (HANDOFF.md and TASKS.md at the end).
+
+## AI data rules
+
+- Never paste production data, a candidate's personal details or a secret into a prompt, an issue or a chat. Use the labelled sample data
+  (Settings → Sample data) or test fixtures.
+- Nothing secret goes into `VITE_` variables or `localStorage`; an Anthropic key a candidate pastes for resume tailoring stays in memory
+  for that one request. Every AI output shown to a user is labelled and reviewed before it is sent or saved.
+- What leaves the system and to whom: `../OpportunityPilotWebApi/docs/THIRD_PARTIES.md` and `DATA_INVENTORY.md`.
+
+## Checks that keep this true
+
+- `node .claude/check-ai-config.mjs` (CI job `ai-config`): `.mcp.json` lists only servers from the table below, with no inline
+  credentials; project servers are never auto-enabled; the deny rules and hook files exist; every skill has a name and a description.
+- `node --test .claude/hooks/hooks.test.mjs` (same CI job): the guard hooks block what they claim to block.
+- `.githooks/pre-commit` (enable with `git config core.hooksPath .githooks`): gitleaks on the staged changes.
 
 ## MCP servers and plugins
 

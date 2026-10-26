@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
+import { FeedbackButton } from '../feedback/FeedbackButton'
 import { API_STATUS_LABELS, type ApiStatus, type Workspace } from './shellModel'
 
-/** Slim footer on every screen: service status, the one promise, and two links. */
+/** Slim footer on every screen: service status, the one promise, two links and "Send feedback". */
 export function AppFooter({ apiStatus, workspace }: Readonly<{ apiStatus: ApiStatus; workspace: Workspace }>) {
   const s = API_STATUS_LABELS[apiStatus]
   return (
@@ -14,6 +15,7 @@ export function AppFooter({ apiStatus, workspace }: Readonly<{ apiStatus: ApiSta
       <span className="foot-promise">Nothing is sent or applied without your approval</span>
       <Link to="/how-it-works">How it works</Link>
       <Link to="/settings">Settings</Link>
+      <FeedbackButton className="foot-link" />
     </footer>
   )
 }

@@ -1,0 +1,14 @@
+{
+  "data": "{\"name\":\"Priya Sharma (sample)\",\"title\":\"Senior .NET Developer \\u2013 6 years\",\"summary\":\"Senior .NET developer with 6 years of experience building payment and claims platforms on Azure. Expert in C#, .NET 8, ASP.NET Core, Entity Framework Core, and Azure services including Service Bus. Designed and delivered microservice\\u2011based solutions using Docker containers and SQL Server, handling millions of records daily. Proven ability to implement event\\u2011driven architectures and CI/CD pipelines on Azure.\",\"skills\":[{\"label\":\"Backend\",\"items\":\"C#, .NET 8, ASP.NET Core, Entity Framework Core\"},{\"label\":\"Cloud\",\"items\":\"Azure, Azure Service Bus, Azure Functions, Key Vault\"},{\"label\":\"Databases\",\"items\":\"SQL Server, Redis\"},{\"label\":\"Containers\",\"items\":\"Docker\"}],\"projects\":[{\"name\":\"ClaimSure - Claims Data Platform\",\"details\":\"Claims platform for 150,000\\u002B users.\",\"teamSize\":\"17\",\"technology\":\"C#, .NET, Azure Service Bus, SQL Server, Docker\",\"responsibilities\":\"Built 5 microservices in .NET\\nPublished events with Azure Service Bus topics\\nTuned SQL Server queries for 4M\\u002B records a day\"}]}",
+  "provider": "Groq",
+  "model": "openai/gpt-oss-120b",
+  "changes": [
+    "Reordered summary to lead with years of experience and Azure focus",
+    "Aligned skill labels with job description terminology",
+    "Added Docker under a new Containers skill group (present in project tech)",
+    "Rephrased summary to echo key job requirements without adding new facts",
+    "Prioritized microservices and event‑driven responsibilities in project section",
+    "Used job‑title style for the resume title"
+  ],
+  "notAdded": []
+}

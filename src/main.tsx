@@ -12,9 +12,11 @@ import './styles/v5.css'
 import './styles/auth-v6.css'
 import { inject } from '@vercel/analytics'
 import { App } from './App'
+import { installErrorReporter } from './lib/errorReporter'
 
 // Page views for the Vercel deployment only (the same build also runs on Render, where the script is not served).
 if (__ON_VERCEL__) inject()
+installErrorReporter()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

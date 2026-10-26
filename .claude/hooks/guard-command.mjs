@@ -19,10 +19,12 @@ const command = String(input?.tool_input?.command ?? '')
 if (!command.trim()) process.exit(0)
 
 /** Splits a command line into simple segments on ; && || | and new lines (quotes are not parsed). */
-const segments = command
-  .split(/\r?\n|;|&&|\|\||\|/)
-  .map((s) => s.trim())
-  .filter(Boolean)
+const split = (line) => line.split(/\r?\n|;|&&|\|\||\|/).map((s) => s.trim()).filter(Boolean)
+
+/** Scripts handed to a nested shell (bash -c "…", pwsh -Command '…'), so a wrapped rm -rf / is judged too. */
+const nested = [...command.matchAll(/\b(?:sh|bash|zsh|dash|pwsh|powershell)(?:\.exe)?\s+(?:-c|-command)\s+(["'])([\s\S]*?)\1/gi)].map((m) => m[2])
+
+const segments = [...split(command), ...nested.flatMap(split)]
 
 const tokensOf = (segment) =>
   segment

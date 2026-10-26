@@ -22,5 +22,17 @@ export default defineConfig({
       },
     },
   },
-  test: { environment: 'node', include: ['src/**/*.test.ts'] },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    // Logic lives in *.ts (models, lib); components are checked in the browser. CI fails below these floors (set 2026-10-26 at
+    // 77% statements / 74% branches / 79% functions / 79% lines measured; raise them as tests are added, never lower them).
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
+      reporter: ['text-summary'],
+      thresholds: { statements: 75, branches: 72, functions: 77, lines: 77 },
+    },
+  },
 })

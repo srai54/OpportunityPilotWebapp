@@ -46,23 +46,9 @@ Rules for any AI agent working in this repository. Project rules here win over g
 
 ## 3. Folder blueprint
 
-| Path | Holds | Rule |
-|---|---|---|
-| `src/main.tsx` | Mounts `<App/>`, imports `tokens.css`, then `styles/app/*.css` in order, then `v5.css` and `auth-v6.css` | Nothing else goes here |
-| `src/App.tsx` | Route table (data router), `AuthGate`, `NotFound` | Every new route is added here **and** to `docs/SCREEN_MAP.md` |
-| `src/lib/` | `api.ts` (fetch wrapper, `ApiError`, `ApiUnreachableError`), `config.ts` (public env), `useApi.ts`, `supabase.ts` (auth client only), `types.ts` (DTOs), `download.ts` | Framework-free helpers shared by several features |
-| `src/components/` | Shared UI: `ErrorNotice` (inline, or the "Could not load X" card with `what`), `States` (`EmptyState`, `FilteredEmpty`, `LoadingState` with API-waking, `NotBuiltState`), `StatusBadge`/`Badge`, `TagInput` | Only components used by two or more features. Every page uses `States` for loading / empty / waking — no hand-made "Loading…" text or centred empty cards |
-| `src/features/<area>/` | One folder per area: `auth`, `shell`, `overview`, `profiles`, `campaigns`, `research`, `opportunities`, `approvals`, `applications`, `integrations`, `settings`, `placeholder` | Screen components are `<Name>Page.tsx` (or a step/section component next to its page) |
-| `src/features/<area>/<area>Model.ts` | Pure logic: labels, validation (`draftProblems`), path builders, normalisers, formatters | No React, no fetch, no DOM — so it can be unit-tested in Node. Existing: `campaignModel`, `researchModel`, `opportunityModel`, `approvalModel`, `applicationStatus`, `profileFields` |
-| `src/features/<area>/*.test.ts` | Vitest tests, co-located with the model they test | Every new model function gets a test |
-| `src/styles/tokens.css` | Design tokens (`--op-*`) | Copied from `../opportunitypilot-ui/tokens.css`; change the design source first, then copy |
-| `src/styles/app/*.css` | Component classes split by area: `base`, `layout`, `accounts`, `screens`, `features`, `refinements`, `find-drawer` (order matters: later files refine earlier ones) | Uses tokens only; add new rules to the file of their area |
-| `docs/` | Flow docs, screen map, project reference, open questions | See the reference table below |
-| `skills/` | `prompt-master.SKILL.md` | Read when a rule below says so |
-| `.claude/commands/` | `/audit-oq`, `/resolve-oq`, `/build-screen` | |
-| `.claude/hooks/` | Command/write guards and the write log | Wired in `.claude/settings.json` |
-
-**Where a new screen goes:** flow-doc entry first (role doc) → `src/features/<area>/<Name>Page.tsx` → pure logic in `<area>Model.ts` + `<area>Model.test.ts` → DTOs in `src/lib/types.ts` → route in `src/App.tsx` (with `handle: { title }`) → nav entry in `NAV` in `src/features/shell/AppShell.tsx` if it is top-level → classes in the matching `src/styles/app/*.css` → `docs/SCREEN_MAP.md`. A screen whose milestone is not built uses `NotBuiltPage` (no sample data, no dead buttons).
+`src/features/<feature>/` holds a screen's components with its pure `*Model.ts` (+ tests); `src/components/` the shared components from
+DESIGN.md §7; `src/lib/` the API client, config and helpers; `src/styles/` tokens and CSS. The full folder map with the rule for each folder
+is in `docs/ARCHITECTURE.md` → "Folder map"; open it before adding a feature or a folder. UI work: the `ui-change` skill.
 
 ## 4. Path aliases
 
@@ -128,8 +114,7 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 
 ### Git workflow
 
-- Every feature or change goes on a **new branch** (`feature/`, `fix/`, `docs/`, `chore/` + name); never commit to `main`. Run this repo's checks, commit, then from the workspace root run `bash tools/pr.sh <repo> "<title>" <body-file>`: it pushes, raises a PR to `main` and **squash-merges** it (auto-merge authorised by the user *for now*; if withdrawn, pass `--no-merge` and wait), deletes the branch and pulls `main`. `main` deploys automatically, so a merge is a release.
-- **Push only at the end of the session or when the user says so (rule, set by the user 2026-10-06 — replaces "always push"):** commit locally as each task finishes; a local commit deploys nothing. Do **not** push, raise or merge a PR after a task or a minor change: every push/merge to `main` deploys Vercel and Render and uses up free-tier limits. Push + PR + merge only when **all tasks of the session are done and verified** (typecheck, lint, tests, build, browser check through the local proxy against the live API), or when the user **explicitly** asks. If the session must stop early, leave the work committed locally on its branch (no push) and note the branch in `TASKS.md`. See `../CLAUDE.md`.
+- **Git, push and merge:** the workspace rules in `../CLAUDE.md` (one branch and one PR per batch, push only when the batch is verified, merge with `tools/pr.sh`) and `CONTRIBUTING.md`. Never commit to `main`, force-push or use `--no-verify`.
 
 ### Do not
 
@@ -138,7 +123,6 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 - Do not use design artboards (`../opportunitypilot-ui/*.dc.html`) as the routing source of truth; routes come from the flow docs and `src/App.tsx`.
 - Do not add dependencies, a state library, a CSS framework or path aliases without asking.
 - Do not edit `package-lock.json` by hand, anything in `dist/` or `node_modules/`, or `.env*` files other than `.env.example`/`.env.production` (hooks block these).
-- Do not commit or push unless asked; `main` auto-deploys to Vercel.
 - Do not bypass hooks (`--no-verify`), force-push, or run `rm -rf` on broad paths.
 - Do not claim live verification (Supabase sign-in, LinkedIn/Naukri, Gemini, real-internet fetch, 375 px check) that was not actually run.
 

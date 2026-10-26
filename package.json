@@ -9,9 +9,11 @@
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "check:devices": "node scripts/check-devices.mjs",
-    "check:shell": "node scripts/check-shell.mjs"
+    "check:shell": "node scripts/check-shell.mjs",
+    "smoke": "node scripts/ci-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
@@ -29,6 +31,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.3",
     "oxlint": "^1.81.0",
     "playwright": "^1.49.1",
     "typescript": "~6.0.2",

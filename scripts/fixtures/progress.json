@@ -1,0 +1,31 @@
+{
+  "firstName": "Priya",
+  "asOf": "2026-10-26T14:02:55.5127166Z",
+  "items": [
+    {
+      "client": "Northwind Technologies (sample)",
+      "role": "3 senior .NET developers for a payments platform (sample)",
+      "stage": "Interview scheduled",
+      "updatedAt": "2026-10-26T14:02:02.116843Z",
+      "interview": {
+        "round": 2,
+        "scheduledAt": "2026-10-29T09:30:00Z",
+        "timeZone": "Asia/Kolkata",
+        "mode": "Phone",
+        "location": "Meera Kapoor calls Priya on +91 98111 22334",
+        "minutes": 30,
+        "notes": "Short call with the hiring manager.",
+        "prep": "Meera Kapoor (hiring manager) calls you. Be ready to explain why payments, your notice period, and one question about the team."
+      }
+    }
+  ],
+  "note": "Great news: Northwind liked your profile. Two rounds are booked; prep notes are under each interview. Also have a look at the Globex role.",
+  "roles": [
+    {
+      "id": "60300dac-9e3d-4e43-947f-14c793afe36d",
+      "title": "Data science team extension, 2 engineers (sample)",
+      "client": "Globex Fintech (sample)",
+      "answer": "None"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { ErrorNotice } from '../../components/ErrorNotice'
 import { Badge } from '../../components/StatusBadge'
 import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
+import { TailorPanel } from './TailorPanel'
 import { emptyProject, fileName, gaps, jdMatch, parseDoc, resumeDocx, startDoc, type ResumeDoc } from './resumeDoc'
 
 interface ResumeState { id: string | null; dealId: string; data: string; matchScore: number | null; status: 'Draft' | 'Submitted' | 'Reviewed'; salesScore: number | null; salesFeedback: string | null; updatedAt: string | null }
@@ -52,6 +53,8 @@ function Editor({ token, ws, job, onSaved }: Readonly<{ token: string; ws: Works
           {match.missing.length > 0 && <p className="muted-small">Not in your resume yet: {match.missing.join(', ')}. Add them only if you have used them.</p>}
         </div>
       )}
+      <TailorPanel token={token} dealId={job.dealId} doc={doc} jobDescription={job.jobDescription}
+        onUse={(d) => { setDoc(d); setNote('Tailored version in place. Check it, then Save draft.') }} />
       <div className="rb-grid">
         <div className="field"><label htmlFor={id('name')}>Name</label><input id={id('name')} value={doc.name} onChange={(e) => set({ name: e.target.value })} /></div>
         <div className="field"><label htmlFor={id('title')}>Title line</label><input id={id('title')} value={doc.title} placeholder="Software Engineer | .NET | Angular | Azure | 4+ years" onChange={(e) => set({ title: e.target.value })} /></div>

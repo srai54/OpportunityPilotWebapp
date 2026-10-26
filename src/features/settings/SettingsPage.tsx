@@ -18,6 +18,8 @@ import { ThemeChoiceGroup } from '../shell/ThemeToggle'
 import { SampleDataButton } from '../sample/SampleDataButton'
 import { ROLE_LABEL } from '../access/accessModel'
 import { UsersRolesCard } from '../access/UsersRolesCard'
+import { ClaudeCard } from '../ai/ClaudeCard'
+import { FeedbackAdminCard } from '../feedback/FeedbackAdminCard'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 const AUTH_LABEL = {
@@ -125,6 +127,9 @@ export function SettingsPage() {
           </Card>
 
           {me?.isAdmin && <UsersRolesCard />}
+          {me?.isAdmin && <FeedbackAdminCard />}
+
+          <ClaudeCard guest={mode === 'guest'} />
 
           <Card title="Sample data">
             <p className="muted-small">Fill this workspace with labelled sample candidates, deals and interviews to try things out.</p>

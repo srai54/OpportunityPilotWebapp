@@ -416,3 +416,27 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .connector-target input { flex: none; }
 @media (max-width: 860px) { .connector-target { min-height: var(--op-touch-target); } }
 
+
+/* Feedback (2026-10-26): footer link, kind chips and the 1–5 rating. */
+.app-footer .foot-link { background: none; border: 0; padding: 0; font: inherit; color: var(--op-muted); cursor: pointer; }
+.app-footer .foot-link:hover { color: var(--op-ink); text-decoration: underline; }
+.fb-kinds, .fb-rating { display: flex; flex-wrap: wrap; gap: 8px; }
+.fb-kind, .fb-star { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--op-line); border-radius: 999px; cursor: pointer; }
+.fb-kind:has(input:checked), .fb-star:has(input:checked) { border-color: var(--op-primary); background: var(--op-primary-tint); color: var(--op-on-primary-tint); }
+.fb-star { min-width: 44px; justify-content: center; }
+.fb-star input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.fb-star:has(input:focus-visible) { outline: 2px solid var(--op-focus); outline-offset: 2px; }
+.fb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.fb-item { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--op-hair); border-radius: 12px; }
+.fb-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.fb-item pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: var(--op-muted); max-height: 140px; overflow: auto; }
+
+/* Claude key (2026-10-26) and resume tailoring. */
+.claude-key { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-tailor { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--op-line); border-radius: 14px; background: var(--op-indigo-tint); color: var(--op-ink); }
+.rb-tailor .muted-small, .rb-tailor .hint { color: var(--op-on-indigo-tint); }
+.rb-tailor-result { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--op-surface); border: 1px solid var(--op-hair); }
+.rb-tailor-result ul { margin: 0; padding-left: 18px; }
+.fb-subhead { margin: 0; font-size: 14px; font-weight: 600; }
+.top-switch.claude-share { white-space: normal; text-align: left; min-height: 44px; color: var(--op-ink); }
+.rb-tailor .btn-link { color: var(--op-on-indigo-tint); text-decoration: underline; min-height: 44px; }

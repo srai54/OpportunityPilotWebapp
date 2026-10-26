@@ -1,0 +1,145 @@
+{
+  "candidateId": "c3677cfc-f654-4dc1-9e96-d6fed448355c",
+  "name": "Priya Sharma (sample)",
+  "headline": "Senior .NET developer",
+  "skills": "C#, .NET 8, ASP.NET Core, Azure, SQL Server",
+  "joinedAt": "2026-09-11T00:00:00Z",
+  "day": 46,
+  "salesperson": "Meera Kapoor",
+  "priority": false,
+  "status": "interviewing",
+  "resumeStrength": 86,
+  "bestFit": {
+    "role": "3 senior .NET developers for a payments platform (sample)",
+    "score": 80
+  },
+  "certifications": [
+    "AZ-900 Azure Fundamentals",
+    "AZ-204 Azure Developer Associate"
+  ],
+  "learningHours": 48,
+  "timeline": [
+    {
+      "kind": "InterviewPrep",
+      "title": "Prep: Northwind payments domain",
+      "detail": "Read their product pages; drafted 3 questions",
+      "at": "2026-10-24T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "161167ca-3945-4449-aeb3-12507b96804d"
+    },
+    {
+      "kind": "Resume",
+      "title": "Resume for 3 senior .NET developers for a payments platform (sample) scored 86/100",
+      "detail": "JD match 80%",
+      "at": "2026-10-22T14:02:03.609314Z",
+      "source": "Pipeline",
+      "entryId": null
+    },
+    {
+      "kind": "Note",
+      "title": "Resume shared with Meera for review",
+      "detail": null,
+      "at": "2026-10-21T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "965ca266-646e-4769-98ee-1c3a4a2680ac"
+    },
+    {
+      "kind": "Certification",
+      "title": "AZ-204 Azure Developer Associate",
+      "detail": "Score 862 / 1000",
+      "at": "2026-10-18T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "e13437f0-f9b0-47e1-8c6e-336898d03dab"
+    },
+    {
+      "kind": "Learning",
+      "title": "Kubernetes for developers",
+      "detail": "Deployments, services, Helm basics · 10 h",
+      "at": "2026-10-14T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "492adf4d-2182-46e1-bed7-dba2361bd7c8"
+    },
+    {
+      "kind": "Project",
+      "title": "Built a claims event pipeline",
+      "detail": ".NET, Azure Service Bus, SQL Server; repo shared with sales",
+      "at": "2026-10-10T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "c64ede6c-3835-406e-8da3-57dab835f47a"
+    },
+    {
+      "kind": "InterviewPrep",
+      "title": "Mock interview with the delivery lead",
+      "detail": "System design 4/5, communication 4/5",
+      "at": "2026-10-02T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "9f9503f8-3c1b-4d4a-b0f4-adde2fe81edf"
+    },
+    {
+      "kind": "Learning",
+      "title": "System design primer",
+      "detail": "Queues, idempotency, sagas · 8 h",
+      "at": "2026-09-29T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "86953fb8-4361-446a-a37b-3af7b251e6c7"
+    },
+    {
+      "kind": "Learning",
+      "title": "Microservices on Azure",
+      "detail": "Service Bus topics, Durable Functions, Key Vault · 24 h",
+      "at": "2026-09-24T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "38d949c7-35f3-428c-9840-1db7a4da9702"
+    },
+    {
+      "kind": "Learning",
+      "title": "C# advanced patterns",
+      "detail": "Async, generics, LINQ performance · 6 h",
+      "at": "2026-09-18T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "8ae0b8fc-9c7c-440d-9977-5de826db2162"
+    },
+    {
+      "kind": "Certification",
+      "title": "AZ-900 Azure Fundamentals",
+      "detail": "Passed in the first week",
+      "at": "2026-09-15T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "c4e973c4-7886-436d-a770-9d3260859175"
+    },
+    {
+      "kind": "Joined",
+      "title": "Joined the bench",
+      "detail": "Aligned with Meera Kapoor.",
+      "at": "2026-09-11T00:00:00Z",
+      "source": "System",
+      "entryId": null
+    }
+  ],
+  "upcoming": [
+    {
+      "kind": "Interview",
+      "title": "Interview round 1 · 3 senior .NET developers for a payments platform (sample)",
+      "detail": "Video",
+      "at": "2026-10-27T05:00:00Z",
+      "source": "Pipeline",
+      "entryId": null
+    },
+    {
+      "kind": "Interview",
+      "title": "Interview round 2 · 3 senior .NET developers for a payments platform (sample)",
+      "detail": "Phone",
+      "at": "2026-10-29T09:30:00Z",
+      "source": "Pipeline",
+      "entryId": null
+    },
+    {
+      "kind": "Certification",
+      "title": "AZ-400 exam (booked)",
+      "detail": "Online, proctored",
+      "at": "2026-11-01T14:02:03.609314Z",
+      "source": "Candidate",
+      "entryId": "1751e89c-8812-4e8e-9e71-001a641bfdf8"
+    }
+  ]
+}

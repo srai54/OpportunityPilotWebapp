@@ -1,10 +1,13 @@
+import { useEffect } from 'react'
 import { useRouteError } from 'react-router-dom'
+import { reportError } from '../lib/errorReporter'
 import { isStaleChunkError } from '../lib/lazyPage'
 
 /** Shown when a page fails to load or crashes: plain words and a way back, never a stack trace. */
 export function RouteError() {
   const error = useRouteError()
   const stale = isStaleChunkError(error)
+  useEffect(() => { if (!stale) reportError(error, 'route') }, [error, stale])
   return (
     <main className="signin" id="main">
       <div className="page stack-3" style={{ maxWidth: 560 }}>

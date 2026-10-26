@@ -1,0 +1,43 @@
+{
+  "name": "Priya Sharma (sample)",
+  "headline": "Senior .NET developer",
+  "skills": "C#, .NET 8, ASP.NET Core, Azure, SQL Server",
+  "jobs": [
+    {
+      "dealId": "1a452315-0abd-406f-a81e-d140844f96c4",
+      "title": "3 senior .NET developers for a payments platform (sample)",
+      "client": "Northwind Technologies (sample)",
+      "jobDescription": "Northwind Technologies is building a new payments platform. We need senior .NET developers (5+ years) with C#, .NET 8, ASP.NET Core, Entity Framework Core, Azure, Azure Service Bus, SQL Server, Docker and Kubernetes. Microservices and event-driven design; REST APIs; CI/CD with Azure DevOps. Contract, 12 months, hybrid in Gurugram.",
+      "resume": {
+        "id": "60238b29-29f2-4710-af21-7c5d41d4eb0b",
+        "dealId": "1a452315-0abd-406f-a81e-d140844f96c4",
+        "data": "{\"name\":\"Priya Sharma (sample)\",\"title\":\"Senior .NET developer | Azure | 6 years\",\"summary\":\"Software engineer with 6 years building .NET payment and claims platforms on Azure. Designs microservices with ASP.NET Core, Azure Service Bus and SQL Server; processed 4M+ records daily.\",\"skills\":[{\"label\":\"Backend\",\"items\":\"C#, .NET 8, ASP.NET Core, Entity Framework Core\"},{\"label\":\"Cloud\",\"items\":\"Azure, Azure Service Bus, Azure Functions, Key Vault\"},{\"label\":\"Databases\",\"items\":\"SQL Server, Redis\"}],\"projects\":[{\"name\":\"ClaimSure - Claims Data Platform\",\"details\":\"Claims platform for 150,000+ users.\",\"teamSize\":\"17\",\"technology\":\"C#, .NET, Azure Service Bus, SQL Server, Docker\",\"responsibilities\":\"Built 5 microservices in .NET\\nPublished events with Azure Service Bus topics\\nTuned SQL Server queries for 4M+ records a day\"}]}",
+        "matchScore": 80,
+        "status": "Reviewed",
+        "salesScore": 86,
+        "salesFeedback": "Strong match. Add your Kubernetes work if you have any.",
+        "updatedAt": "2026-10-22T14:02:03.609314Z",
+        "submittedAt": "2026-10-21T14:02:03.609314Z",
+        "reviewedAt": "2026-10-22T14:02:03.609314Z"
+      }
+    },
+    {
+      "dealId": "dcd76410-ea91-4a0b-b2bf-5dd0a6fb132b",
+      "title": "Data science team extension, 2 engineers (sample)",
+      "client": "Globex Fintech (sample)",
+      "jobDescription": "Globex Fintech is extending its data science team. Python, pandas, scikit-learn, SQL, AWS SageMaker, MLflow; experience with fraud or risk models. Contract, 6 months, remote (India).",
+      "resume": {
+        "id": null,
+        "dealId": "dcd76410-ea91-4a0b-b2bf-5dd0a6fb132b",
+        "data": "{}",
+        "matchScore": null,
+        "status": "Draft",
+        "salesScore": null,
+        "salesFeedback": null,
+        "updatedAt": null,
+        "submittedAt": null,
+        "reviewedAt": null
+      }
+    }
+  ]
+}
