@@ -26,6 +26,9 @@ export const config = {
   /** The Candidate workspace (job search for candidates). On by default, so nothing changes. VITE_SALES_ONLY=true makes this app the
    *  Sales portal only (no Candidate/Sales switch); candidates then use the candidate app, OpportunityPilotCandidate (2026-10-22). */
   candidateWorkspace: env.VITE_SALES_ONLY !== 'true',
+  /** Candidate job search (Find jobs, apply queue, campaigns, agent) in the Candidate view. Off (default since 2026-10-26): the Candidate
+   *  view shows only what the sales team shares (My progress). The full job search lives in the candidate app; true brings it back here. */
+  candidateJobSearch: env.VITE_CANDIDATE_JOB_SEARCH === 'true',
   /** The candidate portal's address; share links open there. Empty: links stay on this app. */
   candidatePortalUrl: ((env.VITE_CANDIDATE_PORTAL_URL as string | undefined) ?? '').trim().replace(/\/+$/, ''),
 }

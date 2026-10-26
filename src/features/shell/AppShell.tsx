@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { Link, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
+import { Link, Navigate, NavLink, Outlet, useLocation, useMatches } from 'react-router-dom'
 import { Icon } from '../../components/icons'
 import { ProgressBar } from '../../components/ProgressBar'
 import { percentOf } from '../../components/percent'
@@ -29,6 +29,8 @@ import {
   initials,
   navGroupFor,
   navGroupsFor,
+  candidateEssentials,
+  CANDIDATE_ESSENTIAL_PATHS,
   readAdvanced,
   writeAdvanced,
   navAccessibleName,
@@ -145,6 +147,8 @@ export function AppShell() {
   // Role-based access (2026-10-22): a Candidate-only or Sales-only user sees that view only; Both, no role yet and the admin keep both.
   // The shown email goes along only as the admin's label (Hanko tokens may carry none); access is decided from the token on the server.
   const meLabel = user?.guest ? '' : user?.email ?? ''
+  // Candidate view = only what the sales team shares (2026-10-26), unless candidate job search is switched on.
+  const essentials = candidateEssentials(workspace)
   const me = useApi<Me>(apiStatus === 'ready' ? `/api/v1/me${meLabel.includes('@') ? `?label=${encodeURIComponent(meLabel)}` : ''}` : null)
   const allowedWs = useMemo(() => allowedWorkspaces(me.data), [me.data])
   useEffect(() => {
@@ -400,7 +404,7 @@ export function AppShell() {
                 <TopSwitch label="Guide" on={guide} onChange={setGuide} coach="guide-switch" hint="Tips and the Next bar on every screen" testId="toggle-guide" />
                 <TopSwitch label="Advanced" on={advanced} onChange={setAdvanced} coach="advanced-switch" hint="Every screen, filter and detail" testId="toggle-advanced" />
               </div>
-              <VoiceLaunch workspace={workspace} />
+              {!essentials && <VoiceLaunch workspace={workspace} />}
               <VoicePill />
               <button type="button" className="help-btn" aria-label="Show tips for this page" title="Show tips for this page" disabled={!flowIdForPath(location.pathname)} onClick={() => setReplay((n) => n + 1)}>
                 <Icon name="help" size={17} />
@@ -438,7 +442,7 @@ export function AppShell() {
               </div>
             </div>
           </header>
-          <JourneyBar workspace={workspace} overview={overview.data} pathname={location.pathname} />
+          {!essentials && <JourneyBar workspace={workspace} overview={overview.data} pathname={location.pathname} />}
         </div>
 
         <div className="shell-body">
@@ -470,9 +474,9 @@ export function AppShell() {
                 <span>The API is running but reports its database as unavailable. Data screens will fail until it recovers.</span>
               </div>
             )}
-            {guide && <NextBar workspace={workspace} overview={overview.data} pathname={location.pathname} search={location.search} />}
+            {guide && !essentials && <NextBar workspace={workspace} overview={overview.data} pathname={location.pathname} search={location.search} />}
             <main id="main" className="content" tabIndex={-1} inert={drawerOpen}>
-              <Outlet />
+              {essentials && !CANDIDATE_ESSENTIAL_PATHS.includes(location.pathname) ? <Navigate to="/my-progress" replace /> : <Outlet />}
             </main>
             <AppFooter apiStatus={apiStatus} workspace={workspace} />
           </div>
@@ -486,7 +490,7 @@ export function AppShell() {
             </div>
           </>
         )}
-        <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />
+        {!essentials && <CoachHost pathname={location.pathname} replay={replay} guide={guide} guideTick={guideTick} workspace={workspace} onSkip={() => setGuide(false)} />}
         <CallHost />
       </div>
     </ShellContext.Provider>

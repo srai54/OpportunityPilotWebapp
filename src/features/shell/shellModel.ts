@@ -87,8 +87,23 @@ export const SALES_NAV_GROUPS: NavGroup[] = [
   NAV_GROUPS[2],
 ]
 
+/** The Candidate rail when job search is off (default since 2026-10-26): only what the sales team shares, plus help and settings. */
+export const CANDIDATE_ESSENTIAL_NAV: NavGroup[] = [
+  { id: 'mine', label: 'Mine', items: [{ to: '/my-progress', label: 'My progress', icon: 'pulse' }] },
+  { id: 'setup', label: 'Set up', items: [{ to: '/how-it-works', label: 'How it works', icon: 'help' }, { to: '/settings', label: 'Settings', icon: 'settings' }] },
+]
+
+/** Addresses the essential Candidate view may open; any other address goes to My progress. */
+export const CANDIDATE_ESSENTIAL_PATHS = ['/my-progress', '/how-it-works', '/settings']
+
+/** True when the Candidate view shows only what the sales team shares. */
+export function candidateEssentials(workspace: Workspace, jobSearch = config.candidateJobSearch): boolean {
+  return workspace === 'candidate' && !jobSearch
+}
+
 /** The rail for a workspace; without Advanced, advanced items (and groups left empty) are left out. */
-export function navGroupsFor(workspace: Workspace, advanced = false): NavGroup[] {
+export function navGroupsFor(workspace: Workspace, advanced = false, jobSearch = config.candidateJobSearch): NavGroup[] {
+  if (candidateEssentials(workspace, jobSearch)) return CANDIDATE_ESSENTIAL_NAV
   const groups = workspace === 'sales' ? SALES_NAV_GROUPS : NAV_GROUPS
   if (advanced) return groups
   return groups.map((g) => ({ ...g, items: g.items.filter((i) => !i.advanced) })).filter((g) => g.items.length > 0)
@@ -197,10 +212,13 @@ export function writeNavCollapsed(collapsed: boolean, store: Store | null = safe
 /** The saved workspace. With VITE_SALES_ONLY=true (2026-10-22) this app is the Sales portal: always 'sales'. */
 export function readWorkspace(store: Store | null = safeStore(), candidateOn = config.candidateWorkspace): Workspace {
   if (!candidateOn) return 'sales'
+  // With candidate job search off (default since 2026-10-26) the Sales view is the main product, so a new visitor starts there.
+  const fallback: Workspace = config.candidateJobSearch ? 'candidate' : 'sales'
   try {
-    return store?.getItem(WORKSPACE_KEY) === 'sales' ? 'sales' : 'candidate'
+    const saved = store?.getItem(WORKSPACE_KEY)
+    return saved === 'sales' || saved === 'candidate' ? saved : fallback
   } catch {
-    return 'candidate'
+    return fallback
   }
 }
 

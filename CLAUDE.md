@@ -106,6 +106,7 @@ None. There is no `paths`/`baseUrl` in `tsconfig.app.json` and no `resolve.alias
 - Dev sign-in stays compiled out of production: it is gated by `import.meta.env.DEV` in `config.ts`; never remove that check or add another bypass.
 - `.env.production` holds public values only and is committed on purpose; `.env`, `.env.local` and other `.env.*` files are never committed or edited by the agent.
 - Agent keys are shown once on creation and never stored by the web app.
+- `vercel.json` sets a Content-Security-Policy whose `script-src` allows only this site and the SHA-256 of the inline theme-boot script in `index.html`. Changing that script means updating the hash (compute it from `dist/index.html`), or the theme flashes.
 
 ### CSS (learned in this codebase)
 

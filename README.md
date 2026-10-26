@@ -9,6 +9,26 @@ API: https://opportunitypilotwebapi.onrender.com (free host: the first request c
 [![ci](https://github.com/shr1-live/OpportunityPilotWebapp/actions/workflows/ci.yml/badge.svg)](https://github.com/shr1-live/OpportunityPilotWebapp/actions/workflows/ci.yml)
 · React 19 · TypeScript 6 · Vite 8 · .NET 10 API · PostgreSQL · Playwright agent · Groq / Gemini / Whisper
 
+![Find companies: one search across 18 job sites, grouped by hiring company](docs/img/sales-find-companies.png)
+
+## Judge in 3 minutes
+
+1. Open the live demo, click **Continue as guest**, then **Skip for now**. You start in the **Sales** view.
+2. **Find companies**: type `react developer`, untick *Contract only*, press **Search**. About 30 companies from 40+ postings across 18 sites, each with *why this lead*, linked to the original postings.
+3. **Turn them into leads and write emails**, then **Review leads** to approve a batch, then **Reach out** to see the drafted emails. Nothing is sent without your approval.
+4. **Settings → Load sample data**, then **Staffing → Candidates → Share progress**: tick *A note from you*, *Interview prep*, *Suggested roles*, make the link and open it. That is what the candidate sees.
+5. Voice (Chrome/Edge, allow the microphone): press the mic and say *"Find remote React contract roles in Germany"*.
+
+## New this week
+
+| Feature | What it does |
+|---|---|
+| **Candidate view = what the sales team shares** | Candidates see **My progress** only: each application's stage, the next interview (join + calendar), prep tips, and roles to answer *I'm interested* / *Not for me*. Never pay, rates or internal notes. The full candidate job search lives in the separate candidate app ([OpportunityPilotCandidate](https://github.com/shr1-live/OpportunityPilotCandidate)); `VITE_CANDIDATE_JOB_SEARCH=true` brings it back here. |
+| **Share progress extras** | The sales team adds a note, interview prep and suggested roles to the candidate's private link; the candidate's answers show back in Share progress. |
+| **Role-based access** | At sign-up a new account picks Candidate or Sales; the admin (set on the server) assigns Candidate, Sales or Both to anyone in **Settings → Users & roles**. Accounts without a role, and guests, keep both views. |
+
+![The candidate's private progress page: stage, next interview, prep, suggested roles](docs/img/candidate-progress.png)
+
 ## The problem
 
 - **Job seekers** check LinkedIn, Indeed, Naukri, remote boards and company career pages one by one, and lose track of what they applied to.
@@ -20,7 +40,7 @@ Both are the same job: **find → score → shortlist → act → follow up.**
 
 | Step | Candidate workspace | Sales workspace |
 |---|---|---|
-| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, Hacker News "Who is hiring", The Muse, Instahyre, Freelancer.com projects; with free keys: Adzuna, Jooble, Careerjet, Findwork, USAJOBS), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; *why this lead* and *new since your last search* on each company; CSV export for Apollo |
+| **Find** | Jobs from free feeds (Arbeitnow, Jobicy, We Work Remotely, Remotive, Remote OK, Himalayas, Working Nomads, Hacker News "Who is hiring", The Muse, Instahyre, Freelancer.com projects; Bundesagentur für Arbeit; with free keys: Adzuna, Jooble, Careerjet, Findwork, USAJOBS, Reed; any RapidAPI board by configuration), LinkedIn/Indeed/SEEK/Naukri (credits), Wellfound, Workday/Greenhouse/Lever/Ashby company boards | The same sources, **grouped by hiring company**; Apollo people search; region picker (Global remote, India, Europe, UK, US & Canada, Middle East, ANZ, APAC); **Contract only + Remote only on by default**; *why this lead* and *new since your last search* on each company; CSV export for Apollo |
 | **Score** | Fit out of 100 with the evidence quoted from the posting (rules engine, no black box) | Lead score from hiring signals |
 | **Approve** | Batch approval queue; optional auto-approve above a score | Same, per company |
 | **Act** | Apply link, tailored resume (.docx), or the local desktop agent (stops at any login/CAPTCHA) | Drafted emails per lead, approve, send from Gmail/Outlook/SMTP, or export |
@@ -84,7 +104,7 @@ More: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | Unit tests (Vitest) | `npm test` | 603 tests |
 | Build | `npm run build` | lazy-loaded routes; `docx` loaded only when a resume is exported |
 | Layout + accessibility | `npm run check:shell`, `npm run check:devices` | every route × 1280/1024/375 × light/dark, axe WCAG 2.1 AA 0 violations |
-| API | `dotnet test` in the API repo | 830 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
+| API | `dotnet test` in the API repo | 831 unit tests + Postgres integration tests (Testcontainers); build fails on any warning; coverage in CI |
 
 ## Security and data honesty
 

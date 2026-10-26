@@ -154,6 +154,7 @@ export function SettingsPage() {
         </div>
 
         <div className="stack-4">
+          <DemoReadinessCard />
           {advanced && <>
           <Card title="Rules that cannot be switched off">
             <ul className="plain-list settings-rules">
@@ -169,8 +170,6 @@ export function SettingsPage() {
               ))}
             </ul>
           </Card>
-
-          <DemoReadinessCard />
 
           <Card title="This deployment">
             <dl className="settings-rows">

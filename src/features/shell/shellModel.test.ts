@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Overview } from '../../lib/types'
 import {
   aiModeLabel,
+  candidateEssentials,
+  CANDIDATE_ESSENTIAL_PATHS,
   gmailLabel,
   initials,
   NAV_COLLAPSED_KEY,
@@ -20,6 +22,12 @@ import {
   writeWorkspace,
   type NavItem,
 } from './shellModel'
+
+// These tests cover the full Candidate rail (job search on); the essential Candidate view is tested at the end.
+vi.mock('../../lib/config', async (original) => {
+  const real = await original<typeof import('../../lib/config')>()
+  return { ...real, config: { ...real.config, candidateJobSearch: true } }
+})
 
 const overview: Overview = { profiles: 1, applied: 4, needsManual: 2, campaigns: 3, shortlisted: 5, awaitingApproval: 0, draftsAwaitingReview: 0, followUpsDue: 0 }
 const item = (to: string): NavItem => {
@@ -202,5 +210,19 @@ describe('Sales portal (VITE_SALES_ONLY=true, 2026-10-22)', () => {
   it('is always the Sales workspace, whatever was saved', () => {
     expect(readWorkspace(memoryStore(), false)).toBe('sales')
     expect(readWorkspace(memoryStore({ [WORKSPACE_KEY]: 'candidate' }), false)).toBe('sales')
+  })
+})
+
+describe('Candidate view = what the sales team shares (2026-10-26)', () => {
+  it('shows only My progress, How it works and Settings when job search is off', () => {
+    expect(candidateEssentials('candidate', false)).toBe(true)
+    expect(candidateEssentials('sales', false)).toBe(false)
+    expect(candidateEssentials('candidate', true)).toBe(false)
+    const routes = navGroupsFor('candidate', true, false).flatMap((g) => g.items.map((i) => i.to))
+    expect(routes).toEqual(['/my-progress', '/how-it-works', '/settings'])
+    expect(CANDIDATE_ESSENTIAL_PATHS).toEqual(routes)
+  })
+  it('leaves the Sales rail as it was', () => {
+    expect(navGroupsFor('sales', false, false)).toEqual(navGroupsFor('sales', false, true))
   })
 })

@@ -5,7 +5,7 @@ import { LoadingState } from '../../components/States'
 import { Badge } from '../../components/StatusBadge'
 import { api, ApiError } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
-import { agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
+import { writeMyProgress, agoText, countdown, interviewIcs, joinUrl, journey, nextInterview, type ProgressItem, type ProgressRole, type ProgressView, type RoleAnswer } from './progressModel'
 
 const REFRESH_MS = 30_000
 
@@ -109,6 +109,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
 
   useEffect(() => {
     if (!view.data) return
+    writeMyProgress(token)
     // A new answer from the server arrived (an external event): remember when, for the live marker.
     // oxlint-disable-next-line react/set-state-in-effect
     setFetchedAt(Date.now())
@@ -118,7 +119,7 @@ export function ProgressPage({ token }: Readonly<{ token: string }>) {
       if (moved.size) { setChanged(moved); setTimeout(() => setChanged(new Set()), 4000) }
     }
     previous.current = keys
-  }, [view.data])
+  }, [view.data, token])
 
   const first = view.data?.firstName
   return (

@@ -51,6 +51,23 @@ export function openRoles<T extends { stage: string }>(deals: readonly T[]): T[]
 export const NOTE_MAX = 1000
 export const PREP_MAX = 2000
 
+const MY_PROGRESS_KEY = 'op.myProgress'
+
+/** The progress code inside a pasted link or a bare code (letters, digits, - and _), or null. */
+export function tokenFrom(input: string): string | null {
+  const v = input.trim()
+  const m = /\/progress\/([A-Za-z0-9_-]{16,200})/.exec(v) ?? /^([A-Za-z0-9_-]{16,200})$/.exec(v)
+  return m ? m[1] : null
+}
+
+/** The last progress link opened on this browser, so "My progress" is one tap next time. */
+export function readMyProgress(): string | null {
+  try { const t = localStorage.getItem(MY_PROGRESS_KEY); return t && tokenFrom(t) ? t : null } catch { return null }
+}
+export function writeMyProgress(token: string): void {
+  try { localStorage.setItem(MY_PROGRESS_KEY, token) } catch { /* private mode: not remembered */ }
+}
+
 export function progressUrl(origin: string, token: string): string {
   return `${origin.replace(/\/$/, '')}/progress/${encodeURIComponent(token)}`
 }

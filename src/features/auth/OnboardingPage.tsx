@@ -36,6 +36,13 @@ const CHOICES: { key: Workspace; title: string; sub: string; status: string; ton
   },
 ]
 
+const CANDIDATE_SHARED = {
+  ...CHOICES[0],
+  sub: 'My recruiter shares my progress',
+  status: 'Built',
+  points: ['Where each application stands, live', 'Your next interview: join link and calendar', 'Prep tips and roles your recruiter suggests'],
+}
+
 const NEXT = [
   ['Write a profile', 'A few lines on what you offer. Fit is scored against it.'],
   ['Add a source', 'A Greenhouse or Lever board slug is enough to start.'],
@@ -45,8 +52,10 @@ const NEXT = [
 /** Design AuthOnboarding: shown once per browser after first sign-in. Picks the workspace, then opens Profiles. */
 export function OnboardingPage({ onDone }: { onDone: (path: string) => void }) {
   const { user, signOut } = useAuth()
-  const [choice, setChoice] = useState<Workspace>(config.candidateWorkspace ? 'candidate' : 'sales')
-  const choices = config.candidateWorkspace ? CHOICES : CHOICES.filter((c) => c.key === 'sales')
+  const [choice, setChoice] = useState<Workspace>(config.candidateWorkspace && config.candidateJobSearch ? 'candidate' : 'sales')
+  // Candidate view = what the sales team shares (2026-10-26), unless candidate job search is switched on.
+  const all = config.candidateJobSearch ? CHOICES : CHOICES.map((c) => (c.key === 'candidate' ? CANDIDATE_SHARED : c))
+  const choices = config.candidateWorkspace ? all : all.filter((c) => c.key === 'sales')
 
   async function finish(path: string) {
     writeWorkspace(choice)
