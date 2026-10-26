@@ -22,6 +22,12 @@ export interface BulkResult { campaignId: string; approved: number; found: numbe
  * their title, company, place and board link (so the desktop agent can still apply on LinkedIn/Naukri); for Sales one block per company
  * with the roles it is hiring for.
  */
+/** Hiring signals for a Sales search: "hiring", each meaningful word of the role, and remote / contract. */
+export function salesSignals(query: string): string[] {
+  const words = query.toLowerCase().split(/[^a-z0-9+#.]+/).filter((w) => w.length >= 3 && !['and', 'the', 'for', 'with'].includes(w))
+  return [...new Set(['hiring', ...words, 'remote', 'contract'])].slice(0, 10)
+}
+
 export function pickedAsPaste(sales: boolean, picked: readonly BoardJob[]): string {
   if (sales) {
     const groups: { company: string; jobs: BoardJob[] }[] = []
@@ -61,6 +67,9 @@ export async function bulkFromSearch(o: {
   draft.name = `${o.query.trim().slice(0, 60)} — ${o.boardName} ${o.sales ? 'companies' : 'picks'}`
   draft.goal = o.sales ? `Companies hiring ${o.query.trim()} on ${o.boardName}.` : `Apply to chosen ${o.boardName} jobs for ${o.query.trim()}.`
   draft.criteria = { ...draft.criteria, keywords: [o.query.trim().slice(0, 200)], locations: o.location.trim() ? [o.location.trim().slice(0, 100)] : [] }
+  // Sales leads are scored on hiring signals: the company is hiring, for the searched role, remote or contract. Each match quotes the
+  // posting, so a lead's score is explained (without signals every lead scored 0).
+  if (o.sales) draft.criteria = { ...draft.criteria, signals: salesSignals(o.query) }
   o.onStep?.('Creating the campaign…')
   const campaign = await api<Campaign>('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ profileId: profile.id, mode, ...campaignPayload(draft, mode) }) })
   await api(`/api/v1/campaigns/${campaign.id}/sources`, { method: 'POST', body: JSON.stringify({ kind: 'Paste', name: `${o.boardName} picks`, text: pickedAsPaste(o.sales, o.picked) }) })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pickedAsPaste, sameCompany, sameLink } from './bulkFromSearch'
+import { pickedAsPaste, sameCompany, sameLink, salesSignals } from './bulkFromSearch'
 
 describe('bulk matching', () => {
   it('matches a posting link however the board wrote it', () => {
@@ -24,5 +24,12 @@ describe('pickedAsPaste', () => {
     const text = pickedAsPaste(true, [j('Dev', 'Acme Pty Ltd', 'https://www.seek.com.au/job/1'), j('QA', 'acme', 'https://www.seek.com.au/job/2'), j('PM', 'Beta', 'https://www.seek.com.au/job/3')])
     expect(text.split('\n---\n')).toHaveLength(2)
     expect(text).toContain('Hiring: Dev, QA.')
+  })
+})
+
+describe('salesSignals', () => {
+  it('scores Sales leads on hiring, the role words, remote and contract', () => {
+    expect(salesSignals('React developer')).toEqual(['hiring', 'react', 'developer', 'remote', 'contract'])
+    expect(salesSignals('  .NET and C# engineer ')).toEqual(['hiring', '.net', 'c#', 'engineer', 'remote', 'contract'])
   })
 })
