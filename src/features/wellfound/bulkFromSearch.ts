@@ -24,7 +24,7 @@ export interface BulkResult { campaignId: string; approved: number; found: numbe
  */
 /** Hiring signals for a Sales search: "hiring", each meaningful word of the role, and remote / contract. */
 export function salesSignals(query: string): string[] {
-  const words = query.toLowerCase().split(/[^a-z0-9+#.]+/).filter((w) => w.length >= 3 && !['and', 'the', 'for', 'with'].includes(w))
+  const words = query.toLowerCase().split(/[^a-z0-9+#.]+/).filter((w) => (w.length >= 3 || /[#+.]/.test(w)) && !['and', 'the', 'for', 'with'].includes(w))
   return [...new Set(['hiring', ...words, 'remote', 'contract'])].slice(0, 10)
 }
 
