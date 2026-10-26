@@ -32,12 +32,12 @@ export function MyJourney({ token }: Readonly<{ token: string }>) {
           ))}
         </ol>
         <div className="bench-kpis jr-kpis">
-          {([['Learned', `${j.learningHours} h`], ['Certifications', j.certifications.length], ['Interviews', j.timeline.filter((t) => t.kind === 'Interview').length], ['Resume score', j.resumeStrength ?? '—']] as const)
+          {([['Learned', `${j.learningHours} h`], ['Certifications', j.certifications.length], ['Interviews done / booked', `${j.timeline.filter((t) => t.kind === 'Interview').length} / ${j.upcoming.filter((t) => t.kind === 'Interview').length}`], ['Resume score', j.resumeStrength ?? '—']] as const)
             .map(([label, value]) => <div key={label} className="bench-kpi jr-kpi"><span className="muted-small">{label}</span><strong className="op-numeric">{value}</strong></div>)}
         </div>
       </section>
       {j.salesperson && (
-        <section className="rb-review stack-1" aria-label="Your recruiter">
+        <section className="rb-review jr-recruiter" aria-label="Your recruiter">
           <span className="muted-small">Your recruiter</span>
           <strong>{j.salesperson}</strong>
           <span className="muted-small">Ask them about roles, interviews or your resume.</span>
