@@ -698,7 +698,7 @@ html { scroll-padding-bottom: 96px; }
 .jr-recruiter { display: grid; gap: 2px; }
 /* Candidate view (2026-10-26): hero + recruiter on top, applications / resume / journey on the left, next interview / upcoming / roles on the right. */
 .cv-page { max-width: 1240px; width: 100%; }
-.cv-top { display: flex; flex-wrap: wrap; gap: var(--op-space-4); align-items: stretch; }
+.cv-top { display: flex; flex-wrap: wrap; gap: var(--op-space-4); align-items: flex-start; }
 .cv-hero { flex: 999 1 560px; min-width: 0; padding: var(--op-space-5); }
 .cv-hero-title { margin: 0; font-size: 22px; letter-spacing: -0.01em; }
 .cv-top-side { flex: 1 1 300px; min-width: 0; }
