@@ -20,7 +20,7 @@
     "@teamhanko/hanko-elements": "3.0.0",
     "@vercel/analytics": "^2.0.1",
     "docx": "9.5.1",
-    "lucide-react": "0.469.0",
+    "lucide-react": "1.61.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4"
