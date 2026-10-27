@@ -101,7 +101,7 @@ export function StaffingDealsPage() {
         </details>
         <p className="muted-small">
           Average time in the current stage: {k.averageDaysInStage == null ? '—' : `${k.averageDaysInStage} days`}. Average time from contact to reply:{' '}
-          {k.averageHoursToReply == null ? '—' : `${k.averageHoursToReply} hours`}. Candidates: {k.candidates} on the bench, {k.candidatesWithConsent} with consent, {k.candidatesAvailable} available.
+          {k.averageHoursToReply == null ? '—' : `${k.averageHoursToReply} hours`}. Candidates: {k.candidates} in total, {k.candidatesWithConsent} with consent, {k.candidatesAvailable} available.
         </p>
       </div>
     </section>}

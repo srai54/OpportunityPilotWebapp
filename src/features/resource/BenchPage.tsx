@@ -22,7 +22,7 @@ export function BenchPage() {
   const avg = bench.data?.averageStrength ?? null
   const all = bench.data?.rows ?? []
   const kpis = [
-    ['On the bench', all.length, 'resources'],
+    ['All resources', all.length, 'from the day they joined'],
     ['Priority', all.filter((r) => r.priority).length, 'put forward first'],
     ['Interviewing', all.filter((r) => r.status === 'interviewing').length, 'interviews running'],
     ['Mapped', all.filter((r) => r.status === 'mapped').length, 'going to a project'],
@@ -30,22 +30,22 @@ export function BenchPage() {
   ] as const
   return (
     <div className="page page-wide stack-4">
-      <PageHeader title="Bench" subtitle="Every resource from the day they joined: what they are doing, what fits them, and what is next."
+      <PageHeader title="Resources" subtitle="Every resource from the day they joined: what they are doing, what fits them, and what is next."
         actions={<div className="row wrap">
           <div className="jr-seg" role="group" aria-label="Group by">
             {(['status', 'skill', 'sales'] as const).map((g) => <button key={g} type="button" className="jr-seg-btn" aria-pressed={by === g} onClick={() => setBy(g)}>{g === 'status' ? 'Status' : g === 'skill' ? 'Skill' : 'Salesperson'}</button>)}
           </div>
-          <label className="sr-only" htmlFor="bench-q">Search the bench</label>
+          <label className="sr-only" htmlFor="bench-q">Search resources</label>
           <input id="bench-q" className="bench-search" value={q} placeholder="Search name, skill, certification" onChange={(e) => setQ(e.target.value)} />
         </div>} />
-      {bench.loading && !bench.data && <LoadingState label="Loading the bench…" rows={3} waking={bench.waking} />}
-      {bench.error && <ErrorNotice error={bench.error} onRetry={bench.reload} what="the bench" />}
+      {bench.loading && !bench.data && <LoadingState label="Loading resources…" rows={3} waking={bench.waking} />}
+      {bench.error && <ErrorNotice error={bench.error} onRetry={bench.reload} what="resources" />}
       {bench.data && all.length === 0 && (
         <EmptyState title="No resources yet" actions={<SampleDataButton workspace="Sales" onLoaded={bench.reload} />}>Add candidates under Staffing → Candidates, or load labelled sample data.</EmptyState>
       )}
       {all.length > 0 && (
         <>
-          <section className="bench-kpis" aria-label="Bench summary">
+          <section className="bench-kpis" aria-label="Resources summary">
             {kpis.map(([label, value, sub]) => <div key={label} className="ccard ccard-default bench-kpi"><span className="muted-small">{label}</span><strong className="op-numeric">{value}</strong><span className="muted-small">{sub}</span></div>)}
           </section>
           <section className="bench-groups" aria-label="Resources">
@@ -65,7 +65,7 @@ export function BenchPage() {
                       <div className="stack-1">
                         <span className="muted-small">Resume strength</span>
                         <span className="bench-bar" aria-hidden="true"><span style={{ width: `${r.resumeStrength ?? 0}%` }} className={avg !== null && (r.resumeStrength ?? 0) >= avg ? 'is-strong' : ''} /></span>
-                        <span className="bench-fig">{r.resumeStrength ?? '—'}{r.resumeStrength !== null && avg !== null ? ` · ${r.resumeStrength - avg >= 0 ? '+' : ''}${r.resumeStrength - avg} vs bench` : ''}</span>
+                        <span className="bench-fig">{r.resumeStrength ?? '—'}{r.resumeStrength !== null && avg !== null ? ` · ${r.resumeStrength - avg >= 0 ? '+' : ''}${r.resumeStrength - avg} vs average` : ''}</span>
                       </div>
                       <div className="stack-1">
                         <span className="muted-small">Best fit</span>

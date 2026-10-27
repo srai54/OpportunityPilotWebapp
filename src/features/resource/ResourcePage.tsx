@@ -28,7 +28,7 @@ function ProfileForm({ j, onSaved }: Readonly<{ j: Journey; onSaved: (j: Journey
       <summary>Joined date, salesperson and priority</summary>
       <div className="stack-3">
         <div className="rb-grid">
-          <div className="field"><label htmlFor="r-joined">Joined the bench</label><input id="r-joined" type="date" value={joined} onChange={(e) => setJoined(e.target.value)} /></div>
+          <div className="field"><label htmlFor="r-joined">Joined on</label><input id="r-joined" type="date" value={joined} onChange={(e) => setJoined(e.target.value)} /></div>
           <div className="field"><label htmlFor="r-sales">Aligned salesperson</label><input id="r-sales" value={sales} maxLength={120} onChange={(e) => setSales(e.target.value)} /></div>
         </div>
         <label className="check"><input type="checkbox" checked={priority} onChange={(e) => setPriority(e.target.checked)} /> Priority profile (put forward first)</label>
@@ -67,7 +67,7 @@ export function ResourcePage() {
   const all = [...data.upcoming, ...data.timeline]
   return (
     <div className="page page-wide stack-4">
-      <nav aria-label="Breadcrumb" className="muted-small res-crumb"><Link to="/staffing/bench">Bench</Link> / {data.name}</nav>
+      <nav aria-label="Breadcrumb" className="muted-small res-crumb"><Link to="/staffing/resources">Resources</Link> / {data.name}</nav>
       <section className="ccard ccard-default res-head" aria-label="Profile">
         <span className="bench-avatar res-avatar" aria-hidden="true">{data.name.replace(/\(.*?\)/g, '').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('')}</span>
         <div className="stack-1 res-who">
@@ -98,7 +98,7 @@ export function ResourcePage() {
             {tab === 'Timeline' && <JourneyTimeline items={data.timeline} onDelete={(e) => void remove(e)} />}
             {tab === 'Calendar' && <JourneyCalendar items={all} />}
             {tab === 'Log progress' && <LogProgress<Journey> url={`/api/v1/staffing/candidates/${data.candidateId}/journey`} onAdded={(v) => { setJ(v); setTab('Timeline') }}
-              intro="Log what this resource did or has booked. It shows on their journey and on the bench." />}
+              intro="Log what this resource did or has booked. It shows on their journey and on the Resources page." />}
           </div>
         </Card>
         <div className="stack-4 res-side">

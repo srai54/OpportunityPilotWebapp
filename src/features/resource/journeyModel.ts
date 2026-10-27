@@ -38,7 +38,7 @@ export const LOG_KINDS = [
 
 export const STATUS: Record<BenchStatus | 'priority', { label: string; hint: string; tone: Tone }> = {
   priority: { label: 'Priority', hint: 'Strong profile and a fitting role: put forward first', tone: 'danger' },
-  available: { label: 'Available now', hint: 'On the bench, ready to submit', tone: 'green' },
+  available: { label: 'Available now', hint: 'Ready to submit', tone: 'green' },
   interviewing: { label: 'Interviewing', hint: 'Submitted, interviews running', tone: 'primary' },
   mapped: { label: 'Mapped / onboarding', hint: 'Offer accepted: going to a project', tone: 'amber' },
   training: { label: 'In training', hint: 'Learning or certifying before submission', tone: 'indigo' },

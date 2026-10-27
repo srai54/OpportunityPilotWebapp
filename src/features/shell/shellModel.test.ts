@@ -60,8 +60,8 @@ describe('NAV_GROUPS', () => {
 
   it('keeps the simple menu to the essentials', () => {
     expect(labels(false)).toEqual(['Overview', 'Find jobs', 'Opportunities', 'Outreach', 'Follow up', 'Profiles', 'Settings'])
-    // Bench (2026-10-26) is the central Sales view of every resource, so it shows without Advanced.
-    expect(labels(false, 'sales')).toEqual(['Overview', 'Find companies', 'Companies', 'Outreach', 'Follow up', 'Bench', 'Profiles', 'Settings'])
+    // Resources (2026-10-26) is the central Sales view of every resource, so it shows without Advanced.
+    expect(labels(false, 'sales')).toEqual(['Overview', 'Find companies', 'Companies', 'Outreach', 'Follow up', 'Resources', 'Profiles', 'Settings'])
   })
 
   it('adds campaigns, follow-ups, insights, staffing and help only with Advanced on, each route once', () => {
@@ -77,7 +77,7 @@ describe('NAV_GROUPS', () => {
 
   it('keeps a group with any simple item and drops one whose items are all advanced', () => {
     expect(navGroupsFor('sales', false).map((g) => g.label)).toEqual([null, 'Work', 'Staffing', 'Set up'])
-    expect(navGroupsFor('sales', false).find((g) => g.label === 'Staffing')?.items.map((i) => i.label)).toEqual(['Bench'])
+    expect(navGroupsFor('sales', false).find((g) => g.label === 'Staffing')?.items.map((i) => i.label)).toEqual(['Resources'])
     expect(navGroupsFor('sales', true).map((g) => g.label)).toEqual([null, 'Work', 'Staffing', 'Set up'])
   })
 
