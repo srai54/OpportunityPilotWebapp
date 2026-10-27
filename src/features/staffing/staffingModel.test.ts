@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { inZone, money, nextStages, percent, stageProgress, submittableFields, zonedToUtc } from './staffingModel'
+import { availabilityLabel, inZone, money, nextStages, percent, rateLabel, sharedLine, stageProgress, submittableFields, zonedToUtc } from './staffingModel'
 
 describe('nextStages', () => {
   it('offers one step forward plus hold, lost and disqualified', () =>
@@ -39,4 +39,21 @@ describe('formatting', () => {
     expect(zonedToUtc('bad', 'UTC')).toBeNull()
   })
   it('shows an interview in its own zone', () => expect(inZone('2026-10-20T09:30:00Z', 'Asia/Kolkata')).toContain('15:00 (Asia/Kolkata)'))
+})
+
+describe('candidate card labels', () => {
+  it('says availability in words', () => {
+    expect(availabilityLabel({ availability: 'NoticePeriod', noticePeriodDays: 60 })).toBe("60 days' notice")
+    expect(availabilityLabel({ availability: 'NotAvailable', noticePeriodDays: null })).toBe('Not available')
+    expect(availabilityLabel({ availability: 'Immediate', noticePeriodDays: null })).toBe('Immediate')
+  })
+  it('writes the rate on one line, or nothing', () => {
+    expect(rateLabel({ rateAmount: 1800, rateCurrency: 'INR', rateUnit: 'Hour' })).toBe('1,800 INR / hour')
+    expect(rateLabel({ rateAmount: null, rateCurrency: 'USD', rateUnit: 'Hour' })).toBeNull()
+  })
+  it('sums up the shared fields in one short line', () => {
+    expect(sharedLine([])).toBe('Nothing may be shared yet')
+    expect(sharedLine(['Name', 'Headline'])).toBe('Shares 2 fields: Name, Headline')
+    expect(sharedLine(['Name', 'Headline', 'Skills', 'Rate', 'Location'])).toBe('Shares 5 fields: Name, Headline, Skills +2 more')
+  })
 })

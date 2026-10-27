@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { ErrorNotice } from '../../components/ErrorNotice'
 import { PageHeader } from '../../components/PageHeader'
 import { EmptyState, LoadingState } from '../../components/States'
@@ -11,7 +11,9 @@ import { api } from '../../lib/api'
 import { useApi } from '../../lib/useApi'
 import { ProgressShare } from '../progress/ProgressShare'
 import { ResumeTailorPanel } from '../resume/ResumeTailorPanel'
-import { CANDIDATE_FIELDS, money } from './staffingModel'
+import { CANDIDATE_FIELDS, availabilityLabel, rateLabel, sharedLine } from './staffingModel'
+import { Avatar, CardGrid } from '../../components/cards'
+import { useShell } from '../shell/ShellContext'
 import { latestDealFor } from '../calls/scheduleModel'
 import type { Availability, CandidateField, Consent, InterviewBoardRow, RateUnit, StaffingCandidate } from './staffingTypes'
 
@@ -23,6 +25,7 @@ export function StaffingCandidatesPage() {
   const [consentFor, setConsentFor] = useState<StaffingCandidate | null>(null)
   const [sharing, setSharing] = useState<StaffingCandidate | null>(null)
   const [fitFor, setFitFor] = useState<StaffingCandidate | null>(null)
+  const { advanced } = useShell()
 
   return <div className="page page-wide stack-4">
     <PageHeader title="Candidates" subtitle="Your bench. Submitted only with consent."
@@ -44,24 +47,83 @@ export function StaffingCandidatesPage() {
       {list.error ? <ErrorNotice error={list.error} onRetry={list.reload} what="candidates" />
         : !list.data ? <LoadingState label="Loading candidates…" waking={list.waking} />
         : list.data.length === 0 ? <EmptyState title="No candidates yet" actions={<SampleDataButton workspace="Sales" onLoaded={list.reload} />}>Add the people you can place, then record what each agreed to share.</EmptyState>
-        : <div className="table-scroll"><table className="table">
-          <thead><tr><th>Candidate</th><th>Availability</th><th className="num">Rate</th><th>Consent</th><th>May be shared</th><th><span className="sr-only">Actions</span></th></tr></thead>
+        : !advanced ? <CardGrid label="Candidates">
+          {list.data.map((c) => <CandidateCard key={c.id} c={c} context={latestDealFor(c.id, board.data ?? [])}
+            onEdit={() => setEditing(c)} onConsent={() => setConsentFor(c)} onShare={() => setSharing(c)} onFit={() => setFitFor(c)} />)}
+        </CardGrid>
+        : <div className="table-scroll" role="region" aria-label="Candidates" tabIndex={0}><table className="table cand-table">
+          <thead><tr><th>Candidate</th><th>Availability and rate</th><th>Consent</th><th>May be shared</th><th><span className="sr-only">Actions</span></th></tr></thead>
           <tbody>{list.data.map((c) => <tr key={c.id}>
-            <td><Link to={`/staffing/candidates/${c.id}`}><strong>{c.name}</strong></Link><div className="muted-small">{[c.headline, c.location, c.yearsExperience != null ? `${c.yearsExperience} yrs` : null].filter(Boolean).join(' · ')}</div></td>
-            <td>{c.availability === 'NoticePeriod' ? `${c.noticePeriodDays ?? '?'} days' notice` : c.availability === 'NotAvailable' ? 'Not available' : c.availability}</td>
-            <td className="num op-numeric">{c.rateAmount != null ? `${money(c.rateAmount, c.rateCurrency)} / ${c.rateUnit?.toLowerCase()}` : '—'}</td>
-            <td><Badge tone={c.consent === 'Granted' ? 'success' : c.consent === 'Withdrawn' ? 'danger' : 'warning'}>{c.consent}</Badge>
-              {c.consentEvidence && <div className="muted-small">{c.consentEvidence}</div>}</td>
-            <td className="small">{c.shareableFields.length ? c.shareableFields.join(', ') : '—'}</td>
-            <td className="row"><CallButton phone={c.phone} who={c.name} entityType="candidate" entityId={c.id} context={latestDealFor(c.id, board.data ?? [])} />
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setEditing(c)}>Edit</button>
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setConsentFor(c)}>Consent</button>
+            <td><Link to={`/staffing/candidates/${c.id}`}><strong>{c.name}</strong></Link><div className="muted-small cand-line">{[c.headline, c.location, c.yearsExperience != null ? `${c.yearsExperience} yrs` : null].filter(Boolean).join(' · ')}</div></td>
+            <td className="nowrap">{availabilityLabel(c)}<div className="muted-small op-numeric">{rateLabel(c) ?? 'No rate yet'}</div></td>
+            <td><ConsentBadge c={c} /></td>
+            <td className="small nowrap" title={c.shareableFields.join(', ') || undefined}>{c.shareableFields.length ? `${c.shareableFields.length} fields` : 'None yet'}</td>
+            <td><div className="row nowrap"><CallButton phone={c.phone} who={c.name} entityType="candidate" entityId={c.id} context={latestDealFor(c.id, board.data ?? [])} />
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSharing(c)}>Share progress</button>
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => setFitFor(c)}>Resume fit</button></td>
+              <RowMenu who={c.name} items={[['Edit', () => setEditing(c)], ['Consent', () => setConsentFor(c)], ['Resume fit', () => setFitFor(c)]]} /></div></td>
           </tr>)}</tbody>
         </table></div>}
     </section>
   </div>
+}
+
+/** "More" in a table row: a small menu that closes on Esc (focus back on "More") and after a choice. */
+function RowMenu({ who, items }: Readonly<{ who: string; items: [string, () => void][] }>) {
+  const ref = useRef<HTMLDetailsElement>(null)
+  const close = () => { if (ref.current) ref.current.open = false }
+  return (
+    <details className="row-menu" ref={ref} onKeyDown={(e) => { if (e.key === 'Escape') { close(); ref.current?.querySelector('summary')?.focus() } }}>
+      <summary className="btn btn-ghost btn-sm">More<span className="sr-only"> for {who}</span></summary>
+      <div className="row-menu-list">
+        {items.map(([label, run]) => <button key={label} className="btn btn-ghost btn-sm" type="button" onClick={() => { close(); run() }}>{label}</button>)}
+      </div>
+    </details>
+  )
+}
+
+function ConsentBadge({ c }: Readonly<{ c: StaffingCandidate }>) {
+  const tone = c.consent === 'Granted' ? 'success' : c.consent === 'Withdrawn' ? 'danger' : 'warning'
+  return <span title={c.consentEvidence ?? undefined}><Badge tone={tone}>{c.consent === 'Granted' ? 'Consent given' : c.consent === 'Withdrawn' ? 'Consent withdrawn' : 'Consent pending'}</Badge></span>
+}
+
+/**
+ * One candidate in the simple view (DESIGN.md §13, 2026-10-26): who, availability, rate, consent and what may be shared on one card;
+ * Call is the one primary action, Share progress the second, the rest quiet.
+ */
+function CandidateCard({ c, context, onEdit, onConsent, onShare, onFit }: Readonly<{
+  c: StaffingCandidate; context: ReturnType<typeof latestDealFor>; onEdit: () => void; onConsent: () => void; onShare: () => void; onFit: () => void
+}>) {
+  const meta = [c.location, c.yearsExperience != null ? `${c.yearsExperience} yrs` : null].filter(Boolean).join(' · ')
+  const rate = rateLabel(c)
+  return (
+    <li className="card cand-card">
+      <div className="cand-head">
+        <Avatar name={c.name} />
+        <div className="cand-who">
+          <h3 className="cand-name"><Link to={`/staffing/candidates/${c.id}`}>{c.name}</Link></h3>
+          {c.headline && <p className="cand-line" title={c.headline}>{c.headline}</p>}
+          {meta && <p className="muted-small">{meta}</p>}
+        </div>
+      </div>
+      <div className="cand-chips">
+        <span className="chip">{availabilityLabel(c)}</span>
+        {rate && <span className="chip op-numeric">{rate}</span>}
+        <ConsentBadge c={c} />
+      </div>
+      <p className="muted-small cand-line" title={c.shareableFields.join(', ')}>{sharedLine(c.shareableFields)}</p>
+      <div className="cand-actions">
+        <div className="row">
+          <CallButton phone={c.phone} who={c.name} entityType="candidate" entityId={c.id} context={context} />
+          <button className="btn btn-secondary btn-sm" type="button" onClick={onShare}>Share progress</button>
+        </div>
+        <div className="cand-more">
+          <button className="btn btn-ghost btn-sm" type="button" onClick={onEdit}>Edit<span className="sr-only"> {c.name}</span></button>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={onConsent}>Consent<span className="sr-only"> of {c.name}</span></button>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={onFit}>Resume fit<span className="sr-only"> for {c.name}</span></button>
+        </div>
+      </div>
+    </li>
+  )
 }
 
 function CandidateForm({ candidate, onDone }: { candidate: StaffingCandidate | null; onDone: () => void }) {

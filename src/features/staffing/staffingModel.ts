@@ -57,6 +57,26 @@ export function money(amount: number | null | undefined, currency: string | null
   return `${new Intl.NumberFormat('en', { maximumFractionDigits: 2 }).format(amount)}${currency ? ` ${currency}` : ''}`
 }
 
+/** "60 days' notice", "Immediate", "Not available" — the candidate's availability in words. */
+export function availabilityLabel(c: Pick<StaffingCandidate, 'availability' | 'noticePeriodDays'>): string {
+  if (c.availability === 'NoticePeriod') return `${c.noticePeriodDays ?? '?'} days' notice`
+  if (c.availability === 'NotAvailable') return 'Not available'
+  if (c.availability === 'Unknown') return 'Availability unknown'
+  return c.availability
+}
+
+/** "1,800 INR / hour", or null when no rate is recorded. */
+export function rateLabel(c: Pick<StaffingCandidate, 'rateAmount' | 'rateCurrency' | 'rateUnit'>): string | null {
+  return c.rateAmount == null ? null : `${money(c.rateAmount, c.rateCurrency)}${c.rateUnit ? ` / ${c.rateUnit.toLowerCase()}` : ''}`
+}
+
+/** "Shares 7 fields: Name, Headline, Skills…" — the consented fields in one short line. */
+export function sharedLine(fields: readonly string[], shown = 3): string {
+  if (fields.length === 0) return 'Nothing may be shared yet'
+  const head = fields.slice(0, shown).join(', ')
+  return `Shares ${fields.length} field${fields.length === 1 ? '' : 's'}: ${head}${fields.length > shown ? ` +${fields.length - shown} more` : ''}`
+}
+
 export function percent(rate: number | null): string {
   return rate == null ? '—' : `${Math.round(rate * 100)}%`
 }

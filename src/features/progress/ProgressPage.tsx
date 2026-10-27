@@ -148,14 +148,17 @@ export function ProgressBody({ token, embedded = false }: Readonly<{ token: stri
         <>
           {(j || view.data.note) && (
             <div className="cv-top">
-              {j && <JourneyHero j={j} />}
+              {/* The figures sit under the hero in the left column, so a tall recruiter column never leaves a gap beside them. */}
+              <div className="cv-top-main stack-4">
+                {j && <JourneyHero j={j} />}
+                {j && <CandidateKpis j={j} />}
+              </div>
               <div className="cv-top-side stack-4">
                 {j && <RecruiterCard j={j} />}
                 {view.data.note && <Card level={2} tone="signature" title="A note from your recruiter"><p className="prog-note">{view.data.note}</p></Card>}
               </div>
             </div>
           )}
-          {j && <CandidateKpis j={j} />}
           {j && (
             <div className="cd-row">
               <ReadinessCard j={j} />

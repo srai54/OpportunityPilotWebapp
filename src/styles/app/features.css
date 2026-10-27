@@ -219,7 +219,7 @@ a.menu-item:hover { text-decoration: none; }
 .is-simple .profiles2-main .profiles2-pad { max-width: 720px; margin-inline: auto; }
 .is-simple .profiles2-main .save-bar { justify-content: center; }
 /* Blue text on the hovered grey row is 4.1:1; the darker (light theme) / lighter (dark theme) hover blue passes. */
-.table tbody tr:hover .btn-link, .table tbody tr:hover a { color: var(--op-primary-hover); }
+.table tbody tr:hover .btn-link, .table tbody tr:hover a:not(.btn) { color: var(--op-primary-hover); }
 @media (max-width: 640px) {
   .topbar-wrap .topbar-heading { display: none; }
   .topbar-wrap .topbar { gap: 6px; padding: 0 10px; }
@@ -440,3 +440,25 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .fb-subhead { margin: 0; font-size: 14px; font-weight: 600; }
 .top-switch.claude-share { white-space: normal; text-align: left; min-height: 44px; color: var(--op-ink); }
 .rb-tailor .btn-link { color: var(--op-on-indigo-tint); text-decoration: underline; min-height: 44px; }
+
+/* Candidates as cards in the simple view (2026-10-26, DESIGN.md §13). */
+.cand-card { display: grid; gap: 12px; align-content: start; }
+.cand-head { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.cand-who { display: grid; gap: 2px; min-width: 0; }
+.cand-name { margin: 0; font-size: 16px; line-height: 1.3; }
+.cand-name a { color: var(--op-ink); text-decoration: none; }
+.cand-name a:hover { color: var(--op-primary); text-decoration: underline; }
+.cand-line { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cand-who .cand-line { color: var(--op-muted); font-size: 13px; }
+.cand-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cand-chips .chip { display: inline-flex; align-items: center; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--op-neutral-tint); color: var(--op-on-neutral-tint); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.cand-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 12px; border-top: 1px solid var(--op-hair); }
+.cand-table .cand-line { max-width: 240px; }
+.cand-actions { display: grid; gap: 4px; }
+.cand-more { display: flex; flex-wrap: wrap; gap: 2px; margin-left: -8px; }
+.row-menu { position: relative; }
+.row-menu > summary { list-style: none; cursor: pointer; }
+.row-menu > summary::-webkit-details-marker { display: none; }
+.row-menu-list { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; display: grid; min-width: 140px; padding: 6px; background: var(--op-surface); border: 1px solid var(--op-line); border-radius: 12px; box-shadow: var(--op-shadow-popover); }
+.row-menu-list .btn { justify-content: flex-start; }
+.cand-table tbody tr:last-child .row-menu-list { top: auto; bottom: calc(100% + 4px); }
